@@ -614,17 +614,42 @@ class OpenAILLMProvider(LLMProvider):
         response: AgentResponse,
     ) -> LLMReviewEvaluation:
         structured_model = self.model.with_structured_output(LLMReviewEvaluation)
+
+        company_context = request.context.get("company_profile", "")
+        company_block = (
+            f"\n\nCompany context the output MUST reference:\n{company_context}"
+            if company_context
+            else ""
+        )
+
         return structured_model.invoke(
             [
                 (
                     "system",
-                    "You are a quality-assurance reviewer for AI agent output. Evaluate the agent's "
-                    "response against the original request. Score each dimension 0-1:\n"
-                    "- relevance: does the output address the user's specific request?\n"
-                    "- completeness: are all expected sections present and substantive?\n"
-                    "- clarity: is the output well-structured, concise, and free of filler?\n"
-                    "- actionability: can the founder act on this output immediately?\n\n"
-                    "Provide concrete feedback. If revision is needed, give a specific instruction.",
+                    "You are a STRICT quality-assurance reviewer for AI agent output. "
+                    "Your job is to catch mediocre work — not rubber-stamp everything. "
+                    "Evaluate the agent's response against the original request. "
+                    "Score each dimension 0.0–1.0:\n\n"
+                    "- relevance (0-1): Does the output directly address the SPECIFIC request? "
+                    "Deduct heavily if the output is generic boilerplate that could apply to any company. "
+                    "A score above 0.8 means the output is clearly tailored to the user's specific product, audience, and situation.\n"
+                    "- completeness (0-1): Are ALL expected sections present with real substance? "
+                    "One-liner sections or placeholder text should score below 0.6.\n"
+                    "- clarity (0-1): Is the output well-structured, concise, and free of filler? "
+                    "Deduct for buzzword salad, vague language ('leverage', 'empower', 'cutting-edge'), "
+                    "or sections that say the same thing in different words.\n"
+                    "- actionability (0-1): Can a founder copy-paste this output and USE it immediately? "
+                    "A social post without a hook scores low. An email without a clear CTA scores low. "
+                    "Landing copy without a concrete value prop scores low.\n\n"
+                    "CALIBRATION: A typical first-draft from an AI should score 0.6-0.75, not 0.9-1.0. "
+                    "Reserve scores above 0.85 for genuinely excellent, specific, ready-to-use output. "
+                    "Generic output that could apply to any SaaS company should score below 0.6 on relevance.\n\n"
+                    "In your feedback, cite SPECIFIC examples of what is weak or generic. "
+                    "Do not say 'the output is good' — say what makes it good or bad with evidence. "
+                    "If revision is needed, give a concrete, actionable instruction (not 'make it better').\n\n"
+                    "If company context is provided below, check whether the output actually references "
+                    "the company's specific product, features, audience, and industry — not just its name."
+                    + company_block,
                 ),
                 (
                     "human",
