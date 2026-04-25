@@ -55,59 +55,103 @@ def generate_image(prompt: str, section: str) -> GeneratedImage | None:
         return None
 
 
-SECTION_PROMPT_TEMPLATES = {
-    "positioning": (
-        "Abstract geometric visualization representing innovation and technology. "
-        "Flowing gradients of deep blue, teal, and warm gold. "
-        "Interconnected nodes and clean lines suggesting a network or system. "
-        "Professional corporate aesthetic, soft lighting, shallow depth of field. "
-        "Absolutely no text, no letters, no words, no numbers, no watermarks."
-    ),
-    "landing_copy": (
-        "Sleek product mockup scene on a clean desk workspace. "
-        "Modern laptop or tablet showing an abstract UI dashboard with colorful data visualizations. "
-        "Soft ambient lighting, minimal props, premium feel. "
-        "Blurred background with warm bokeh. Photo-realistic render. "
-        "Absolutely no text, no letters, no words, no numbers, no watermarks."
-    ),
-    "icp_notes": (
-        "Professional portrait-style scene of diverse business professionals in a modern office setting. "
-        "Warm natural light, shallow depth of field, people collaborating over a tablet or whiteboard. "
-        "Clean corporate aesthetic, muted color palette with pops of blue. "
-        "Absolutely no text, no letters, no words, no numbers, no watermarks."
-    ),
-    "launch_email": (
-        "Minimalist flat-lay composition of a laptop with a glowing inbox notification icon. "
-        "Clean white desk surface, coffee cup, and a small plant. "
-        "Soft top-down lighting, pastel accents, modern and inviting feel. "
-        "Absolutely no text, no letters, no words, no numbers, no watermarks."
-    ),
-    "social_post": (
-        "Bold, attention-grabbing abstract composition for social media. "
-        "Dynamic diagonal lines and geometric shapes in contrasting colors — "
-        "electric purple, coral, and white on a dark background. "
-        "Modern, energetic, high-contrast. Perfect square or 16:9 crop. "
-        "Absolutely no text, no letters, no words, no numbers, no watermarks."
-    ),
-}
+def _build_contextual_prompt(section: str, section_text: str, company_context: str) -> str:
+    """Use LLM to generate a context-specific image prompt from the actual content."""
+    try:
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(
+            model="gpt-4o-mini",
+            api_key=settings.pydantic_ai_api_key,
+            base_url="https://ai.pydantic.dev/openai/v1",
+            max_tokens=200,
+            temperature=0.7,
+        )
+
+        result = model.invoke(
+            [
+                (
+                    "system",
+                    "You create image generation prompts for a B2B startup content platform. "
+                    "Given a content section and its text, produce a single vivid image prompt "
+                    "that visually represents the specific ideas in the text.\n\n"
+                    "Rules:\n"
+                    "- The image should feel like a high-quality product screenshot, "
+                    "team photo, data visualization, or professional scene\n"
+                    "- Reference specific concepts from the text (not generic business imagery)\n"
+                    "- NEVER include any text, letters, words, or watermarks in the image\n"
+                    "- Keep the prompt under 150 words\n"
+                    "- End with: 'Absolutely no text, no letters, no words, no numbers, no watermarks.'\n"
+                    "- Make it photorealistic and professional\n"
+                    "- If the text mentions a specific product or tool, depict a sleek UI mockup or "
+                    "dashboard relevant to that product category",
+                ),
+                (
+                    "human",
+                    f"Section: {section}\n"
+                    f"Content:\n{section_text[:600]}\n"
+                    f"Company context:\n{company_context[:400]}",
+                ),
+            ]
+        )
+        content = result.content if hasattr(result, "content") else str(result)
+        return content.strip()
+    except Exception:
+        logger.exception("Failed to generate contextual prompt for '%s'", section)
+        return _fallback_prompt(section, section_text)
+
+
+def _fallback_prompt(section: str, section_text: str) -> str:
+    """Create a basic prompt from the section text without LLM."""
+    first_sentence = section_text.split(".")[0][:120] if section_text else section
+    base = {
+        "positioning": (
+            f"Professional product visualization representing: {first_sentence}. "
+            "Clean modern workspace, soft lighting, premium feel."
+        ),
+        "landing_copy": (
+            f"Sleek product dashboard mockup showing: {first_sentence}. "
+            "Modern UI with data visualizations, ambient lighting."
+        ),
+        "icp_notes": (
+            f"Professional team collaborating in modern office, discussing: {first_sentence}. "
+            "Natural light, shallow depth of field."
+        ),
+        "launch_email": (
+            f"Minimalist laptop on clean desk showing notification about: {first_sentence}. "
+            "Soft lighting, inviting atmosphere."
+        ),
+        "social_post": (
+            f"Bold dynamic composition representing: {first_sentence}. "
+            "Modern, energetic, high-contrast professional visuals."
+        ),
+    }
+    prompt = base.get(section, f"Professional scene representing: {first_sentence}.")
+    return prompt + " Absolutely no text, no letters, no words, no numbers, no watermarks."
 
 
 def generate_content_images(
     startup_idea: str,
     sections: list[str] | None = None,
+    section_texts: dict[str, str] | None = None,
+    company_context: str = "",
 ) -> dict[str, GeneratedImage]:
     if not settings.fal_api_key:
         return {}
 
-    target_sections = sections or list(SECTION_PROMPT_TEMPLATES.keys())
+    default_sections = ["positioning", "landing_copy", "icp_notes", "launch_email", "social_post"]
+    target_sections = sections or default_sections
     results: dict[str, GeneratedImage] = {}
 
     for section in target_sections:
-        template = SECTION_PROMPT_TEMPLATES.get(section)
-        if not template:
-            continue
+        section_text = (section_texts or {}).get(section, startup_idea)
 
-        image = generate_image(template, section)
+        if section_text and company_context:
+            prompt = _build_contextual_prompt(section, section_text, company_context)
+        else:
+            prompt = _fallback_prompt(section, section_text or startup_idea)
+
+        image = generate_image(prompt, section)
         if image:
             results[section] = image
 
