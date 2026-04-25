@@ -20,30 +20,27 @@ The main pitch is not "we built many agents." The pitch is:
 
 ## Current Repo State
 
-The backend already has a useful starter architecture:
+The backend has a focused GTM agent architecture:
 
 - FastAPI app under `backend/app`
 - `GET /` and `GET /api/v1/health`
-- `POST /api/v1/tasks`
-- agent registry
-- orchestrator
-- content generator agent
-- review agent
+- LangGraph campaign, demo chat, and qualification graphs
+- reusable agent capabilities under `backend/app/agents/capabilities`
 - mock LLM provider
+- OpenAI provider boundary with mock fallback
 - backend tests
 
-Do not rewrite this from scratch. Evolve the existing orchestrator, agent, and review pattern into the product workflow.
+The old generic `/tasks` starter route and content/review agents were removed to keep the backend focused on the AI GTM workflow.
 
 Current important files:
 
 - `backend/app/main.py`
-- `backend/app/api/routes/tasks.py`
-- `backend/app/agents/models.py`
-- `backend/app/agents/orchestrator.py`
-- `backend/app/agents/registry.py`
+- `backend/app/api/routes/campaigns.py`
+- `backend/app/agents/campaign_models.py`
+- `backend/app/agents/graphs/campaign.py`
+- `backend/app/agents/graphs/demo.py`
+- `backend/app/agents/capabilities/*.py`
 - `backend/app/agents/llm.py`
-- `backend/app/agents/content_generator.py`
-- `backend/app/agents/review.py`
 
 ## Architecture Decision
 
@@ -329,7 +326,7 @@ Backend tests should cover:
 
 - plain `pytest` works from `backend/`
 - health route still works
-- existing `/api/v1/tasks` route still works unless intentionally deprecated
+- no legacy `/api/v1/tasks` route is required
 - campaign graph invokes each required node in order
 - campaign graph returns valid structured Pydantic outputs
 - campaign creation returns all required structured sections

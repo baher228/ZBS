@@ -121,3 +121,9 @@ def test_missing_demo_room_returns_404() -> None:
     response = client.get("/api/v1/demo-rooms/room_missing")
 
     assert response.status_code == 404
+
+
+def test_legacy_tasks_route_is_not_registered() -> None:
+    response = client.post("/api/v1/tasks", json={"prompt": "Create launch copy"})
+
+    assert response.status_code == 404
