@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  Building2,
   CheckCircle2,
   FileText,
   Globe,
@@ -10,12 +11,15 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
+  fetchCompanyProfile,
   fetchProviderInfo,
   runAgentTask,
   runAgentTaskWithUpload,
   type AgentTaskPayload,
   type AgentTaskResponse,
+  type CompanyProfile,
   type ProviderInfo,
 } from "@/lib/agentApi";
 
@@ -63,11 +67,13 @@ export function AgentTaskConsole({
   const [reviewMode, setReviewMode] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
 
   const isLegal = taskType === "legal";
 
   useEffect(() => {
     fetchProviderInfo(apiBaseUrl).then(setProviderInfo);
+    fetchCompanyProfile(apiBaseUrl).then(setCompanyProfile);
   }, [apiBaseUrl]);
 
   const outputEntries = useMemo(
@@ -135,6 +141,32 @@ export function AgentTaskConsole({
         <div className="label-mono mb-3">{eyebrow}</div>
         <h1 className="font-display text-3xl md:text-5xl font-medium leading-tight">{title}</h1>
         <p className="mt-4 text-sm leading-relaxed text-foreground/70">{description}</p>
+
+        {companyProfile ? (
+          <div className="mt-4 flex items-center gap-2 border border-success/30 bg-success/5 px-4 py-2.5">
+            <Building2 className="h-4 w-4 text-success" />
+            <span className="text-xs text-foreground/80">
+              Context loaded: <strong>{companyProfile.name}</strong>
+            </span>
+            <Link
+              to="/onboarding"
+              className="ml-auto text-xs text-primary hover:text-foreground transition-colors"
+            >
+              Edit
+            </Link>
+          </div>
+        ) : (
+          <Link
+            to="/onboarding"
+            className="mt-4 flex items-center gap-2 border border-foreground/15 bg-card/30 px-4 py-2.5 hover:border-primary/30 transition-colors"
+          >
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              No company profile — <span className="text-primary">set up now</span> for better
+              results
+            </span>
+          </Link>
+        )}
 
         <div className="mt-8 space-y-4">
           <label className="block">

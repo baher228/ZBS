@@ -28,14 +28,14 @@ def generate_image(prompt: str, section: str) -> GeneratedImage | None:
 
         os.environ["FAL_KEY"] = api_key
 
-        result = fal_client.run(
-            "fal-ai/flux/schnell",
+        result = fal_client.subscribe(
+            "fal-ai/flux-pro/v1.1",
             arguments={
                 "prompt": prompt,
                 "image_size": "landscape_16_9",
-                "num_inference_steps": 4,
                 "num_images": 1,
-                "enable_safety_checker": True,
+                "safety_tolerance": "2",
+                "output_format": "jpeg",
             },
         )
 
@@ -57,19 +57,25 @@ def generate_image(prompt: str, section: str) -> GeneratedImage | None:
 
 SECTION_PROMPT_TEMPLATES = {
     "positioning": (
-        "Clean, modern hero image for a startup landing page. "
-        "Abstract visualization of {idea}. "
-        "Professional, minimal, tech-forward aesthetic. No text."
+        "Abstract geometric visualization representing innovation and technology. "
+        "Flowing gradients of deep blue, teal, and warm gold. "
+        "Interconnected nodes and clean lines suggesting a network or system. "
+        "Professional corporate aesthetic, soft lighting, shallow depth of field. "
+        "Absolutely no text, no letters, no words, no numbers, no watermarks."
     ),
     "landing_copy": (
-        "Product hero banner for a B2B SaaS landing page. "
-        "Visual metaphor for {idea}. "
-        "Gradient background, modern UI elements, clean and professional. No text."
+        "Sleek product mockup scene on a clean desk workspace. "
+        "Modern laptop or tablet showing an abstract UI dashboard with colorful data visualizations. "
+        "Soft ambient lighting, minimal props, premium feel. "
+        "Blurred background with warm bokeh. Photo-realistic render. "
+        "Absolutely no text, no letters, no words, no numbers, no watermarks."
     ),
     "social_post": (
-        "Eye-catching social media post graphic for LinkedIn/Twitter. "
-        "Visual concept representing {idea}. "
-        "Bold colors, modern design, engagement-focused. No text."
+        "Bold, attention-grabbing abstract composition for social media. "
+        "Dynamic diagonal lines and geometric shapes in contrasting colors — "
+        "electric purple, coral, and white on a dark background. "
+        "Modern, energetic, high-contrast. Perfect square or 16:9 crop. "
+        "Absolutely no text, no letters, no words, no numbers, no watermarks."
     ),
 }
 
@@ -89,8 +95,7 @@ def generate_content_images(
         if not template:
             continue
 
-        prompt = template.format(idea=startup_idea)
-        image = generate_image(prompt, section)
+        image = generate_image(template, section)
         if image:
             results[section] = image
 

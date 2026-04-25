@@ -11,6 +11,7 @@ from app.agents.models import TaskRequest, TaskResponse
 from app.agents.orchestrator import Orchestrator
 from app.agents.registry import AgentRegistry
 from app.agents.review import ReviewAgent
+from app.company.storage import get_company_context, load_profile
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -31,9 +32,31 @@ def get_orchestrator() -> Orchestrator:
     )
 
 
+def _enrich_with_company_context(request: TaskRequest) -> TaskRequest:
+    """Inject saved company profile context into the request if available."""
+    company_context = get_company_context()
+    if company_context is None:
+        return request
+
+    profile = load_profile()
+    if profile is None:
+        return request
+
+    data = request.model_dump()
+    data["context"] = {**data.get("context", {}), "company_profile": company_context}
+
+    if not data.get("startup_idea") and profile.description:
+        data["startup_idea"] = f"{profile.name}: {profile.description}"
+    if not data.get("target_audience") and profile.target_audience:
+        data["target_audience"] = profile.target_audience
+
+    return TaskRequest.model_validate(data)
+
+
 @router.post("", response_model=TaskResponse)
 def create_task(request: TaskRequest) -> TaskResponse:
-    return get_orchestrator().handle_task(request)
+    enriched = _enrich_with_company_context(request)
+    return get_orchestrator().handle_task(enriched)
 
 
 @router.post("/upload", response_model=TaskResponse)
@@ -71,4 +94,5 @@ async def create_task_with_upload(
         startup_url=startup_url or None,
         review_mode=review_mode,
     )
-    return get_orchestrator().handle_task(request)
+    enriched = _enrich_with_company_context(request)
+    return get_orchestrator().handle_task(enriched)

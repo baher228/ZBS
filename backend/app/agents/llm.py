@@ -428,6 +428,14 @@ class OpenAILLMProvider(LLMProvider):
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
         structured_model = self.model.with_structured_output(ContentPackage)
+
+        company_context = request.context.get("company_profile", "")
+        company_block = (
+            f"\n\nCompany context (use this to ground ALL content):\n{company_context}"
+            if company_context
+            else ""
+        )
+
         package = structured_model.invoke(
             [
                 (
@@ -440,8 +448,11 @@ class OpenAILLMProvider(LLMProvider):
                     "- icp_notes: describe the ideal buyer profile with trigger events and disqualifiers\n"
                     "- launch_email: subject line + short body, personalized to the audience\n"
                     "- social_post: one punchy post under 280 chars, no hashtags unless requested\n\n"
+                    "If company context is provided, use it to make every section specific to that company. "
+                    "Reference actual product features, audience, and differentiators — not generic placeholders.\n"
                     "Tailor the tone, channel focus, and language to the user's inputs. "
-                    "Avoid generic filler. Every sentence should be usable as-is.",
+                    "Avoid generic filler. Every sentence should be usable as-is."
+                    + company_block,
                 ),
                 ("human", request.model_dump_json()),
             ]
@@ -561,6 +572,14 @@ class OpenAILLMProvider(LLMProvider):
         source_context: str,
     ) -> LegalIssueScan:
         structured_model = self.model.with_structured_output(LegalIssueScan)
+
+        company_context = request.context.get("company_profile", "")
+        company_block = (
+            f"\n\nCompany context (tailor ALL analysis to this company):\n{company_context}"
+            if company_context
+            else ""
+        )
+
         return structured_model.invoke(
             [
                 (
@@ -576,7 +595,10 @@ class OpenAILLMProvider(LLMProvider):
                     "- risk_summary should be specific to the founder's product and audience\n"
                     "- founder_checklist should be numbered, actionable steps\n"
                     "- questions_for_counsel should be specific enough to hand to a lawyer\n"
-                    "- next_steps should tell the founder exactly what to collect before counsel review",
+                    "- next_steps should tell the founder exactly what to collect before counsel review\n\n"
+                    "If company context is provided, tailor the risk summary, checklist, and counsel questions "
+                    "to the specific product, industry, and audience described."
+                    + company_block,
                 ),
                 (
                     "human",

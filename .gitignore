@@ -63,6 +63,7 @@ __pycache__/
 .playwright-mcp/
 
 # Local/generated data
+backend/data/
 eval/
 mock/
 exports/
