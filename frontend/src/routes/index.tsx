@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
-import { SystemPipeline } from "@/components/SystemPipeline";
+import { SystemControlPanel } from "@/components/SystemControlPanel";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -114,7 +114,7 @@ function Landing() {
               <span className="text-foreground">— in real time</span>
             </div>
           </div>
-          <SystemPipeline />
+          <SystemControlPanel />
         </div>
       </section>
 
