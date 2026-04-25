@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Building2, CheckCircle2, Globe, Loader2, Plus, Sparkles, Tag, X } from "lucide-react";
+import { Building2, CheckCircle2, Globe, KeyRound, Loader2, Plus, Share2, Sparkles, Tag, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
@@ -45,6 +45,13 @@ const JURISDICTION_OPTIONS = [
 
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
+const SOCIAL_PLATFORMS = [
+  { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/company/your-company" },
+  { key: "twitter", label: "Twitter / X", placeholder: "https://x.com/your-handle" },
+  { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/your-handle" },
+  { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/your-page" },
+];
+
 const emptyProfile: CompanyProfile = {
   name: "",
   description: "",
@@ -56,6 +63,8 @@ const emptyProfile: CompanyProfile = {
   key_features: [],
   differentiators: "",
   jurisdictions: ["US"],
+  testing_credentials: "",
+  social_media_links: {},
 };
 
 function OnboardingPage() {
@@ -337,6 +346,25 @@ function OnboardingPage() {
             />
           </label>
 
+          {/* Testing Credentials */}
+          <label className="block">
+            <span className="label-mono">
+              <KeyRound className="inline h-3 w-3 mr-1" />
+              Testing Credentials <span className="text-muted-foreground text-[10px]">(optional)</span>
+            </span>
+            <p className="mt-1 text-xs text-foreground/50">
+              API keys, test accounts, sandbox URLs, or other credentials needed to test your product.
+              These are stored locally and included in the company profile for reference.
+            </p>
+            <textarea
+              value={profile.testing_credentials}
+              onChange={(e) => update("testing_credentials", e.target.value)}
+              placeholder={"e.g.\nTest API Key: sk-test-xxx\nSandbox URL: https://sandbox.example.com\nTest User: demo@example.com / password123"}
+              rows={4}
+              className="mt-2 w-full border border-foreground/20 bg-card/50 p-4 text-sm outline-none focus:border-primary transition-colors font-mono"
+            />
+          </label>
+
           {/* Jurisdictions */}
           <div>
             <span className="label-mono">Operating Jurisdictions</span>
@@ -354,6 +382,35 @@ function OnboardingPage() {
                 >
                   {opt.label}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Social Media Links */}
+          <div>
+            <span className="label-mono">
+              <Share2 className="inline h-3 w-3 mr-1" />
+              Social Media <span className="text-muted-foreground text-[10px]">(optional)</span>
+            </span>
+            <p className="mt-1 text-xs text-foreground/50">
+              Add your company&apos;s social profiles. We&apos;ll analyze your content to extract tone, themes, and audience insights for better output.
+            </p>
+            <div className="mt-3 space-y-3">
+              {SOCIAL_PLATFORMS.map((plat) => (
+                <div key={plat.key} className="flex items-center gap-3">
+                  <span className="w-24 text-xs text-foreground/60 shrink-0">{plat.label}</span>
+                  <input
+                    value={profile.social_media_links[plat.key] ?? ""}
+                    onChange={(e) =>
+                      update("social_media_links", {
+                        ...profile.social_media_links,
+                        [plat.key]: e.target.value,
+                      })
+                    }
+                    placeholder={plat.placeholder}
+                    className="flex-1 border border-foreground/20 bg-card/50 px-4 py-2 text-sm outline-none focus:border-primary transition-colors"
+                  />
+                </div>
               ))}
             </div>
           </div>

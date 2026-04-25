@@ -4,6 +4,21 @@ from app.agents.legal_knowledge import LegalKnowledgeBase
 from app.agents.llm import LLMProvider
 from app.agents.models import AgentCapability, AgentRequest, AgentResponse, LegalIssueScan
 
+_INDUSTRY_MAP: dict[str, list[str]] = {
+    "fintech": ["FinTech"],
+    "finance": ["FinTech"],
+    "banking": ["FinTech"],
+    "payments": ["FinTech"],
+    "healthtech": ["HealthTech"],
+    "health": ["HealthTech"],
+    "healthcare": ["HealthTech"],
+    "medical": ["HealthTech"],
+    "biotech": ["HealthTech"],
+    "edtech": ["EdTech"],
+    "education": ["EdTech"],
+    "e-learning": ["EdTech"],
+}
+
 
 class LegalAgent:
     capability = AgentCapability.LEGAL
@@ -16,10 +31,45 @@ class LegalAgent:
         self.knowledge_base = knowledge_base or LegalKnowledgeBase()
         self.llm_provider = llm_provider
 
+    @staticmethod
+    def _detect_industries(profile_industry: str, explicit: list[str] | None) -> list[str] | None:
+        """Auto-detect industry categories from the company profile industry field."""
+        if explicit:
+            return explicit
+        if not profile_industry:
+            return None
+        lowered = profile_industry.lower()
+        detected: list[str] = []
+        for keyword, industries in _INDUSTRY_MAP.items():
+            if keyword in lowered:
+                for ind in industries:
+                    if ind not in detected:
+                        detected.append(ind)
+        return detected or None
+
     def run(self, request: AgentRequest) -> AgentResponse:
+        company_profile_text = request.context.get("company_profile", "")
+        profile_industry = ""
+        profile_jurisdictions: list[str] = []
+        if company_profile_text:
+            for line in company_profile_text.split("\n"):
+                if line.startswith("Industry:"):
+                    profile_industry = line.split(":", 1)[1].strip()
+                elif line.startswith("Jurisdictions:"):
+                    profile_jurisdictions = [
+                        j.strip() for j in line.split(":", 1)[1].split(",") if j.strip()
+                    ]
+
+        jurisdictions = request.jurisdictions
+        if not jurisdictions or jurisdictions == ["US"]:
+            if profile_jurisdictions:
+                jurisdictions = profile_jurisdictions
+
+        industries = self._detect_industries(profile_industry, request.industries or None)
+
         kb = LegalKnowledgeBase.for_jurisdictions(
-            jurisdictions=request.jurisdictions,
-            industries=request.industries or None,
+            jurisdictions=jurisdictions,
+            industries=industries,
         )
         query = " ".join(
             [
