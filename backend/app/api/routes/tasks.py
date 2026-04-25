@@ -5,9 +5,10 @@ from functools import lru_cache
 from fastapi import APIRouter, File, Form, UploadFile
 
 from app.agents.content_generator import ContentGeneratorAgent
+from app.agents.image_gen import generate_image
 from app.agents.legal import LegalAgent
 from app.agents.llm import get_llm_provider
-from app.agents.models import TaskRequest, TaskResponse
+from app.agents.models import SocialPostRequest, SocialPostResponse, TaskRequest, TaskResponse
 from app.agents.orchestrator import Orchestrator
 from app.agents.registry import AgentRegistry
 from app.agents.review import ReviewAgent
@@ -96,3 +97,29 @@ async def create_task_with_upload(
     )
     enriched = _enrich_with_company_context(request)
     return get_orchestrator().handle_task(enriched)
+
+
+@router.post("/social-post", response_model=SocialPostResponse)
+def create_social_post(request: SocialPostRequest) -> SocialPostResponse:
+    llm = get_llm_provider()
+    company_context = get_company_context() or ""
+
+    post = llm.generate_social_post(request, company_context)
+
+    images: list[str] = []
+    if request.num_images > 0:
+        prompt = (
+            f"Bold, eye-catching visual for a {request.platform} post about: {request.topic}. "
+            "Modern, professional, vibrant colors, abstract composition. "
+            "Absolutely no text, no letters, no words, no numbers, no watermarks."
+        )
+        for _ in range(request.num_images):
+            img = generate_image(prompt, "social_post")
+            if img:
+                images.append(img.url)
+
+    return SocialPostResponse(
+        post=post.as_output_dict(),
+        images=images,
+        platform=request.platform,
+    )

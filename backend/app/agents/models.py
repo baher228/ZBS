@@ -119,6 +119,30 @@ class LLMReviewEvaluation(BaseModel):
     revision_instruction: str | None = None
 
 
+class SocialPost(BaseModel):
+    caption: str
+    hashtags: str = ""
+    call_to_action: str = ""
+    follow_up_needed: str = ""
+
+    def as_output_dict(self) -> dict[str, str]:
+        return {k: v for k, v in self.model_dump().items() if v}
+
+
+class SocialPostRequest(BaseModel):
+    platform: str = Field(default="linkedin", pattern=r"^(linkedin|twitter|instagram|facebook)$")
+    topic: str = Field(..., min_length=1)
+    extra_context: str = ""
+    tone: str = "professional"
+    num_images: int = Field(default=1, ge=0, le=3)
+
+
+class SocialPostResponse(BaseModel):
+    post: dict[str, str]
+    images: list[str] = Field(default_factory=list)
+    platform: str
+
+
 class TaskRequest(AgentRequest):
     pass
 

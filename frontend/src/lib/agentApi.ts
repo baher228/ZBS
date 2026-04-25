@@ -117,6 +117,7 @@ export type CompanyProfile = {
   key_features: string[];
   differentiators: string;
   jurisdictions: string[];
+  testing_credentials: string;
 };
 
 export async function saveCompanyProfile(
@@ -148,6 +149,40 @@ export async function fetchCompanyProfile(
   } catch {
     return null;
   }
+}
+
+/* ── Social Post Generator ─────────────────────────────── */
+
+export type SocialPostRequest = {
+  platform: "linkedin" | "twitter" | "instagram" | "facebook";
+  topic: string;
+  extra_context?: string;
+  tone?: string;
+  num_images?: number;
+};
+
+export type SocialPostResponse = {
+  post: Record<string, string>;
+  images: string[];
+  platform: string;
+};
+
+export async function generateSocialPost(
+  apiBaseUrl: string,
+  payload: SocialPostRequest,
+): Promise<SocialPostResponse> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/tasks/social-post`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function deleteCompanyProfile(apiBaseUrl: string): Promise<boolean> {

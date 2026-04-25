@@ -14,6 +14,7 @@ class CompanyProfile(BaseModel):
     key_features: list[str] = Field(default_factory=list)
     differentiators: str = Field(default="", max_length=2000)
     jurisdictions: list[str] = Field(default_factory=lambda: ["US"])
+    testing_credentials: str = Field(default="", max_length=5000)
 
     def to_context_string(self) -> str:
         """Render the company profile as a context block for agent prompts."""
@@ -67,5 +68,8 @@ class CompanyProfile(BaseModel):
             sections.append("")
         if self.differentiators:
             sections.extend(["## Differentiators", "", self.differentiators, ""])
+
+        if self.testing_credentials:
+            sections.extend(["## Testing Credentials", "", self.testing_credentials, ""])
 
         return "\n".join(sections)

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Building2, CheckCircle2, Globe, Loader2, Plus, Sparkles, Tag, X } from "lucide-react";
+import { Building2, CheckCircle2, Globe, KeyRound, Loader2, Plus, Sparkles, Tag, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
@@ -56,6 +56,7 @@ const emptyProfile: CompanyProfile = {
   key_features: [],
   differentiators: "",
   jurisdictions: ["US"],
+  testing_credentials: "",
 };
 
 function OnboardingPage() {
@@ -334,6 +335,25 @@ function OnboardingPage() {
               placeholder="What makes your product different from competitors? Why should customers choose you?"
               rows={3}
               className="mt-2 w-full border border-foreground/20 bg-card/50 p-4 text-sm outline-none focus:border-primary transition-colors"
+            />
+          </label>
+
+          {/* Testing Credentials */}
+          <label className="block">
+            <span className="label-mono">
+              <KeyRound className="inline h-3 w-3 mr-1" />
+              Testing Credentials <span className="text-muted-foreground text-[10px]">(optional)</span>
+            </span>
+            <p className="mt-1 text-xs text-foreground/50">
+              API keys, test accounts, sandbox URLs, or other credentials needed to test your product.
+              These are stored locally and included in the company profile for reference.
+            </p>
+            <textarea
+              value={profile.testing_credentials}
+              onChange={(e) => update("testing_credentials", e.target.value)}
+              placeholder={"e.g.\nTest API Key: sk-test-xxx\nSandbox URL: https://sandbox.example.com\nTest User: demo@example.com / password123"}
+              rows={4}
+              className="mt-2 w-full border border-foreground/20 bg-card/50 p-4 text-sm outline-none focus:border-primary transition-colors font-mono"
             />
           </label>
 

@@ -20,6 +20,8 @@ from app.agents.models import (
     DocumentReviewResult,
     LegalIssueScan,
     LLMReviewEvaluation,
+    SocialPost,
+    SocialPostRequest,
     TaskClassification,
     TaskRequest,
 )
@@ -96,6 +98,14 @@ class LLMProvider(ABC):
         jurisdictions: list[str],
     ) -> DocumentReviewResult:
         """Review a user-uploaded document against regulatory sources."""
+
+    @abstractmethod
+    def generate_social_post(
+        self,
+        request: SocialPostRequest,
+        company_context: str,
+    ) -> SocialPost:
+        """Generate a social media post tailored to a platform."""
 
 
 class MockLLMProvider(LLMProvider):
@@ -412,6 +422,19 @@ class MockLLMProvider(LLMProvider):
             next_steps="Have a qualified attorney review the full document against applicable regulations.",
         )
 
+    def generate_social_post(
+        self,
+        request: SocialPostRequest,
+        company_context: str,
+    ) -> SocialPost:
+        platform_limits = {"twitter": "280 chars", "linkedin": "3000 chars", "instagram": "2200 chars", "facebook": "no limit"}
+        limit = platform_limits.get(request.platform, "no limit")
+        return SocialPost(
+            caption=f"Mock {request.platform} post ({limit}) about: {request.topic}. This is a placeholder for the real LLM-generated post.",
+            hashtags="#startup #launch #product",
+            call_to_action="Learn more at our website.",
+        )
+
 
 class OpenAILLMProvider(LLMProvider):
     def __init__(self, api_key: str | None = None, base_url: str | None = None) -> None:
@@ -724,6 +747,58 @@ class OpenAILLMProvider(LLMProvider):
             ]
         )
 
+    def generate_social_post(
+        self,
+        request: SocialPostRequest,
+        company_context: str,
+    ) -> SocialPost:
+        structured_model = self.model.with_structured_output(SocialPost)
+
+        platform_guidance = {
+            "linkedin": "Professional tone. 1000-1500 chars ideal. Use line breaks for readability. Include 3-5 relevant hashtags.",
+            "twitter": "Concise, punchy. Max 280 chars for the caption. 2-3 hashtags max.",
+            "instagram": "Visual-first storytelling. 500-1000 chars. Use emoji sparingly. 10-15 hashtags.",
+            "facebook": "Conversational, story-driven. 200-500 chars. 2-3 hashtags.",
+        }
+        guidance = platform_guidance.get(request.platform, "Professional and engaging.")
+
+        company_block = (
+            f"\n\nCompany context (use this to ground the post):\n{company_context}"
+            if company_context
+            else ""
+        )
+
+        extra_block = (
+            f"\n\nAdditional context from user:\n{request.extra_context}"
+            if request.extra_context
+            else ""
+        )
+
+        return structured_model.invoke(
+            [
+                (
+                    "system",
+                    f"You are a social media content specialist for B2B startups. "
+                    f"Generate a {request.platform} post.\n\n"
+                    f"Platform guidelines: {guidance}\n"
+                    f"Tone: {request.tone}\n\n"
+                    "Rules:\n"
+                    "- caption: the main post text, ready to copy-paste\n"
+                    "- hashtags: relevant hashtags as a single string\n"
+                    "- call_to_action: what the reader should do next\n"
+                    "- follow_up_needed: if you need more info from the user to write a better post, "
+                    "list specific questions here (e.g., 'What metric or result should we highlight?'). "
+                    "Leave empty if the provided context is sufficient."
+                    + company_block
+                    + extra_block,
+                ),
+                (
+                    "human",
+                    f"Write a {request.platform} post about: {request.topic}",
+                ),
+            ]
+        )
+
 
 class ResilientLLMProvider(LLMProvider):
     def __init__(self, primary: LLMProvider, fallback: LLMProvider) -> None:
@@ -810,6 +885,13 @@ class ResilientLLMProvider(LLMProvider):
     ) -> DocumentReviewResult:
         return self._try_primary("review_document", document_text, source_context, jurisdictions)
 
+    def generate_social_post(
+        self,
+        request: SocialPostRequest,
+        company_context: str,
+    ) -> SocialPost:
+        return self._try_primary("generate_social_post", request, company_context)
+
 
 class UnconfiguredLLMProvider(LLMProvider):
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
@@ -876,6 +958,13 @@ class UnconfiguredLLMProvider(LLMProvider):
         source_context: str,
         jurisdictions: list[str],
     ) -> DocumentReviewResult:
+        self._raise_unconfigured()
+
+    def generate_social_post(
+        self,
+        request: SocialPostRequest,
+        company_context: str,
+    ) -> SocialPost:
         self._raise_unconfigured()
 
 
