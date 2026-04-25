@@ -70,6 +70,18 @@ SECTION_PROMPT_TEMPLATES = {
         "Blurred background with warm bokeh. Photo-realistic render. "
         "Absolutely no text, no letters, no words, no numbers, no watermarks."
     ),
+    "icp_notes": (
+        "Professional portrait-style scene of diverse business professionals in a modern office setting. "
+        "Warm natural light, shallow depth of field, people collaborating over a tablet or whiteboard. "
+        "Clean corporate aesthetic, muted color palette with pops of blue. "
+        "Absolutely no text, no letters, no words, no numbers, no watermarks."
+    ),
+    "launch_email": (
+        "Minimalist flat-lay composition of a laptop with a glowing inbox notification icon. "
+        "Clean white desk surface, coffee cup, and a small plant. "
+        "Soft top-down lighting, pastel accents, modern and inviting feel. "
+        "Absolutely no text, no letters, no words, no numbers, no watermarks."
+    ),
     "social_post": (
         "Bold, attention-grabbing abstract composition for social media. "
         "Dynamic diagonal lines and geometric shapes in contrasting colors — "

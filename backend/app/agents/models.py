@@ -60,9 +60,10 @@ class LegalIssueScan(BaseModel):
     founder_checklist: str
     questions_for_counsel: str
     next_steps: str
+    follow_up_needed: str = ""
 
     def as_output_dict(self) -> dict[str, str]:
-        return self.model_dump()
+        return {k: v for k, v in self.model_dump().items() if v}
 
 
 class DocumentReviewResult(BaseModel):

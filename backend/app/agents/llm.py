@@ -574,11 +574,24 @@ class OpenAILLMProvider(LLMProvider):
         structured_model = self.model.with_structured_output(LegalIssueScan)
 
         company_context = request.context.get("company_profile", "")
-        company_block = (
-            f"\n\nCompany context (tailor ALL analysis to this company):\n{company_context}"
-            if company_context
-            else ""
-        )
+
+        if company_context:
+            context_instruction = (
+                f"\n\nCompany context (already provided — do NOT ask for info that is here):\n{company_context}\n\n"
+                "IMPORTANT: The company profile above is already saved. Do NOT repeat or re-ask for information "
+                "that is already provided (name, industry, audience, jurisdictions, product description, features). "
+                "Instead, USE this context directly in your analysis.\n\n"
+                "If you need ADDITIONAL information that is NOT in the company profile to give a more precise "
+                "legal assessment, list those specific questions in the follow_up_needed field. "
+                "Examples: 'Do you collect payment card data directly?', 'Will you process EU resident health records?', "
+                "'Do you use third-party data processors?'. Only ask for what you genuinely need to refine the analysis."
+            )
+        else:
+            context_instruction = (
+                "\n\nNo company profile is available. Provide a general analysis based on the request. "
+                "In follow_up_needed, list the key questions the founder should answer for a more tailored scan: "
+                "company name, industry, product description, target audience, jurisdictions, data handling practices."
+            )
 
         return structured_model.invoke(
             [
@@ -595,10 +608,10 @@ class OpenAILLMProvider(LLMProvider):
                     "- risk_summary should be specific to the founder's product and audience\n"
                     "- founder_checklist should be numbered, actionable steps\n"
                     "- questions_for_counsel should be specific enough to hand to a lawyer\n"
-                    "- next_steps should tell the founder exactly what to collect before counsel review\n\n"
-                    "If company context is provided, tailor the risk summary, checklist, and counsel questions "
-                    "to the specific product, industry, and audience described."
-                    + company_block,
+                    "- next_steps should tell the founder exactly what to collect before counsel review\n"
+                    "- follow_up_needed: if you need more information from the founder to refine the analysis, "
+                    "list specific questions here. Leave empty if the provided context is sufficient."
+                    + context_instruction,
                 ),
                 (
                     "human",

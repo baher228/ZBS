@@ -481,6 +481,7 @@ function OutputSection({
   taskType: string;
 }) {
   const isLegalSources = taskType === "legal" && sectionKey === "relevant_sources";
+  const isFollowUp = sectionKey === "follow_up_needed";
   const isImage = sectionKey.endsWith("_image");
   const displayLabel = sectionKey.replaceAll("_", " ");
 
@@ -495,6 +496,15 @@ function OutputSection({
           className="w-full rounded border border-foreground/10"
           loading="lazy"
         />
+      </article>
+    );
+  }
+
+  if (isFollowUp) {
+    return (
+      <article className="border border-warning/40 bg-warning/5 p-4">
+        <div className="label-mono mb-2 text-warning">Follow-up Information Needed</div>
+        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/80">{value}</p>
       </article>
     );
   }
