@@ -103,3 +103,60 @@ export async function fetchProviderInfo(apiBaseUrl: string): Promise<ProviderInf
     return null;
   }
 }
+
+/* ── Company Profile ────────────────────────────────────── */
+
+export type CompanyProfile = {
+  name: string;
+  description: string;
+  industry: string;
+  target_audience: string;
+  product: string;
+  website: string;
+  stage: string;
+  key_features: string[];
+  differentiators: string;
+  jurisdictions: string[];
+};
+
+export async function saveCompanyProfile(
+  apiBaseUrl: string,
+  profile: CompanyProfile,
+): Promise<CompanyProfile> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profile),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchCompanyProfile(
+  apiBaseUrl: string,
+): Promise<CompanyProfile | null> {
+  try {
+    const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company`);
+    if (response.status === 404) return null;
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteCompanyProfile(apiBaseUrl: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company`, {
+      method: "DELETE",
+    });
+    return response.ok || response.status === 204;
+  } catch {
+    return false;
+  }
+}

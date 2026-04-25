@@ -11,6 +11,7 @@ export function SiteHeader() {
         <nav className="hidden md:flex items-center gap-1 label-mono">
           {[
             { to: "/", label: "Home", exact: true },
+            { to: "/onboarding", label: "Setup" },
             { to: "/agents", label: "Agents" },
             { to: "/dashboard", label: "Dashboard" },
             { to: "/demo", label: "Demo Room" },
