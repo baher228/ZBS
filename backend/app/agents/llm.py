@@ -17,6 +17,7 @@ from app.agents.models import (
     AgentRequest,
     AgentResponse,
     ContentPackage,
+    DocumentReviewResult,
     LegalIssueScan,
     LLMReviewEvaluation,
     TaskClassification,
@@ -86,6 +87,15 @@ class LLMProvider(ABC):
     @abstractmethod
     def classify_task(self, request: AgentRequest) -> TaskClassification:
         """Classify which agent should handle the request."""
+
+    @abstractmethod
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
+        """Review a user-uploaded document against regulatory sources."""
 
 
 class MockLLMProvider(LLMProvider):
@@ -382,6 +392,26 @@ class MockLLMProvider(LLMProvider):
             agent=AgentCapability.UNSUPPORTED, confidence=0.5, reasoning="No matching agent capability detected."
         )
 
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
+        scope = ", ".join(jurisdictions) if jurisdictions else "US"
+        return DocumentReviewResult(
+            important_notice=(
+                "This is an automated compliance review for educational purposes, not legal advice. "
+                "Have a qualified attorney review any legal documents before use."
+            ),
+            document_summary=f"Mock review of uploaded document ({len(document_text)} chars) against {scope} regulations.",
+            compliance_gaps="Mock: no specific gaps identified in this automated review.",
+            risk_areas="Mock: general risk areas include missing privacy disclosures and vague data handling terms.",
+            recommendations="Mock: consider adding explicit data retention policies and user consent mechanisms.",
+            applicable_regulations=source_context[:500] if source_context else "No regulations loaded.",
+            next_steps="Have a qualified attorney review the full document against applicable regulations.",
+        )
+
 
 class OpenAILLMProvider(LLMProvider):
     def __init__(self, api_key: str | None = None, base_url: str | None = None) -> None:
@@ -601,6 +631,39 @@ class OpenAILLMProvider(LLMProvider):
             ]
         )
 
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
+        structured_model = self.model.with_structured_output(DocumentReviewResult)
+        scope = ", ".join(jurisdictions) if jurisdictions else "US"
+        return structured_model.invoke(
+            [
+                (
+                    "system",
+                    "You are a regulatory compliance document reviewer for startups. "
+                    "Review the uploaded document against the provided regulatory sources and flag "
+                    "compliance gaps, risk areas, and recommendations.\n\n"
+                    "Rules:\n"
+                    "- important_notice MUST state this is educational, not legal advice\n"
+                    "- document_summary should concisely describe the document's purpose and scope\n"
+                    "- compliance_gaps should list specific missing or inadequate provisions\n"
+                    "- risk_areas should highlight provisions that could create legal exposure\n"
+                    "- recommendations should be numbered, actionable improvements\n"
+                    "- applicable_regulations should cite the specific regulations that apply\n"
+                    "- next_steps should tell the founder what to do with these findings\n\n"
+                    f"Jurisdictions in scope: {scope}",
+                ),
+                (
+                    "human",
+                    f"Document to review:\n{document_text}\n\n"
+                    f"Regulatory reference sources:\n{source_context}",
+                ),
+            ]
+        )
+
 
 class ResilientLLMProvider(LLMProvider):
     def __init__(self, primary: LLMProvider, fallback: LLMProvider) -> None:
@@ -679,6 +742,14 @@ class ResilientLLMProvider(LLMProvider):
     def classify_task(self, request: AgentRequest) -> TaskClassification:
         return self._try_primary("classify_task", request)
 
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
+        return self._try_primary("review_document", document_text, source_context, jurisdictions)
+
 
 class UnconfiguredLLMProvider(LLMProvider):
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
@@ -737,6 +808,14 @@ class UnconfiguredLLMProvider(LLMProvider):
         self._raise_unconfigured()
 
     def classify_task(self, request: AgentRequest) -> TaskClassification:
+        self._raise_unconfigured()
+
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
         self._raise_unconfigured()
 
 

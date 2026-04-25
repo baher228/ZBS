@@ -34,6 +34,11 @@ class AgentRequest(BaseModel):
     tone: str | None = None
     channel: str | None = None
     context: dict[str, str] = Field(default_factory=dict)
+    jurisdictions: list[str] = Field(default_factory=lambda: ["US"])
+    industries: list[str] = Field(default_factory=list)
+    uploaded_doc_text: str | None = None
+    startup_url: str | None = None
+    review_mode: bool = False
 
 
 class ContentPackage(BaseModel):
@@ -54,6 +59,19 @@ class LegalIssueScan(BaseModel):
     risk_summary: str
     founder_checklist: str
     questions_for_counsel: str
+    next_steps: str
+
+    def as_output_dict(self) -> dict[str, str]:
+        return self.model_dump()
+
+
+class DocumentReviewResult(BaseModel):
+    important_notice: str
+    document_summary: str
+    compliance_gaps: str
+    risk_areas: str
+    recommendations: str
+    applicable_regulations: str
     next_steps: str
 
     def as_output_dict(self) -> dict[str, str]:

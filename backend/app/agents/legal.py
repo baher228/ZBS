@@ -17,6 +17,10 @@ class LegalAgent:
         self.llm_provider = llm_provider
 
     def run(self, request: AgentRequest) -> AgentResponse:
+        kb = LegalKnowledgeBase.for_jurisdictions(
+            jurisdictions=request.jurisdictions,
+            industries=request.industries or None,
+        )
         query = " ".join(
             [
                 request.prompt,
@@ -27,7 +31,7 @@ class LegalAgent:
                 " ".join(request.context.values()),
             ]
         )
-        documents = self.knowledge_base.retrieve(query)
+        documents = kb.retrieve(query)
         source_context = "\n\n".join(
             f"[{doc.id}] {doc.title} ({doc.jurisdiction})\n"
             f"URL: {doc.source_url}\n"
@@ -35,8 +39,29 @@ class LegalAgent:
             for doc in documents
         )
 
+        if request.review_mode and request.uploaded_doc_text and self.llm_provider is not None:
+            review = self.llm_provider.review_document(
+                document_text=request.uploaded_doc_text,
+                source_context=source_context,
+                jurisdictions=request.jurisdictions,
+            )
+            return AgentResponse(
+                agent=self.capability,
+                title="Document Compliance Review",
+                output=review.as_output_dict(),
+                summary="Reviewed uploaded document against applicable regulations and flagged compliance gaps.",
+            )
+
+        extra_context = ""
+        if request.uploaded_doc_text:
+            extra_context += f"\n\nUploaded document excerpt:\n{request.uploaded_doc_text[:3000]}"
+        if request.startup_url:
+            extra_context += f"\n\nStartup URL: {request.startup_url}"
+
+        full_source_context = source_context + extra_context
+
         if self.llm_provider is not None:
-            scan = self.llm_provider.generate_legal_scan(request, source_context)
+            scan = self.llm_provider.generate_legal_scan(request, full_source_context)
         else:
             scan = self._build_fallback_scan(request, query, source_context, documents)
 
@@ -59,14 +84,16 @@ class LegalAgent:
             for document in documents
         ]
         risk_summary = " ".join(document.summary for document in documents)
+        scope = ", ".join(request.jurisdictions) if request.jurisdictions else "US"
         return LegalIssueScan(
             important_notice=(
                 "This is educational issue-spotting for founders, not legal advice. "
                 "A qualified lawyer should review jurisdiction-specific decisions, filings, contracts, and regulated claims."
             ),
             jurisdiction_scope=(
-                "Seed sources are currently United States-focused. Treat non-US launches, regulated industries, "
-                "employment, securities, health, finance, and tax questions as counsel-required."
+                f"Jurisdictions in scope: {scope}. "
+                "Treat regulated industries, employment, securities, health, finance, "
+                "and tax questions as counsel-required."
             ),
             relevant_sources="\n".join(source_lines),
             risk_summary=risk_summary,
@@ -95,4 +122,16 @@ class LegalAgent:
             items.append("Document review, testimonial, influencer, and affiliate disclosure practices.")
         if any(term in lowered for term in ("website", "web", "landing", "app")):
             items.append("Run an accessibility pass on core website and app flows.")
+        if any(term in lowered for term in ("gdpr", "eu", "european")):
+            items.append("Assess GDPR obligations: lawful basis, DPA, DPIA, and data subject rights workflows.")
+        if any(term in lowered for term in ("ccpa", "california", "cpra")):
+            items.append("Assess CCPA/CPRA obligations: privacy notice, opt-out, deletion, and data sale disclosures.")
+        if any(term in lowered for term in ("email", "newsletter", "outreach")):
+            items.append("Confirm CAN-SPAM compliance: opt-out, headers, physical address, ad identification.")
+        if any(term in lowered for term in ("fintech", "payment", "money", "banking")):
+            items.append("Evaluate money transmission, AML/KYC, and PCI DSS compliance requirements.")
+        if any(term in lowered for term in ("health", "medical", "hipaa", "patient")):
+            items.append("Evaluate HIPAA obligations and FDA digital health guidance if applicable.")
+        if any(term in lowered for term in ("education", "student", "school", "children", "kids")):
+            items.append("Evaluate FERPA/COPPA compliance for student/child data handling.")
         return "\n".join(f"{index}. {item}" for index, item in enumerate(items, start=1))

@@ -1,8 +1,19 @@
-import { AlertCircle, CheckCircle2, Loader2, Server, XCircle, Zap } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  Globe,
+  Loader2,
+  Server,
+  Upload,
+  XCircle,
+  Zap,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchProviderInfo,
   runAgentTask,
+  runAgentTaskWithUpload,
   type AgentTaskPayload,
   type AgentTaskResponse,
   type ProviderInfo,
@@ -15,6 +26,18 @@ type AgentTaskConsoleProps = {
   defaultPayload: AgentTaskPayload;
   taskType: string;
 };
+
+const JURISDICTION_OPTIONS = [
+  { value: "US", label: "United States" },
+  { value: "EU", label: "European Union" },
+  { value: "UK", label: "United Kingdom" },
+];
+
+const INDUSTRY_OPTIONS = [
+  { value: "fintech", label: "FinTech" },
+  { value: "healthtech", label: "HealthTech" },
+  { value: "edtech", label: "EdTech" },
+];
 
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
@@ -34,6 +57,15 @@ export function AgentTaskConsole({
   const [loading, setLoading] = useState(false);
   const [providerInfo, setProviderInfo] = useState<ProviderInfo | null>(null);
 
+  const [jurisdictions, setJurisdictions] = useState<string[]>(["US"]);
+  const [industries, setIndustries] = useState<string[]>([]);
+  const [startupUrl, setStartupUrl] = useState("");
+  const [reviewMode, setReviewMode] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isLegal = taskType === "legal";
+
   useEffect(() => {
     fetchProviderInfo(apiBaseUrl).then(setProviderInfo);
   }, [apiBaseUrl]);
@@ -47,20 +79,39 @@ export function AgentTaskConsole({
     setPayload((current) => ({ ...current, [field]: value }));
   };
 
+  const toggleJurisdiction = (j: string) => {
+    setJurisdictions((prev) => (prev.includes(j) ? prev.filter((x) => x !== j) : [...prev, j]));
+  };
+
+  const toggleIndustry = (i: string) => {
+    setIndustries((prev) => (prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]));
+  };
+
   const submit = async () => {
     setLoading(true);
     setError(null);
     setResult(null);
     localStorage.setItem("zbs-api-base-url", apiBaseUrl);
 
+    const enrichedPayload: AgentTaskPayload = {
+      ...payload,
+      jurisdictions,
+      industries,
+      startup_url: startupUrl || undefined,
+      review_mode: reviewMode,
+      context: {
+        ...(payload.context ?? {}),
+        task_type: taskType,
+      },
+    };
+
     try {
-      const response = await runAgentTask(apiBaseUrl, {
-        ...payload,
-        context: {
-          ...(payload.context ?? {}),
-          task_type: taskType,
-        },
-      });
+      let response: AgentTaskResponse;
+      if (uploadedFile) {
+        response = await runAgentTaskWithUpload(apiBaseUrl, enrichedPayload, uploadedFile);
+      } else {
+        response = await runAgentTask(apiBaseUrl, enrichedPayload);
+      }
       setResult(response);
     } catch (exc) {
       setError(exc instanceof Error ? exc.message : "Request failed");
@@ -127,6 +178,124 @@ export function AgentTaskConsole({
               </label>
             ))}
           </div>
+
+          {/* Startup URL */}
+          <label className="block">
+            <span className="label-mono">
+              <Globe className="inline h-3 w-3 mr-1" />
+              Startup URL (optional)
+            </span>
+            <input
+              value={startupUrl}
+              onChange={(e) => setStartupUrl(e.target.value)}
+              placeholder="https://your-startup.com"
+              className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
+            />
+          </label>
+
+          {/* Jurisdiction selector — legal page only */}
+          {isLegal && (
+            <div>
+              <span className="label-mono">Jurisdictions</span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {JURISDICTION_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => toggleJurisdiction(opt.value)}
+                    className={`px-3 py-1.5 text-xs border transition-colors ${
+                      jurisdictions.includes(opt.value)
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-foreground/20 text-foreground/60 hover:border-foreground/40"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Industry selector — legal page only */}
+          {isLegal && (
+            <div>
+              <span className="label-mono">Industries (optional)</span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {INDUSTRY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => toggleIndustry(opt.value)}
+                    className={`px-3 py-1.5 text-xs border transition-colors ${
+                      industries.includes(opt.value)
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-foreground/20 text-foreground/60 hover:border-foreground/40"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Document upload — legal page only */}
+          {isLegal && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={reviewMode}
+                    onChange={(e) => setReviewMode(e.target.checked)}
+                    className="accent-primary"
+                  />
+                  <span className="label-mono">Document Review Mode</span>
+                </label>
+              </div>
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex items-center gap-3 border border-dashed px-4 py-3 cursor-pointer transition-colors ${
+                  uploadedFile
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-foreground/20 hover:border-foreground/40"
+                }`}
+              >
+                {uploadedFile ? (
+                  <>
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-foreground/80 truncate">{uploadedFile.name}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadedFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      className="ml-auto text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Remove
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Upload document (ToS, privacy policy, etc.)
+                    </span>
+                  </>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.md,.pdf,.doc,.docx"
+                className="hidden"
+                onChange={(e) => setUploadedFile(e.target.files?.[0] ?? null)}
+              />
+            </div>
+          )}
 
           <button
             onClick={submit}
@@ -280,7 +449,23 @@ function OutputSection({
   taskType: string;
 }) {
   const isLegalSources = taskType === "legal" && sectionKey === "relevant_sources";
+  const isImage = sectionKey.endsWith("_image");
   const displayLabel = sectionKey.replaceAll("_", " ");
+
+  if (isImage) {
+    const sectionName = sectionKey.replace("_image", "").replaceAll("_", " ");
+    return (
+      <article className="border border-foreground/15 bg-card/40 p-4">
+        <div className="label-mono mb-2">Generated Image — {sectionName}</div>
+        <img
+          src={value}
+          alt={`Generated visual for ${sectionName}`}
+          className="w-full rounded border border-foreground/10"
+          loading="lazy"
+        />
+      </article>
+    );
+  }
 
   return (
     <article className="border border-foreground/15 bg-card/40 p-4">

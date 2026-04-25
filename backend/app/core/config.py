@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     pydantic_ai_gateway_api_key: str | None = None
     pydantic_ai_gateway_base_url: str | None = None
     pydantic: str | None = None
+    fal_api_key: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=(str(REPO_ROOT / ".env"), str(BACKEND_ROOT / ".env")),
