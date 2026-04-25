@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from app.agents.llm import LLMProvider
 from app.agents.models import AgentCapability, AgentRequest, AgentResponse, ReviewResult, ReviewStatus
 
 
@@ -25,7 +26,40 @@ class ReviewAgent:
         },
     }
 
+    def __init__(self, llm_provider: LLMProvider | None = None) -> None:
+        self.llm_provider = llm_provider
+
     def review(self, request: AgentRequest, response: AgentResponse) -> ReviewResult:
+        if self.llm_provider is not None:
+            return self._llm_review(request, response)
+        return self._heuristic_review(request, response)
+
+    def _llm_review(self, request: AgentRequest, response: AgentResponse) -> ReviewResult:
+        evaluation = self.llm_provider.review_agent_output(request, response)
+        score = round(
+            (evaluation.relevance + evaluation.completeness + evaluation.clarity + evaluation.actionability) / 4,
+            2,
+        )
+
+        if not response.output or score < 0.4:
+            status = ReviewStatus.FAILED
+        elif score < 0.75 or evaluation.completeness < 0.8:
+            status = ReviewStatus.REVISE
+        else:
+            status = ReviewStatus.APPROVED
+
+        return ReviewResult(
+            status=status,
+            score=score,
+            relevance=evaluation.relevance,
+            completeness=evaluation.completeness,
+            clarity=evaluation.clarity,
+            actionability=evaluation.actionability,
+            feedback=evaluation.feedback,
+            revision_instruction=evaluation.revision_instruction,
+        )
+
+    def _heuristic_review(self, request: AgentRequest, response: AgentResponse) -> ReviewResult:
         required_sections = self._required_sections.get(response.agent, set(response.output.keys()))
         filled_sections = {
             key for key, value in response.output.items() if key in required_sections and value.strip()

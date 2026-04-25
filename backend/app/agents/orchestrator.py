@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.agents.llm import LLMProvider
 from app.agents.models import (
     AgentCapability,
     AgentRequest,
@@ -42,9 +43,15 @@ class Orchestrator:
     }
     _demo_keywords = {"demo", "prototype", "presentation", "pitch walkthrough"}
 
-    def __init__(self, registry: AgentRegistry, review_agent: ReviewAgent) -> None:
+    def __init__(
+        self,
+        registry: AgentRegistry,
+        review_agent: ReviewAgent,
+        llm_provider: LLMProvider | None = None,
+    ) -> None:
         self.registry = registry
         self.review_agent = review_agent
+        self.llm_provider = llm_provider
 
     def handle_task(self, request: AgentRequest) -> TaskResponse:
         selected_agent = self.choose_agent(request)
@@ -91,6 +98,16 @@ class Orchestrator:
         if task_type == "content":
             return AgentCapability.CONTENT_GENERATOR
 
+        if self.llm_provider is not None:
+            return self._llm_classify(request)
+
+        return self._keyword_classify(request)
+
+    def _llm_classify(self, request: AgentRequest) -> AgentCapability:
+        classification = self.llm_provider.classify_task(request)
+        return classification.agent
+
+    def _keyword_classify(self, request: AgentRequest) -> AgentCapability:
         text = " ".join(
             [
                 request.prompt,

@@ -51,3 +51,18 @@ export async function runAgentTask(
 
   return response.json();
 }
+
+export type ProviderInfo = {
+  provider: string;
+  model: string;
+};
+
+export async function fetchProviderInfo(apiBaseUrl: string): Promise<ProviderInfo | null> {
+  try {
+    const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/health/provider`);
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
+}
