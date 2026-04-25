@@ -108,8 +108,8 @@ export function CustomCursor() {
         <div
           className="transition-all duration-150 ease-out"
           style={{
-            width: hovering ? 4 : 6,
-            height: hovering ? 4 : 6,
+            width: hovering ? 3 : 4,
+            height: hovering ? 3 : 4,
             background: "oklch(0.36 0.07 155)",
             boxShadow: "0 0 12px oklch(0.36 0.07 155 / 0.8)",
           }}
