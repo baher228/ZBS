@@ -126,7 +126,7 @@ function ContentPage() {
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/70">
             Create positioning, landing page copy, ICP notes, launch email, and social posts — all
-            tailored to your company. Images are generated automatically via Flux Pro.
+            tailored to your company. Images are generated from your actual content context.
           </p>
         </div>
 
@@ -217,7 +217,7 @@ function ContentPage() {
             <div className="text-center space-y-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
               <p className="text-sm text-foreground/70">
-                Generating content + images with Flux Pro…
+                Generating content + context-aware images…
               </p>
               <p className="text-xs text-muted-foreground">This usually takes 15–30 seconds.</p>
             </div>
@@ -236,6 +236,11 @@ function ContentPage() {
               )}
               <div className="flex-1">
                 <span className="text-sm font-medium">{result.agent_response?.title}</span>
+                {result.agent_response?.summary?.includes("revised") && (
+                  <span className="ml-2 text-[10px] border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">
+                    Iteratively refined
+                  </span>
+                )}
                 {result.review && (
                   <span className="ml-3 text-xs text-muted-foreground">
                     Score: {(result.review.score * 100).toFixed(0)}%

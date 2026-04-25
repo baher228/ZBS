@@ -34,6 +34,15 @@ class LLMProvider(ABC):
         """Return GTM content sections for the generic tasks route."""
 
     @abstractmethod
+    def revise_content_package(
+        self,
+        request: TaskRequest,
+        original_output: dict[str, str],
+        revision_instruction: str,
+    ) -> dict[str, str]:
+        """Revise a content package based on reviewer feedback."""
+
+    @abstractmethod
     def generate_product_strategy(self, request: CampaignCreateRequest) -> ProductStrategy:
         """Return product positioning and ICP for a campaign."""
 
@@ -141,6 +150,18 @@ class MockLLMProvider(LLMProvider):
             ),
         )
         return package.as_output_dict()
+
+    def revise_content_package(
+        self,
+        request: TaskRequest,
+        original_output: dict[str, str],
+        revision_instruction: str,
+    ) -> dict[str, str]:
+        revised = dict(original_output)
+        for key in revised:
+            if not key.endswith("_image"):
+                revised[key] = f"[REVISED] {revised[key]}"
+        return revised
 
     def generate_product_strategy(self, request: CampaignCreateRequest) -> ProductStrategy:
         audience = request.target_audience or "technical B2B founders and lean GTM teams"
@@ -459,25 +480,84 @@ class OpenAILLMProvider(LLMProvider):
             else ""
         )
 
+        social_insights = request.context.get("social_insights", "")
+        social_block = (
+            f"\n\nInsights from the company's existing social media presence:\n{social_insights}"
+            if social_insights
+            else ""
+        )
+
         package = structured_model.invoke(
             [
                 (
                     "system",
-                    "You are a senior GTM content strategist for B2B startups. "
-                    "Generate launch-ready, structured content that is specific, practical, and concise.\n\n"
-                    "Guidelines:\n"
-                    "- positioning: one clear sentence on what the product does and for whom\n"
-                    "- landing_copy: headline + subhead + 2-3 bullet points, ready to paste\n"
-                    "- icp_notes: describe the ideal buyer profile with trigger events and disqualifiers\n"
-                    "- launch_email: subject line + short body, personalized to the audience\n"
-                    "- social_post: one punchy post under 280 chars, no hashtags unless requested\n\n"
-                    "If company context is provided, use it to make every section specific to that company. "
-                    "Reference actual product features, audience, and differentiators — not generic placeholders.\n"
-                    "Tailor the tone, channel focus, and language to the user's inputs. "
-                    "Avoid generic filler. Every sentence should be usable as-is."
-                    + company_block,
+                    "You are a world-class creative director and GTM strategist for B2B startups. "
+                    "Your content should be vivid, memorable, and impossible to ignore.\n\n"
+                    "Creative principles:\n"
+                    "- Lead with a story, insight, or provocative angle — never a generic claim\n"
+                    "- Use concrete details: real numbers, specific scenarios, named pain points\n"
+                    "- Write like a human who deeply understands the audience's daily frustrations\n"
+                    "- Every sentence should earn its place — cut anything that sounds like marketing filler\n"
+                    "- Use power words, rhythm, and surprise to make copy sticky\n\n"
+                    "Section guidelines:\n"
+                    "- positioning: a bold, memorable statement that reframes how the audience "
+                    "thinks about the problem. Not 'we do X for Y' but a paradigm shift.\n"
+                    "- landing_copy: headline that stops scrolling + subhead that explains the 'how' "
+                    "+ 3 benefit bullets that paint a before/after picture\n"
+                    "- icp_notes: vivid buyer persona with day-in-the-life details, emotional triggers, "
+                    "budget authority signals, and 'hair on fire' moments\n"
+                    "- launch_email: subject line that creates curiosity (not clickbait) + body "
+                    "that tells a mini-story leading to a single clear CTA\n"
+                    "- social_post: a hook that stops the scroll in the first line, followed by "
+                    "a punchy insight or story, ending with engagement bait\n\n"
+                    "If social media insights are provided, match the company's existing voice and "
+                    "content themes while pushing for higher impact.\n"
+                    "Reference actual product features, audience, and differentiators — not generic placeholders."
+                    + company_block
+                    + social_block,
                 ),
                 ("human", request.model_dump_json()),
+            ]
+        )
+        return package.as_output_dict()
+
+    def revise_content_package(
+        self,
+        request: TaskRequest,
+        original_output: dict[str, str],
+        revision_instruction: str,
+    ) -> dict[str, str]:
+        structured_model = self.model.with_structured_output(ContentPackage)
+
+        company_context = request.context.get("company_profile", "")
+        company_block = (
+            f"\n\nCompany context:\n{company_context}" if company_context else ""
+        )
+
+        original_text = "\n".join(f"[{k}]: {v}" for k, v in original_output.items() if not k.endswith("_image"))
+
+        package = structured_model.invoke(
+            [
+                (
+                    "system",
+                    "You are a world-class creative director revising GTM content based on critic feedback. "
+                    "You received a first draft and specific improvement instructions from a quality reviewer. "
+                    "Your job is to SIGNIFICANTLY improve every section — not just tweak words.\n\n"
+                    "Rules:\n"
+                    "- Address EVERY point in the revision instructions\n"
+                    "- Make the content more specific, vivid, and actionable\n"
+                    "- Replace generic language with concrete details from the company context\n"
+                    "- Each section should feel like it was written by a human who deeply knows the product\n"
+                    "- The revised version must be noticeably better than the original — not a minor edit"
+                    + company_block,
+                ),
+                (
+                    "human",
+                    f"Original request:\n{request.model_dump_json()}\n\n"
+                    f"First draft:\n{original_text}\n\n"
+                    f"Reviewer feedback and revision instructions:\n{revision_instruction}\n\n"
+                    "Now produce the improved version. Every section must be better.",
+                ),
             ]
         )
         return package.as_output_dict()
@@ -662,29 +742,39 @@ class OpenAILLMProvider(LLMProvider):
             [
                 (
                     "system",
-                    "You are a STRICT quality-assurance reviewer for AI agent output. "
-                    "Your job is to catch mediocre work — not rubber-stamp everything. "
-                    "Evaluate the agent's response against the original request. "
+                    "You are a RUTHLESS quality-assurance critic for AI-generated GTM content. "
+                    "Your job is to catch mediocre, generic, or lazy work — never rubber-stamp. "
+                    "You review output as if a paying customer will use it to launch their startup. "
                     "Score each dimension 0.0–1.0:\n\n"
-                    "- relevance (0-1): Does the output directly address the SPECIFIC request? "
-                    "Deduct heavily if the output is generic boilerplate that could apply to any company. "
-                    "A score above 0.8 means the output is clearly tailored to the user's specific product, audience, and situation.\n"
+                    "- relevance (0-1): Does EVERY section directly address the SPECIFIC company, product, "
+                    "and audience? Deduct heavily if ANY section is generic boilerplate that could apply "
+                    "to any SaaS company. Mentioning the company name alone is NOT enough — "
+                    "the content must reference specific features, pain points, and differentiators. "
+                    "Score above 0.8 only if the content could NOT have been written for a different company.\n"
                     "- completeness (0-1): Are ALL expected sections present with real substance? "
-                    "One-liner sections or placeholder text should score below 0.6.\n"
+                    "One-liner sections, placeholder text, or vague overviews score below 0.5. "
+                    "Each section must be copy-paste ready, not a summary.\n"
                     "- clarity (0-1): Is the output well-structured, concise, and free of filler? "
-                    "Deduct for buzzword salad, vague language ('leverage', 'empower', 'cutting-edge'), "
-                    "or sections that say the same thing in different words.\n"
-                    "- actionability (0-1): Can a founder copy-paste this output and USE it immediately? "
-                    "A social post without a hook scores low. An email without a clear CTA scores low. "
-                    "Landing copy without a concrete value prop scores low.\n\n"
-                    "CALIBRATION: A typical first-draft from an AI should score 0.6-0.75, not 0.9-1.0. "
-                    "Reserve scores above 0.85 for genuinely excellent, specific, ready-to-use output. "
-                    "Generic output that could apply to any SaaS company should score below 0.6 on relevance.\n\n"
-                    "In your feedback, cite SPECIFIC examples of what is weak or generic. "
-                    "Do not say 'the output is good' — say what makes it good or bad with evidence. "
-                    "If revision is needed, give a concrete, actionable instruction (not 'make it better').\n\n"
-                    "If company context is provided below, check whether the output actually references "
-                    "the company's specific product, features, audience, and industry — not just its name."
+                    "Deduct for: buzzword salad ('leverage', 'empower', 'cutting-edge', 'innovative'), "
+                    "repeating the same idea across sections, overly long sentences, passive voice, "
+                    "or corporate jargon that obscures meaning.\n"
+                    "- actionability (0-1): Can a founder copy-paste this and USE it right now? "
+                    "Specifically check:\n"
+                    "  * Social post: Does it have a scroll-stopping hook in the first line?\n"
+                    "  * Email: Does it have a compelling subject line AND a clear CTA?\n"
+                    "  * Landing copy: Does it have a headline, subhead, AND concrete benefits?\n"
+                    "  * ICP notes: Does it describe a specific person, not a vague segment?\n"
+                    "  * Positioning: Does it reframe the problem, not just describe the product?\n\n"
+                    "CALIBRATION: A typical AI first-draft should score 0.55-0.70. "
+                    "Reserve scores above 0.80 for genuinely excellent, differentiated, ready-to-ship output. "
+                    "Generic output MUST score below 0.55 on relevance. "
+                    "NEVER give all four dimensions above 0.80 on a first draft.\n\n"
+                    "ALWAYS provide a revision_instruction with 2-3 specific improvements. "
+                    "Each instruction should cite the exact section and what to fix. "
+                    "Example: 'In social_post, replace the generic opener with a specific pain point "
+                    "about [X]. In launch_email, add a concrete metric or customer proof point.'\n\n"
+                    "If company context is provided, verify the output uses specific product features, "
+                    "named competitors, real audience pain points — not surface-level name-dropping."
                     + company_block,
                 ),
                 (
@@ -755,10 +845,26 @@ class OpenAILLMProvider(LLMProvider):
         structured_model = self.model.with_structured_output(SocialPost)
 
         platform_guidance = {
-            "linkedin": "Professional tone. 1000-1500 chars ideal. Use line breaks for readability. Include 3-5 relevant hashtags.",
-            "twitter": "Concise, punchy. Max 280 chars for the caption. 2-3 hashtags max.",
-            "instagram": "Visual-first storytelling. 500-1000 chars. Use emoji sparingly. 10-15 hashtags.",
-            "facebook": "Conversational, story-driven. 200-500 chars. 2-3 hashtags.",
+            "linkedin": (
+                "LinkedIn best practices: 1000-1500 chars. "
+                "Start with a bold hook line that makes people stop scrolling. "
+                "Use short paragraphs (1-2 sentences each) with line breaks between them. "
+                "Include a personal insight or contrarian take. 3-5 relevant hashtags at the end."
+            ),
+            "twitter": (
+                "Twitter/X best practices: Max 280 chars. "
+                "Punchy, provocative, or surprisingly insightful. "
+                "Make people want to retweet. 1-2 hashtags max."
+            ),
+            "instagram": (
+                "Instagram best practices: 500-1000 chars. "
+                "Open with an emotional hook. Tell a micro-story. "
+                "Use emoji strategically (not excessively). 10-15 hashtags."
+            ),
+            "facebook": (
+                "Facebook best practices: 200-500 chars. "
+                "Conversational and relatable. Ask a question or share a realization. 2-3 hashtags."
+            ),
         }
         guidance = platform_guidance.get(request.platform, "Professional and engaging.")
 
@@ -778,17 +884,18 @@ class OpenAILLMProvider(LLMProvider):
             [
                 (
                     "system",
-                    f"You are a social media content specialist for B2B startups. "
-                    f"Generate a {request.platform} post.\n\n"
+                    f"You are a top-tier social media strategist who writes posts that go viral. "
+                    f"Generate a {request.platform} post that people actually want to engage with.\n\n"
                     f"Platform guidelines: {guidance}\n"
                     f"Tone: {request.tone}\n\n"
-                    "Rules:\n"
-                    "- caption: the main post text, ready to copy-paste\n"
+                    "Creative rules:\n"
+                    "- caption: Start with an irresistible hook (question, bold claim, or story opener). "
+                    "The first line determines if anyone reads the rest. "
+                    "Write like a thought leader, not a marketing bot. Ready to copy-paste.\n"
                     "- hashtags: relevant hashtags as a single string\n"
-                    "- call_to_action: what the reader should do next\n"
+                    "- call_to_action: specific, compelling next step (not generic 'learn more')\n"
                     "- follow_up_needed: if you need more info from the user to write a better post, "
-                    "list specific questions here (e.g., 'What metric or result should we highlight?'). "
-                    "Leave empty if the provided context is sufficient."
+                    "list specific questions here. Leave empty if context is sufficient."
                     + company_block
                     + extra_block,
                 ),
@@ -815,6 +922,14 @@ class ResilientLLMProvider(LLMProvider):
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
         return self._try_primary("generate_content_package", request)
+
+    def revise_content_package(
+        self,
+        request: TaskRequest,
+        original_output: dict[str, str],
+        revision_instruction: str,
+    ) -> dict[str, str]:
+        return self._try_primary("revise_content_package", request, original_output, revision_instruction)
 
     def generate_product_strategy(self, request: CampaignCreateRequest) -> ProductStrategy:
         return self._try_primary("generate_product_strategy", request)
@@ -895,6 +1010,14 @@ class ResilientLLMProvider(LLMProvider):
 
 class UnconfiguredLLMProvider(LLMProvider):
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
+        self._raise_unconfigured()
+
+    def revise_content_package(
+        self,
+        request: TaskRequest,
+        original_output: dict[str, str],
+        revision_instruction: str,
+    ) -> dict[str, str]:
         self._raise_unconfigured()
 
     def _raise_unconfigured(self) -> None:

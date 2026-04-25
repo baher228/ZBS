@@ -34,7 +34,7 @@ def get_orchestrator() -> Orchestrator:
 
 
 def _enrich_with_company_context(request: TaskRequest) -> TaskRequest:
-    """Inject saved company profile context into the request if available."""
+    """Inject saved company profile context and social media insights into the request."""
     company_context = get_company_context()
     if company_context is None:
         return request
@@ -45,6 +45,17 @@ def _enrich_with_company_context(request: TaskRequest) -> TaskRequest:
 
     data = request.model_dump()
     data["context"] = {**data.get("context", {}), "company_profile": company_context}
+
+    if profile.social_media_links:
+        from app.agents.social_insights import extract_social_insights
+
+        insights = extract_social_insights(
+            profile.social_media_links,
+            company_context=company_context,
+        )
+        insights_block = insights.to_context_block()
+        if insights_block:
+            data["context"]["social_insights"] = insights_block
 
     if not data.get("startup_idea") and profile.description:
         data["startup_idea"] = f"{profile.name}: {profile.description}"
@@ -108,10 +119,13 @@ def create_social_post(request: SocialPostRequest) -> SocialPostResponse:
 
     images: list[str] = []
     if request.num_images > 0:
-        prompt = (
-            f"Bold, eye-catching visual for a {request.platform} post about: {request.topic}. "
-            "Modern, professional, vibrant colors, abstract composition. "
-            "Absolutely no text, no letters, no words, no numbers, no watermarks."
+        from app.agents.image_gen import _build_contextual_prompt
+
+        caption = post.caption or request.topic
+        prompt = _build_contextual_prompt(
+            section=f"{request.platform}_post",
+            section_text=caption,
+            company_context=company_context,
         )
         for _ in range(request.num_images):
             img = generate_image(prompt, "social_post")

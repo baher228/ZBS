@@ -118,6 +118,7 @@ export type CompanyProfile = {
   differentiators: string;
   jurisdictions: string[];
   testing_credentials: string;
+  social_media_links: Record<string, string>;
 };
 
 export async function saveCompanyProfile(
