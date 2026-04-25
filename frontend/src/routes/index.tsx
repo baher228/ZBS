@@ -27,10 +27,10 @@ function Landing() {
       <SiteHeader />
 
       {/* Masthead band */}
-      <div className="border-b border-foreground/15 bg-card/40">
+      <div className="border-b border-foreground/15 bg-card/40 animate-slide-down">
         <div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between label-mono">
           <span>Vol. I — Issue 01</span>
-          <span className="hidden md:inline">Established 2025 · The AI Go-To-Market Operator</span>
+          <span className="hidden md:inline">Established 2026 · The AI Go-To-Market Operator</span>
           <span>EST. ZBS</span>
         </div>
       </div>
@@ -39,23 +39,47 @@ function Landing() {
       <section className="relative">
         <div className="mx-auto max-w-7xl px-6 pt-16 md:pt-24 pb-20 grid lg:grid-cols-12 gap-10 items-end">
           <div className="lg:col-span-8">
-            <div className="flex items-center gap-3 mb-8">
+            {/* Eyebrow */}
+            <div
+              className="flex items-center gap-3 mb-8 animate-fade-up"
+              style={{ animationDelay: "80ms" }}
+            >
               <span className="h-px w-12 bg-foreground" />
               <span className="label-mono">Manifesto № 01</span>
             </div>
 
-            <h1 className="font-display font-medium text-5xl md:text-7xl lg:text-[88px] leading-[0.95] tracking-tight">
-              We turn cold outreach into{" "}
-              <span className="italic text-primary">personalized</span>{" "}
-              <span className="relative inline-block">
-                AI demo rooms
-                <span className="absolute -bottom-2 left-0 right-0 h-px bg-foreground/40" />
+            {/* H1 — each phrase appears in sequence */}
+            <h1 className="font-display font-medium text-3xl md:text-5xl lg:text-[56px] leading-[1.05] tracking-tight">
+              <span
+                className="block animate-fade-up-hero"
+                style={{ animationDelay: "180ms" }}
+              >
+                We turn cold outreach into
               </span>
-              .
+              <span
+                className="block italic text-primary animate-fade-up-hero"
+                style={{ animationDelay: "340ms" }}
+              >
+                personalized
+              </span>
+              <span
+                className="block animate-fade-up-hero"
+                style={{ animationDelay: "480ms" }}
+              >
+                <span className="relative inline-block">
+                  AI demo rooms
+                  <span className="absolute -bottom-2 left-0 right-0 h-px bg-foreground/40" />
+                </span>
+                .
+              </span>
             </h1>
           </div>
 
-          <div className="lg:col-span-4 lg:pl-8 lg:border-l border-foreground/20">
+          {/* Right column */}
+          <div
+            className="lg:col-span-4 lg:pl-8 lg:border-l border-foreground/20 animate-fade-up"
+            style={{ animationDelay: "640ms" }}
+          >
             <p className="text-base md:text-lg text-foreground/75 leading-relaxed">
               One AI operator finds your buyers, writes the message, runs the demo, and books the
               meeting. Your sales team — replaced by intelligence.
@@ -90,7 +114,8 @@ function Landing() {
             ].map((s, i) => (
               <div
                 key={s.k}
-                className={`px-6 py-6 ${i > 0 ? "border-l border-foreground/15" : ""}`}
+                className={`px-6 py-6 animate-fade-up ${i > 0 ? "border-l border-foreground/15" : ""}`}
+                style={{ animationDelay: `${800 + i * 100}ms` }}
               >
                 <div className="font-display num-mono text-3xl md:text-4xl">{s.k}</div>
                 <div className="label-mono mt-2">{s.l}</div>

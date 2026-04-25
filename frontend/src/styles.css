@@ -109,6 +109,10 @@
     border-color: var(--color-border);
   }
 
+  .label-mono {
+    color: var(--color-muted-foreground);
+  }
+
   html,
   body {
     background-color: var(--color-background);
@@ -245,7 +249,6 @@
     font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--color-muted-foreground);
   }
 
   .num-mono {
@@ -321,6 +324,30 @@
   }
   .animate-fade-up {
     animation: fade-up 0.6s ease-out both;
+  }
+
+  @keyframes fade-up-hero {
+    from { opacity: 0; transform: translateY(28px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up-hero {
+    animation: fade-up-hero 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.7s ease-out both;
+  }
+
+  @keyframes slide-down {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-slide-down {
+    animation: slide-down 0.5s ease-out both;
   }
 
   @keyframes blink {
