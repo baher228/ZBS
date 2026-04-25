@@ -85,6 +85,21 @@ class OrchestratorDecision(BaseModel):
     revision_instruction: str | None = None
 
 
+class TaskClassification(BaseModel):
+    agent: AgentCapability
+    confidence: float = Field(..., ge=0, le=1)
+    reasoning: str
+
+
+class LLMReviewEvaluation(BaseModel):
+    relevance: float = Field(..., ge=0, le=1)
+    completeness: float = Field(..., ge=0, le=1)
+    clarity: float = Field(..., ge=0, le=1)
+    actionability: float = Field(..., ge=0, le=1)
+    feedback: str
+    revision_instruction: str | None = None
+
+
 class TaskRequest(AgentRequest):
     pass
 

@@ -1,6 +1,12 @@
-import { AlertCircle, CheckCircle2, Loader2, Server } from "lucide-react";
-import { useMemo, useState } from "react";
-import { runAgentTask, type AgentTaskPayload, type AgentTaskResponse } from "@/lib/agentApi";
+import { AlertCircle, CheckCircle2, Loader2, Server, XCircle, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  fetchProviderInfo,
+  runAgentTask,
+  type AgentTaskPayload,
+  type AgentTaskResponse,
+  type ProviderInfo,
+} from "@/lib/agentApi";
 
 type AgentTaskConsoleProps = {
   title: string;
@@ -26,6 +32,11 @@ export function AgentTaskConsole({
   const [result, setResult] = useState<AgentTaskResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [providerInfo, setProviderInfo] = useState<ProviderInfo | null>(null);
+
+  useEffect(() => {
+    fetchProviderInfo(apiBaseUrl).then(setProviderInfo);
+  }, [apiBaseUrl]);
 
   const outputEntries = useMemo(
     () => Object.entries(result?.agent_response?.output ?? {}),
@@ -57,6 +68,15 @@ export function AgentTaskConsole({
       setLoading(false);
     }
   };
+
+  const statusIcon =
+    result?.decision.status === "completed" ? (
+      <CheckCircle2 className="h-4 w-4 text-success" />
+    ) : result?.decision.status === "failed" ? (
+      <XCircle className="h-4 w-4 text-destructive" />
+    ) : (
+      <AlertCircle className="h-4 w-4 text-warning" />
+    );
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
@@ -116,6 +136,17 @@ export function AgentTaskConsole({
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Run Agent
           </button>
+
+          {providerInfo && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Zap className="h-3 w-3" />
+              <span>
+                {providerInfo.provider === "mock"
+                  ? "Mock provider (template output)"
+                  : `${providerInfo.provider} · ${providerInfo.model}`}
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -129,7 +160,7 @@ export function AgentTaskConsole({
           </div>
           {result?.decision.status && (
             <div className="flex items-center gap-2 border border-foreground/20 px-3 py-2 text-xs">
-              <CheckCircle2 className="h-4 w-4 text-success" />
+              {statusIcon}
               {result.decision.status}
             </div>
           )}
@@ -163,24 +194,46 @@ export function AgentTaskConsole({
             </div>
 
             {result.review && (
-              <div className="border border-foreground/15 bg-card/40 p-4">
-                <div className="label-mono mb-2">Review Agent</div>
-                <p className="text-sm leading-relaxed text-foreground/75">
-                  {result.review.feedback}
-                </p>
+              <div className="border border-foreground/15 bg-card/40 p-4 space-y-4">
+                <div>
+                  <div className="label-mono mb-2">Review Agent</div>
+                  <p className="text-sm leading-relaxed text-foreground/75">
+                    {result.review.feedback}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <ScoreBar label="Relevance" value={result.review.relevance} />
+                  <ScoreBar label="Completeness" value={result.review.completeness} />
+                  <ScoreBar label="Clarity" value={result.review.clarity} />
+                  <ScoreBar label="Actionability" value={result.review.actionability} />
+                </div>
+
+                {result.review.revision_instruction && (
+                  <div className="border-t border-foreground/10 pt-3">
+                    <div className="label-mono mb-1 text-warning">Revision needed</div>
+                    <p className="text-xs leading-relaxed text-foreground/60">
+                      {result.review.revision_instruction}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
             <div className="space-y-3">
               {outputEntries.map(([key, value]) => (
-                <article key={key} className="border border-foreground/15 bg-card/40 p-4">
-                  <div className="label-mono mb-2">{key.replaceAll("_", " ")}</div>
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/80">
-                    {value}
-                  </p>
-                </article>
+                <OutputSection key={key} sectionKey={key} value={value} taskType={taskType} />
               ))}
             </div>
+
+            {result.decision.message && (
+              <div className="border border-foreground/15 bg-card/40 p-4">
+                <div className="label-mono mb-2">Orchestrator Decision</div>
+                <p className="text-sm leading-relaxed text-foreground/75">
+                  {result.decision.message}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -194,5 +247,78 @@ function Metric({ label, value }: { label: string; value: string }) {
       <div className="label-mono mb-2">{label}</div>
       <div className="font-display text-xl font-medium">{value}</div>
     </div>
+  );
+}
+
+function ScoreBar({ label, value }: { label: string; value: number }) {
+  const pct = Math.round(value * 100);
+  const color = pct >= 75 ? "bg-success" : pct >= 50 ? "bg-warning" : "bg-destructive";
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1">
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
+        <span className="font-mono text-xs">{pct}%</span>
+      </div>
+      <div className="h-1.5 w-full bg-foreground/10">
+        <div
+          className={`h-full ${color} transition-all duration-500`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function OutputSection({
+  sectionKey,
+  value,
+  taskType,
+}: {
+  sectionKey: string;
+  value: string;
+  taskType: string;
+}) {
+  const isLegalSources = taskType === "legal" && sectionKey === "relevant_sources";
+  const displayLabel = sectionKey.replaceAll("_", " ");
+
+  return (
+    <article className="border border-foreground/15 bg-card/40 p-4">
+      <div className="label-mono mb-2">{displayLabel}</div>
+      {isLegalSources ? (
+        <div className="space-y-2">
+          {value
+            .split("\n")
+            .filter(Boolean)
+            .map((line, i) => {
+              const urlMatch = line.match(/(https?:\/\/\S+)/);
+              if (urlMatch) {
+                const url = urlMatch[1];
+                const text = line.replace(url, "").replace("URL:", "").trim();
+                return (
+                  <div key={i} className="text-sm leading-relaxed text-foreground/80">
+                    <span>{text} </span>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline underline-offset-2 hover:text-foreground"
+                    >
+                      {url}
+                    </a>
+                  </div>
+                );
+              }
+              return (
+                <p key={i} className="text-sm leading-relaxed text-foreground/80">
+                  {line}
+                </p>
+              );
+            })}
+        </div>
+      ) : (
+        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/80">{value}</p>
+      )}
+    </article>
   );
 }

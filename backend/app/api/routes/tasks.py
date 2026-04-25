@@ -17,13 +17,18 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 @lru_cache
 def get_orchestrator() -> Orchestrator:
+    llm = get_llm_provider()
     registry = AgentRegistry(
         [
-            ContentGeneratorAgent(get_llm_provider()),
-            LegalAgent(),
+            ContentGeneratorAgent(llm),
+            LegalAgent(llm_provider=llm),
         ]
     )
-    return Orchestrator(registry=registry, review_agent=ReviewAgent())
+    return Orchestrator(
+        registry=registry,
+        review_agent=ReviewAgent(llm_provider=llm),
+        llm_provider=llm,
+    )
 
 
 @router.post("", response_model=TaskResponse)

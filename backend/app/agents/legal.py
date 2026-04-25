@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 from app.agents.legal_knowledge import LegalKnowledgeBase
+from app.agents.llm import LLMProvider
 from app.agents.models import AgentCapability, AgentRequest, AgentResponse, LegalIssueScan
 
 
 class LegalAgent:
     capability = AgentCapability.LEGAL
 
-    def __init__(self, knowledge_base: LegalKnowledgeBase | None = None) -> None:
+    def __init__(
+        self,
+        knowledge_base: LegalKnowledgeBase | None = None,
+        llm_provider: LLMProvider | None = None,
+    ) -> None:
         self.knowledge_base = knowledge_base or LegalKnowledgeBase()
+        self.llm_provider = llm_provider
 
     def run(self, request: AgentRequest) -> AgentResponse:
         query = " ".join(
@@ -22,12 +28,38 @@ class LegalAgent:
             ]
         )
         documents = self.knowledge_base.retrieve(query)
+        source_context = "\n\n".join(
+            f"[{doc.id}] {doc.title} ({doc.jurisdiction})\n"
+            f"URL: {doc.source_url}\n"
+            f"Summary: {doc.summary}"
+            for doc in documents
+        )
+
+        if self.llm_provider is not None:
+            scan = self.llm_provider.generate_legal_scan(request, source_context)
+        else:
+            scan = self._build_fallback_scan(request, query, source_context, documents)
+
+        return AgentResponse(
+            agent=self.capability,
+            title="Founder Legal Issue Scan",
+            output=scan.as_output_dict(),
+            summary="Generated a source-grounded legal issue scan with citations and counsel handoff questions.",
+        )
+
+    def _build_fallback_scan(
+        self,
+        request: AgentRequest,
+        query: str,
+        source_context: str,
+        documents: list,
+    ) -> LegalIssueScan:
         source_lines = [
             f"{document.title} ({document.jurisdiction}): {document.source_url}"
             for document in documents
         ]
         risk_summary = " ".join(document.summary for document in documents)
-        scan = LegalIssueScan(
+        return LegalIssueScan(
             important_notice=(
                 "This is educational issue-spotting for founders, not legal advice. "
                 "A qualified lawyer should review jurisdiction-specific decisions, filings, contracts, and regulated claims."
@@ -49,12 +81,6 @@ class LegalAgent:
                 "Collect product claims, data flows, customer promises, planned jurisdictions, and launch channels. "
                 "Use this packet for a legal review before publishing high-risk claims or collecting customer data."
             ),
-        )
-        return AgentResponse(
-            agent=self.capability,
-            title="Founder Legal Issue Scan",
-            output=scan.as_output_dict(),
-            summary="Generated a source-grounded legal issue scan with citations and counsel handoff questions.",
         )
 
     def _build_checklist(self, query: str) -> str:

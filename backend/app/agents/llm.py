@@ -12,7 +12,16 @@ from app.agents.campaign_models import (
     ProspectProfile,
     QualificationReport,
 )
-from app.agents.models import ContentPackage, TaskRequest
+from app.agents.models import (
+    AgentCapability,
+    AgentRequest,
+    AgentResponse,
+    ContentPackage,
+    LegalIssueScan,
+    LLMReviewEvaluation,
+    TaskClassification,
+    TaskRequest,
+)
 from app.core.config import settings
 
 
@@ -57,6 +66,26 @@ class LLMProvider(ABC):
     @abstractmethod
     def generate_qualification(self, demo_room: DemoRoom) -> QualificationReport:
         """Return lead qualification from the demo-room transcript."""
+
+    @abstractmethod
+    def generate_legal_scan(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalIssueScan:
+        """Return a source-grounded legal issue scan for founders."""
+
+    @abstractmethod
+    def review_agent_output(
+        self,
+        request: AgentRequest,
+        response: AgentResponse,
+    ) -> LLMReviewEvaluation:
+        """Semantically evaluate agent output for quality."""
+
+    @abstractmethod
+    def classify_task(self, request: AgentRequest) -> TaskClassification:
+        """Classify which agent should handle the request."""
 
 
 class MockLLMProvider(LLMProvider):
@@ -270,6 +299,89 @@ class MockLLMProvider(LLMProvider):
             ),
         )
 
+    def generate_legal_scan(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalIssueScan:
+        idea = request.startup_idea or request.prompt
+        audience = request.target_audience or "US startup founders"
+        return LegalIssueScan(
+            important_notice=(
+                "This is educational issue-spotting for founders, not legal advice. "
+                "A qualified lawyer should review jurisdiction-specific decisions, filings, contracts, and regulated claims."
+            ),
+            jurisdiction_scope=(
+                "Seed sources are currently United States-focused. Treat non-US launches, regulated industries, "
+                "employment, securities, health, finance, and tax questions as counsel-required."
+            ),
+            relevant_sources=source_context,
+            risk_summary=(
+                f"Founders building {idea} for {audience} should review advertising substantiation, privacy obligations, "
+                "entity formation, and any regulated claims before launching publicly."
+            ),
+            founder_checklist=(
+                "1. Confirm the company formation path and founder ownership structure.\n"
+                "2. List every public marketing claim and attach evidence before launch.\n"
+                "3. Map what personal data is collected, why it is needed, where it is stored, and who receives it.\n"
+                "4. Prepare customer-facing terms, privacy notice, and support/contact details before collecting users."
+            ),
+            questions_for_counsel=(
+                "1. Which entity structure and state filing path best fits the founders' risk, tax, and fundraising plans?\n"
+                "2. Are the landing page, outreach, pricing, endorsements, and claims substantiated and non-deceptive?\n"
+                "3. What privacy notice, data-processing, security, and customer-contract terms are needed before launch?\n"
+                "4. Are accessibility, industry-specific, international, or employment obligations triggered?"
+            ),
+            next_steps=(
+                "Collect product claims, data flows, customer promises, planned jurisdictions, and launch channels. "
+                "Use this packet for a legal review before publishing high-risk claims or collecting customer data."
+            ),
+        )
+
+    def review_agent_output(
+        self,
+        request: AgentRequest,
+        response: AgentResponse,
+    ) -> LLMReviewEvaluation:
+        output_text = " ".join(response.output.values())
+        has_substance = len(output_text) > 100
+        sections_filled = sum(1 for v in response.output.values() if v.strip())
+        total_sections = max(1, len(response.output))
+        completeness = round(sections_filled / total_sections, 2)
+        relevance = 0.85 if has_substance else 0.3
+        clarity = 0.85 if has_substance else 0.3
+        actionability = 0.8 if has_substance else 0.3
+        return LLMReviewEvaluation(
+            relevance=relevance,
+            completeness=completeness,
+            clarity=clarity,
+            actionability=actionability,
+            feedback="Mock review: output meets structural requirements." if has_substance
+            else "Mock review: output lacks substance.",
+            revision_instruction="Add more specific, actionable content to each section." if not has_substance else None,
+        )
+
+    def classify_task(self, request: AgentRequest) -> TaskClassification:
+        task_type = request.context.get("task_type", "").lower()
+        if task_type == "legal":
+            return TaskClassification(agent=AgentCapability.LEGAL, confidence=1.0, reasoning="Explicit legal task type.")
+        if task_type == "content":
+            return TaskClassification(
+                agent=AgentCapability.CONTENT_GENERATOR, confidence=1.0, reasoning="Explicit content task type."
+            )
+        text = f"{request.prompt} {request.goal or ''} {request.channel or ''}".lower()
+        if any(kw in text for kw in ("legal", "privacy", "compliance", "terms", "gdpr")):
+            return TaskClassification(agent=AgentCapability.LEGAL, confidence=0.8, reasoning="Legal keywords detected.")
+        if any(kw in text for kw in ("content", "marketing", "copy", "email", "social")):
+            return TaskClassification(
+                agent=AgentCapability.CONTENT_GENERATOR, confidence=0.8, reasoning="Content keywords detected."
+            )
+        if any(kw in text for kw in ("demo", "prototype", "presentation")):
+            return TaskClassification(agent=AgentCapability.DEMO, confidence=0.8, reasoning="Demo keywords detected.")
+        return TaskClassification(
+            agent=AgentCapability.UNSUPPORTED, confidence=0.5, reasoning="No matching agent capability detected."
+        )
+
 
 class OpenAILLMProvider(LLMProvider):
     def __init__(self, api_key: str | None = None, base_url: str | None = None) -> None:
@@ -290,7 +402,16 @@ class OpenAILLMProvider(LLMProvider):
             [
                 (
                     "system",
-                    "You are a senior GTM content strategist. Return launch-ready structured content that is specific, practical, and concise.",
+                    "You are a senior GTM content strategist for B2B startups. "
+                    "Generate launch-ready, structured content that is specific, practical, and concise.\n\n"
+                    "Guidelines:\n"
+                    "- positioning: one clear sentence on what the product does and for whom\n"
+                    "- landing_copy: headline + subhead + 2-3 bullet points, ready to paste\n"
+                    "- icp_notes: describe the ideal buyer profile with trigger events and disqualifiers\n"
+                    "- launch_email: subject line + short body, personalized to the audience\n"
+                    "- social_post: one punchy post under 280 chars, no hashtags unless requested\n\n"
+                    "Tailor the tone, channel focus, and language to the user's inputs. "
+                    "Avoid generic filler. Every sentence should be usable as-is.",
                 ),
                 ("human", request.model_dump_json()),
             ]
@@ -404,6 +525,82 @@ class OpenAILLMProvider(LLMProvider):
             ]
         )
 
+    def generate_legal_scan(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalIssueScan:
+        structured_model = self.model.with_structured_output(LegalIssueScan)
+        return structured_model.invoke(
+            [
+                (
+                    "system",
+                    "You are a startup legal issue-spotter. You help founders identify regulatory, "
+                    "compliance, and legal risks before launch. Your output is educational and "
+                    "source-grounded — clearly NOT legal advice. Always cite the specific public "
+                    "guidance documents provided. Be concrete and practical.\n\n"
+                    "Rules:\n"
+                    "- important_notice MUST state this is educational, not legal advice\n"
+                    "- jurisdiction_scope MUST note the geographic scope of the sources\n"
+                    "- relevant_sources MUST cite each source document with title and URL\n"
+                    "- risk_summary should be specific to the founder's product and audience\n"
+                    "- founder_checklist should be numbered, actionable steps\n"
+                    "- questions_for_counsel should be specific enough to hand to a lawyer\n"
+                    "- next_steps should tell the founder exactly what to collect before counsel review",
+                ),
+                (
+                    "human",
+                    f"Founder request:\n{request.model_dump_json()}\n\n"
+                    f"Reference sources:\n{source_context}",
+                ),
+            ]
+        )
+
+    def review_agent_output(
+        self,
+        request: AgentRequest,
+        response: AgentResponse,
+    ) -> LLMReviewEvaluation:
+        structured_model = self.model.with_structured_output(LLMReviewEvaluation)
+        return structured_model.invoke(
+            [
+                (
+                    "system",
+                    "You are a quality-assurance reviewer for AI agent output. Evaluate the agent's "
+                    "response against the original request. Score each dimension 0-1:\n"
+                    "- relevance: does the output address the user's specific request?\n"
+                    "- completeness: are all expected sections present and substantive?\n"
+                    "- clarity: is the output well-structured, concise, and free of filler?\n"
+                    "- actionability: can the founder act on this output immediately?\n\n"
+                    "Provide concrete feedback. If revision is needed, give a specific instruction.",
+                ),
+                (
+                    "human",
+                    f"Original request:\n{request.model_dump_json()}\n\n"
+                    f"Agent ({response.agent}) output:\n"
+                    + "\n".join(f"[{k}]: {v}" for k, v in response.output.items()),
+                ),
+            ]
+        )
+
+    def classify_task(self, request: AgentRequest) -> TaskClassification:
+        structured_model = self.model.with_structured_output(TaskClassification)
+        return structured_model.invoke(
+            [
+                (
+                    "system",
+                    "You are a task router for a GTM AI platform. Classify the user's request "
+                    "into exactly one agent capability. Available agents:\n"
+                    "- content_generator: GTM content like landing pages, emails, social posts, positioning\n"
+                    "- legal: legal risk scanning, compliance, privacy, terms, entity formation\n"
+                    "- demo: demo rooms, prototypes, presentations, pitch walkthroughs\n"
+                    "- unsupported: anything that doesn't fit the above agents\n\n"
+                    "Return the agent name, your confidence (0-1), and a brief reasoning.",
+                ),
+                ("human", request.model_dump_json()),
+            ]
+        )
+
 
 class ResilientLLMProvider(LLMProvider):
     def __init__(self, primary: LLMProvider, fallback: LLMProvider) -> None:
@@ -465,6 +662,23 @@ class ResilientLLMProvider(LLMProvider):
     def generate_qualification(self, demo_room: DemoRoom) -> QualificationReport:
         return self._try_primary("generate_qualification", demo_room)
 
+    def generate_legal_scan(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalIssueScan:
+        return self._try_primary("generate_legal_scan", request, source_context)
+
+    def review_agent_output(
+        self,
+        request: AgentRequest,
+        response: AgentResponse,
+    ) -> LLMReviewEvaluation:
+        return self._try_primary("review_agent_output", request, response)
+
+    def classify_task(self, request: AgentRequest) -> TaskClassification:
+        return self._try_primary("classify_task", request)
+
 
 class UnconfiguredLLMProvider(LLMProvider):
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
@@ -506,6 +720,23 @@ class UnconfiguredLLMProvider(LLMProvider):
         self._raise_unconfigured()
 
     def generate_qualification(self, demo_room: DemoRoom) -> QualificationReport:
+        self._raise_unconfigured()
+
+    def generate_legal_scan(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalIssueScan:
+        self._raise_unconfigured()
+
+    def review_agent_output(
+        self,
+        request: AgentRequest,
+        response: AgentResponse,
+    ) -> LLMReviewEvaluation:
+        self._raise_unconfigured()
+
+    def classify_task(self, request: AgentRequest) -> TaskClassification:
         self._raise_unconfigured()
 
 
