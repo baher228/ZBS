@@ -24,6 +24,25 @@ class Orchestrator:
         "icp",
     }
     _demo_keywords = {"demo", "prototype", "presentation", "pitch walkthrough"}
+    _legal_keywords = {
+        "legal",
+        "law",
+        "lawyer",
+        "compliance",
+        "privacy",
+        "terms",
+        "contract",
+        "liability",
+        "entity",
+        "formation",
+        "llc",
+        "corporation",
+        "accessibility",
+        "ada",
+        "ftc",
+        "regulation",
+        "regulatory",
+    }
 
     def __init__(self, registry: AgentRegistry, review_agent: ReviewAgent) -> None:
         self.registry = registry
@@ -78,6 +97,8 @@ class Orchestrator:
         ).lower()
         if any(keyword in text for keyword in self._demo_keywords):
             return AgentCapability.DEMO
+        if any(keyword in text for keyword in self._legal_keywords):
+            return AgentCapability.LEGAL
         if any(keyword in text for keyword in self._content_keywords):
             return AgentCapability.CONTENT_GENERATOR
         return AgentCapability.UNSUPPORTED

@@ -9,12 +9,27 @@ class ReviewAgent:
         "launch_email",
         "social_post",
     }
+    _required_sections_by_agent = {
+        "legal": {
+            "important_notice",
+            "jurisdiction_scope",
+            "relevant_sources",
+            "risk_summary",
+            "founder_checklist",
+            "questions_for_counsel",
+            "next_steps",
+        }
+    }
 
     def review(self, request: AgentRequest, response: AgentResponse) -> ReviewResult:
+        required_sections = self._required_sections_by_agent.get(
+            response.agent.value,
+            self._required_sections,
+        )
         filled_sections = {
             key
             for key, value in response.output.items()
-            if key in self._required_sections and value.strip()
+            if key in required_sections and value.strip()
         }
         output_text = " ".join(response.output.values()).lower()
         prompt_terms = self._terms(request.prompt)
@@ -22,7 +37,7 @@ class ReviewAgent:
         relevant_terms = prompt_terms | idea_terms
 
         relevance = self._score_relevance(output_text, relevant_terms)
-        completeness = len(filled_sections) / len(self._required_sections)
+        completeness = len(filled_sections) / len(required_sections)
         clarity = self._score_clarity(response.output.values())
         actionability = self._score_actionability(output_text)
         score = round((relevance + completeness + clarity + actionability) / 4, 2)

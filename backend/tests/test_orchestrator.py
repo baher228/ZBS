@@ -1,4 +1,5 @@
 from app.agents.content_generator import ContentGeneratorAgent
+from app.agents.legal import LegalAgent
 from app.agents.llm import MockLLMProvider
 from app.agents.models import AgentCapability, AgentRequest, OrchestratorStatus
 from app.agents.orchestrator import Orchestrator
@@ -7,7 +8,7 @@ from app.agents.review import ReviewAgent
 
 
 def make_orchestrator() -> Orchestrator:
-    registry = AgentRegistry([ContentGeneratorAgent(MockLLMProvider())])
+    registry = AgentRegistry([ContentGeneratorAgent(MockLLMProvider()), LegalAgent()])
     return Orchestrator(registry=registry, review_agent=ReviewAgent())
 
 
@@ -49,3 +50,16 @@ def test_unknown_prompt_returns_unsupported() -> None:
     assert response.agent_response is None
     assert response.review is None
     assert response.decision.status == OrchestratorStatus.UNSUPPORTED
+
+
+def test_legal_prompt_selects_legal_agent() -> None:
+    orchestrator = make_orchestrator()
+
+    response = orchestrator.handle_task(
+        AgentRequest(prompt="Check privacy policy and advertising legal compliance for my launch")
+    )
+
+    assert response.selected_agent == AgentCapability.LEGAL
+    assert response.agent_response is not None
+    assert response.review is not None
+    assert response.decision.status == OrchestratorStatus.COMPLETED

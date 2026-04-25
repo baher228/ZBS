@@ -1,4 +1,5 @@
 from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.campaigns import router as campaigns_router
 from app.api.routes.health import router as health_router
@@ -11,6 +12,13 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=settings.app_version,
         debug=settings.app_debug,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.resolved_cors_allow_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     api_v1_router = APIRouter(prefix="/api/v1")

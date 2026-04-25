@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class AgentCapability(StrEnum):
     CONTENT_GENERATOR = "content_generator"
+    LEGAL = "legal"
     DEMO = "demo"
     UNSUPPORTED = "unsupported"
 
