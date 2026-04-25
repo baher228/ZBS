@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     app_debug: bool = True
     app_host: str = "127.0.0.1"
     app_port: int = 8000
+    llm_provider: str = "mock"
+    llm_model: str = "mock-gtm-v1"
+    llm_api_key: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, FastAPI
 
 from app.api.routes.health import router as health_router
+from app.api.routes.tasks import router as tasks_router
 from app.core.config import settings
 
 
@@ -13,6 +14,7 @@ def create_app() -> FastAPI:
 
     api_v1_router = APIRouter(prefix="/api/v1")
     api_v1_router.include_router(health_router)
+    api_v1_router.include_router(tasks_router)
 
     @app.get("/")
     def root() -> dict[str, str]:
