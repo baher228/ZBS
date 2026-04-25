@@ -17,6 +17,7 @@ from app.agents.models import (
     AgentRequest,
     AgentResponse,
     ContentPackage,
+    DocumentReviewResult,
     LegalIssueScan,
     LLMReviewEvaluation,
     TaskClassification,
@@ -86,6 +87,15 @@ class LLMProvider(ABC):
     @abstractmethod
     def classify_task(self, request: AgentRequest) -> TaskClassification:
         """Classify which agent should handle the request."""
+
+    @abstractmethod
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
+        """Review a user-uploaded document against regulatory sources."""
 
 
 class MockLLMProvider(LLMProvider):
@@ -382,6 +392,26 @@ class MockLLMProvider(LLMProvider):
             agent=AgentCapability.UNSUPPORTED, confidence=0.5, reasoning="No matching agent capability detected."
         )
 
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
+        scope = ", ".join(jurisdictions) if jurisdictions else "US"
+        return DocumentReviewResult(
+            important_notice=(
+                "This is an automated compliance review for educational purposes, not legal advice. "
+                "Have a qualified attorney review any legal documents before use."
+            ),
+            document_summary=f"Mock review of uploaded document ({len(document_text)} chars) against {scope} regulations.",
+            compliance_gaps="Mock: no specific gaps identified in this automated review.",
+            risk_areas="Mock: general risk areas include missing privacy disclosures and vague data handling terms.",
+            recommendations="Mock: consider adding explicit data retention policies and user consent mechanisms.",
+            applicable_regulations=source_context[:500] if source_context else "No regulations loaded.",
+            next_steps="Have a qualified attorney review the full document against applicable regulations.",
+        )
+
 
 class OpenAILLMProvider(LLMProvider):
     def __init__(self, api_key: str | None = None, base_url: str | None = None) -> None:
@@ -398,6 +428,14 @@ class OpenAILLMProvider(LLMProvider):
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
         structured_model = self.model.with_structured_output(ContentPackage)
+
+        company_context = request.context.get("company_profile", "")
+        company_block = (
+            f"\n\nCompany context (use this to ground ALL content):\n{company_context}"
+            if company_context
+            else ""
+        )
+
         package = structured_model.invoke(
             [
                 (
@@ -410,8 +448,11 @@ class OpenAILLMProvider(LLMProvider):
                     "- icp_notes: describe the ideal buyer profile with trigger events and disqualifiers\n"
                     "- launch_email: subject line + short body, personalized to the audience\n"
                     "- social_post: one punchy post under 280 chars, no hashtags unless requested\n\n"
+                    "If company context is provided, use it to make every section specific to that company. "
+                    "Reference actual product features, audience, and differentiators — not generic placeholders.\n"
                     "Tailor the tone, channel focus, and language to the user's inputs. "
-                    "Avoid generic filler. Every sentence should be usable as-is.",
+                    "Avoid generic filler. Every sentence should be usable as-is."
+                    + company_block,
                 ),
                 ("human", request.model_dump_json()),
             ]
@@ -531,6 +572,14 @@ class OpenAILLMProvider(LLMProvider):
         source_context: str,
     ) -> LegalIssueScan:
         structured_model = self.model.with_structured_output(LegalIssueScan)
+
+        company_context = request.context.get("company_profile", "")
+        company_block = (
+            f"\n\nCompany context (tailor ALL analysis to this company):\n{company_context}"
+            if company_context
+            else ""
+        )
+
         return structured_model.invoke(
             [
                 (
@@ -546,7 +595,10 @@ class OpenAILLMProvider(LLMProvider):
                     "- risk_summary should be specific to the founder's product and audience\n"
                     "- founder_checklist should be numbered, actionable steps\n"
                     "- questions_for_counsel should be specific enough to hand to a lawyer\n"
-                    "- next_steps should tell the founder exactly what to collect before counsel review",
+                    "- next_steps should tell the founder exactly what to collect before counsel review\n\n"
+                    "If company context is provided, tailor the risk summary, checklist, and counsel questions "
+                    "to the specific product, industry, and audience described."
+                    + company_block,
                 ),
                 (
                     "human",
@@ -598,6 +650,39 @@ class OpenAILLMProvider(LLMProvider):
                     "Return the agent name, your confidence (0-1), and a brief reasoning.",
                 ),
                 ("human", request.model_dump_json()),
+            ]
+        )
+
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
+        structured_model = self.model.with_structured_output(DocumentReviewResult)
+        scope = ", ".join(jurisdictions) if jurisdictions else "US"
+        return structured_model.invoke(
+            [
+                (
+                    "system",
+                    "You are a regulatory compliance document reviewer for startups. "
+                    "Review the uploaded document against the provided regulatory sources and flag "
+                    "compliance gaps, risk areas, and recommendations.\n\n"
+                    "Rules:\n"
+                    "- important_notice MUST state this is educational, not legal advice\n"
+                    "- document_summary should concisely describe the document's purpose and scope\n"
+                    "- compliance_gaps should list specific missing or inadequate provisions\n"
+                    "- risk_areas should highlight provisions that could create legal exposure\n"
+                    "- recommendations should be numbered, actionable improvements\n"
+                    "- applicable_regulations should cite the specific regulations that apply\n"
+                    "- next_steps should tell the founder what to do with these findings\n\n"
+                    f"Jurisdictions in scope: {scope}",
+                ),
+                (
+                    "human",
+                    f"Document to review:\n{document_text}\n\n"
+                    f"Regulatory reference sources:\n{source_context}",
+                ),
             ]
         )
 
@@ -679,6 +764,14 @@ class ResilientLLMProvider(LLMProvider):
     def classify_task(self, request: AgentRequest) -> TaskClassification:
         return self._try_primary("classify_task", request)
 
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
+        return self._try_primary("review_document", document_text, source_context, jurisdictions)
+
 
 class UnconfiguredLLMProvider(LLMProvider):
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
@@ -737,6 +830,14 @@ class UnconfiguredLLMProvider(LLMProvider):
         self._raise_unconfigured()
 
     def classify_task(self, request: AgentRequest) -> TaskClassification:
+        self._raise_unconfigured()
+
+    def review_document(
+        self,
+        document_text: str,
+        source_context: str,
+        jurisdictions: list[str],
+    ) -> DocumentReviewResult:
         self._raise_unconfigured()
 
 
