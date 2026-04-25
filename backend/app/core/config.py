@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     llm_model: str = "mock-gtm-v1"
     llm_api_key: str | None = None
     openai_api_key: str | None = None
+    pydantic_ai_gateway_api_key: str | None = None
+    pydantic_ai_gateway_base_url: str | None = None
+    pydantic: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=(str(REPO_ROOT / ".env"), str(BACKEND_ROOT / ".env")),
@@ -36,6 +39,40 @@ class Settings(BaseSettings):
     @property
     def resolved_llm_api_key(self) -> str | None:
         return self.llm_api_key or self.openai_api_key
+
+    @property
+    def resolved_gateway_api_key(self) -> str | None:
+        return self.pydantic_ai_gateway_api_key or self.pydantic
+
+    @property
+    def resolved_llm_provider(self) -> str:
+        provider = self.llm_provider.lower()
+        if provider != "mock":
+            return provider
+        if self.resolved_gateway_api_key:
+            return "gateway"
+        if self.resolved_llm_api_key:
+            return "openai"
+        return "mock"
+
+    @property
+    def resolved_gateway_base_url(self) -> str | None:
+        if self.pydantic_ai_gateway_base_url:
+            return self.pydantic_ai_gateway_base_url
+        api_key = self.resolved_gateway_api_key or ""
+        if "_eu_" in api_key:
+            return "https://gateway-eu.pydantic.dev/proxy/chat/"
+        if "_us_" in api_key:
+            return "https://gateway-us.pydantic.dev/proxy/chat/"
+        return None
+
+    @property
+    def resolved_llm_model(self) -> str:
+        if self.llm_model != "mock-gtm-v1":
+            return self.llm_model
+        if self.resolved_llm_provider == "gateway":
+            return "gpt-4o-mini"
+        return "gpt-4o-mini"
 
     @property
     def resolved_cors_allow_origins(self) -> list[str]:

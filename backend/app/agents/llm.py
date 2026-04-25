@@ -272,12 +272,13 @@ class MockLLMProvider(LLMProvider):
 
 
 class OpenAILLMProvider(LLMProvider):
-    def __init__(self) -> None:
+    def __init__(self, api_key: str | None = None, base_url: str | None = None) -> None:
         from langchain_openai import ChatOpenAI
 
         self.model = ChatOpenAI(
-            model=settings.llm_model if settings.llm_model != "mock-gtm-v1" else "gpt-4o-mini",
-            api_key=settings.resolved_llm_api_key,
+            model=settings.resolved_llm_model,
+            api_key=api_key or settings.resolved_llm_api_key,
+            base_url=base_url,
             temperature=0.2,
             max_retries=0,
             timeout=10,
@@ -471,8 +472,9 @@ class UnconfiguredLLMProvider(LLMProvider):
 
     def _raise_unconfigured(self) -> None:
         raise RuntimeError(
-            f"LLM provider '{settings.llm_provider}' is not configured. "
-            "Set LLM_PROVIDER=mock or set LLM_PROVIDER=openai with OPENAI_API_KEY."
+            f"LLM provider '{settings.resolved_llm_provider}' is not configured. "
+            "Set LLM_PROVIDER=mock, set LLM_PROVIDER=openai with OPENAI_API_KEY, "
+            "or set PYDANTIC_AI_GATEWAY_API_KEY."
         )
 
     def generate_product_strategy(self, request: CampaignCreateRequest) -> ProductStrategy:
@@ -508,9 +510,20 @@ class UnconfiguredLLMProvider(LLMProvider):
 
 
 def get_llm_provider() -> LLMProvider:
-    provider = settings.llm_provider.lower()
+    provider = settings.resolved_llm_provider
+    if provider == "gateway" and settings.resolved_gateway_api_key:
+        return ResilientLLMProvider(
+            OpenAILLMProvider(
+                api_key=settings.resolved_gateway_api_key,
+                base_url=settings.resolved_gateway_base_url,
+            ),
+            MockLLMProvider(),
+        )
     if provider == "openai" and settings.resolved_llm_api_key:
-        return ResilientLLMProvider(OpenAILLMProvider(), MockLLMProvider())
+        return ResilientLLMProvider(
+            OpenAILLMProvider(api_key=settings.resolved_llm_api_key),
+            MockLLMProvider(),
+        )
     if provider == "mock":
         return MockLLMProvider()
     return UnconfiguredLLMProvider()
