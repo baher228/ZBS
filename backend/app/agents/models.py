@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -32,6 +34,30 @@ class AgentRequest(BaseModel):
     tone: str | None = None
     channel: str | None = None
     context: dict[str, str] = Field(default_factory=dict)
+
+
+class ContentPackage(BaseModel):
+    positioning: str
+    landing_copy: str
+    icp_notes: str
+    launch_email: str
+    social_post: str
+
+    def as_output_dict(self) -> dict[str, str]:
+        return self.model_dump()
+
+
+class LegalIssueScan(BaseModel):
+    important_notice: str
+    jurisdiction_scope: str
+    relevant_sources: str
+    risk_summary: str
+    founder_checklist: str
+    questions_for_counsel: str
+    next_steps: str
+
+    def as_output_dict(self) -> dict[str, str]:
+        return self.model_dump()
 
 
 class AgentResponse(BaseModel):

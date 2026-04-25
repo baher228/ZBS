@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.agents.legal_knowledge import LegalKnowledgeBase
-from app.agents.models import AgentCapability, AgentRequest, AgentResponse
+from app.agents.models import AgentCapability, AgentRequest, AgentResponse, LegalIssueScan
 
 
 class LegalAgent:
@@ -27,34 +27,33 @@ class LegalAgent:
             for document in documents
         ]
         risk_summary = " ".join(document.summary for document in documents)
-
-        output = {
-            "important_notice": (
+        scan = LegalIssueScan(
+            important_notice=(
                 "This is educational issue-spotting for founders, not legal advice. "
                 "A qualified lawyer should review jurisdiction-specific decisions, filings, contracts, and regulated claims."
             ),
-            "jurisdiction_scope": (
+            jurisdiction_scope=(
                 "Seed sources are currently United States-focused. Treat non-US launches, regulated industries, "
                 "employment, securities, health, finance, and tax questions as counsel-required."
             ),
-            "relevant_sources": "\n".join(source_lines),
-            "risk_summary": risk_summary,
-            "founder_checklist": self._build_checklist(query),
-            "questions_for_counsel": (
+            relevant_sources="\n".join(source_lines),
+            risk_summary=risk_summary,
+            founder_checklist=self._build_checklist(query),
+            questions_for_counsel=(
                 "1. Which entity structure and state filing path best fits the founders' risk, tax, and fundraising plans?\n"
                 "2. Are the landing page, outreach, pricing, endorsements, and claims substantiated and non-deceptive?\n"
                 "3. What privacy notice, data-processing, security, and customer-contract terms are needed before launch?\n"
                 "4. Are accessibility, industry-specific, international, or employment obligations triggered?"
             ),
-            "next_steps": (
+            next_steps=(
                 "Collect product claims, data flows, customer promises, planned jurisdictions, and launch channels. "
                 "Use this packet for a legal review before publishing high-risk claims or collecting customer data."
             ),
-        }
+        )
         return AgentResponse(
             agent=self.capability,
             title="Founder Legal Issue Scan",
-            output=output,
+            output=scan.as_output_dict(),
             summary="Generated a source-grounded legal issue scan with citations and counsel handoff questions.",
         )
 

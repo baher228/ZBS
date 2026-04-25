@@ -23,8 +23,8 @@ def create_app() -> FastAPI:
 
     api_v1_router = APIRouter(prefix="/api/v1")
     api_v1_router.include_router(health_router)
-    api_v1_router.include_router(tasks_router)
     api_v1_router.include_router(campaigns_router)
+    api_v1_router.include_router(tasks_router)
 
     @app.get("/")
     def root() -> dict[str, str]:

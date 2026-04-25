@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from app.agents.llm import LLMProvider
 from app.agents.models import AgentCapability, AgentRequest, AgentResponse
 

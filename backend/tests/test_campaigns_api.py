@@ -121,3 +121,4 @@ def test_missing_demo_room_returns_404() -> None:
     response = client.get("/api/v1/demo-rooms/room_missing")
 
     assert response.status_code == 404
+

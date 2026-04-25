@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from app.agents.models import (
     AgentCapability,
     AgentRequest,
@@ -23,26 +25,22 @@ class Orchestrator:
         "positioning",
         "icp",
     }
-    _demo_keywords = {"demo", "prototype", "presentation", "pitch walkthrough"}
     _legal_keywords = {
         "legal",
-        "law",
-        "lawyer",
-        "compliance",
         "privacy",
+        "compliance",
         "terms",
-        "contract",
-        "liability",
-        "entity",
-        "formation",
+        "gdpr",
         "llc",
-        "corporation",
+        "soc2",
+        "dpa",
+        "claim",
+        "claims",
+        "testimonial",
         "accessibility",
-        "ada",
-        "ftc",
-        "regulation",
-        "regulatory",
+        "counsel",
     }
+    _demo_keywords = {"demo", "prototype", "presentation", "pitch walkthrough"}
 
     def __init__(self, registry: AgentRegistry, review_agent: ReviewAgent) -> None:
         self.registry = registry
@@ -55,7 +53,7 @@ class Orchestrator:
             decision = OrchestratorDecision(
                 status=OrchestratorStatus.UNAVAILABLE,
                 selected_agent=selected_agent,
-                message="Demo Agent is planned but not available in this MVP slice.",
+                message="Demo Agent is handled by the campaign demo-room workflow, not the generic tasks route.",
             )
             return TaskResponse(selected_agent=selected_agent, decision=decision)
 
@@ -63,7 +61,7 @@ class Orchestrator:
             decision = OrchestratorDecision(
                 status=OrchestratorStatus.UNSUPPORTED,
                 selected_agent=selected_agent,
-                message="This task is not supported yet. Try a content, landing page, email, or social launch task.",
+                message="This task is not supported yet. Try a content or legal task.",
             )
             return TaskResponse(selected_agent=selected_agent, decision=decision)
 
@@ -87,6 +85,12 @@ class Orchestrator:
         )
 
     def choose_agent(self, request: AgentRequest) -> AgentCapability:
+        task_type = request.context.get("task_type", "").lower()
+        if task_type == "legal":
+            return AgentCapability.LEGAL
+        if task_type == "content":
+            return AgentCapability.CONTENT_GENERATOR
+
         text = " ".join(
             [
                 request.prompt,

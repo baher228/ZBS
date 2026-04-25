@@ -21,11 +21,30 @@ def test_content_prompt_selects_content_generator() -> None:
             startup_idea="GTM AI office for founders",
             target_audience="solo founders",
             goal="start sales conversations",
+            context={"task_type": "content"},
         )
     )
 
     assert response.selected_agent == AgentCapability.CONTENT_GENERATOR
     assert response.agent_response is not None
+    assert response.review is not None
+    assert response.decision.status == OrchestratorStatus.COMPLETED
+
+
+def test_legal_prompt_selects_legal_agent() -> None:
+    orchestrator = make_orchestrator()
+
+    response = orchestrator.handle_task(
+        AgentRequest(
+            prompt="Review privacy, testimonials, and LLC formation compliance for launch",
+            startup_idea="GTM AI office for founders",
+            context={"task_type": "legal"},
+        )
+    )
+
+    assert response.selected_agent == AgentCapability.LEGAL
+    assert response.agent_response is not None
+    assert "important_notice" in response.agent_response.output
     assert response.review is not None
     assert response.decision.status == OrchestratorStatus.COMPLETED
 
@@ -50,16 +69,3 @@ def test_unknown_prompt_returns_unsupported() -> None:
     assert response.agent_response is None
     assert response.review is None
     assert response.decision.status == OrchestratorStatus.UNSUPPORTED
-
-
-def test_legal_prompt_selects_legal_agent() -> None:
-    orchestrator = make_orchestrator()
-
-    response = orchestrator.handle_task(
-        AgentRequest(prompt="Check privacy policy and advertising legal compliance for my launch")
-    )
-
-    assert response.selected_agent == AgentCapability.LEGAL
-    assert response.agent_response is not None
-    assert response.review is not None
-    assert response.decision.status == OrchestratorStatus.COMPLETED

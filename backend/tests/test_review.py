@@ -27,6 +27,28 @@ def test_review_approves_strong_content_package() -> None:
     assert result.status == ReviewStatus.APPROVED
 
 
+def test_review_approves_complete_legal_scan() -> None:
+    result = ReviewAgent().review(
+        AgentRequest(prompt="Review privacy and advertising compliance for my SaaS launch"),
+        AgentResponse(
+            agent=AgentCapability.LEGAL,
+            title="Founder Legal Issue Scan",
+            summary="Generated legal scan",
+            output={
+                "important_notice": "This is educational issue-spotting for founders, not legal advice.",
+                "jurisdiction_scope": "Seed sources are currently United States-focused.",
+                "relevant_sources": "FTC Truth in Advertising (US): https://www.ftc.gov/business-guidance/advertising-marketing/truth-advertising",
+                "risk_summary": "Marketing claims and privacy promises need substantiation before launch.",
+                "founder_checklist": "1. Confirm the company formation path.\n2. List public claims.",
+                "questions_for_counsel": "1. Are the claims substantiated?\n2. What privacy terms are needed?",
+                "next_steps": "Collect claims, data flows, and jurisdictions before counsel review.",
+            },
+        ),
+    )
+
+    assert result.status == ReviewStatus.APPROVED
+
+
 def test_review_fails_empty_output() -> None:
     result = ReviewAgent().review(
         AgentRequest(prompt="Create launch content for a GTM AI office"),

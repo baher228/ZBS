@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from functools import lru_cache
+
 from fastapi import APIRouter
 
 from app.agents.content_generator import ContentGeneratorAgent
@@ -11,10 +15,14 @@ from app.agents.review import ReviewAgent
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
+@lru_cache
 def get_orchestrator() -> Orchestrator:
-    content_agent = ContentGeneratorAgent(get_llm_provider())
-    legal_agent = LegalAgent()
-    registry = AgentRegistry([content_agent, legal_agent])
+    registry = AgentRegistry(
+        [
+            ContentGeneratorAgent(get_llm_provider()),
+            LegalAgent(),
+        ]
+    )
     return Orchestrator(registry=registry, review_agent=ReviewAgent())
 
 

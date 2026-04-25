@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Protocol
 
 from app.agents.models import AgentCapability, AgentRequest, AgentResponse
@@ -6,8 +8,7 @@ from app.agents.models import AgentCapability, AgentRequest, AgentResponse
 class RunnableAgent(Protocol):
     capability: AgentCapability
 
-    def run(self, request: AgentRequest) -> AgentResponse:
-        ...
+    def run(self, request: AgentRequest) -> AgentResponse: ...
 
 
 class AgentRegistry:
