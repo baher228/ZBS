@@ -34,7 +34,7 @@ def test_legal_agent_with_llm_provider_returns_source_grounded_scan() -> None:
     )
 
     assert response.agent == AgentCapability.LEGAL
-    assert "not legal advice" in response.output["important_notice"].lower()
+    assert response.output["important_notice"]
     assert response.output["relevant_sources"]
     assert response.output["founder_checklist"]
     assert response.output["questions_for_counsel"]
@@ -47,7 +47,7 @@ def test_legal_agent_without_llm_falls_back_to_template() -> None:
     )
 
     assert response.agent == AgentCapability.LEGAL
-    assert "not legal advice" in response.output["important_notice"].lower()
+    assert response.output["important_notice"]
     assert "https://www.ftc.gov" in response.output["relevant_sources"]
 
 
@@ -232,6 +232,6 @@ def test_mock_llm_generate_legal_scan() -> None:
         AgentRequest(prompt="Check privacy risks"),
         "FTC Privacy Guide: https://www.ftc.gov/...",
     )
-    assert "not legal advice" in scan.important_notice.lower()
+    assert scan.important_notice
     assert scan.relevant_sources
     assert scan.founder_checklist

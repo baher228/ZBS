@@ -10,6 +10,8 @@ export type AgentTaskPayload = {
   industries?: string[];
   startup_url?: string;
   review_mode?: boolean;
+  additional_context?: string;
+  document_type?: string;
 };
 
 export type AgentTaskResponse = {
@@ -72,6 +74,8 @@ export async function runAgentTaskWithUpload(
   formData.append("industries", (payload.industries ?? []).join(","));
   formData.append("startup_url", payload.startup_url ?? "");
   formData.append("review_mode", String(payload.review_mode ?? false));
+  formData.append("additional_context", payload.additional_context ?? "");
+  formData.append("document_type", payload.document_type ?? "");
   if (file) {
     formData.append("document", file);
   }
@@ -139,9 +143,7 @@ export async function saveCompanyProfile(
   return response.json();
 }
 
-export async function fetchCompanyProfile(
-  apiBaseUrl: string,
-): Promise<CompanyProfile | null> {
+export async function fetchCompanyProfile(apiBaseUrl: string): Promise<CompanyProfile | null> {
   try {
     const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company`);
     if (response.status === 404) return null;
@@ -176,6 +178,123 @@ export async function generateSocialPost(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/* ── Legal Chat ─────────────────────────────────────────── */
+
+export type LegalChatMode = "legal_advice" | "tax" | "document_drafting";
+
+export type LegalChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type LegalDocumentDraft = {
+  important_notice: string;
+  document_title: string;
+  document_body: string;
+  key_provisions: string;
+  customization_notes: string;
+  jurisdiction_notes: string;
+  next_steps: string;
+  follow_up_needed?: string;
+};
+
+export type LegalChatResponse = {
+  reply: string;
+  document: LegalDocumentDraft | null;
+  follow_up_questions: string[];
+  mode: LegalChatMode;
+  sources_used: string[];
+};
+
+export async function sendLegalChat(
+  apiBaseUrl: string,
+  messages: LegalChatMessage[],
+  mode: LegalChatMode,
+  documentType?: string,
+  jurisdictions?: string[],
+): Promise<LegalChatResponse> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/legal/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages,
+      mode,
+      document_type: documentType || null,
+      jurisdictions: jurisdictions || ["US"],
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/* ── Legal Overview ─────────────────────────────────────── */
+
+export type LegalOverviewIssue = {
+  title: string;
+  severity: "high" | "medium" | "low";
+  description: string;
+  recommendation: string;
+};
+
+export type LegalOverviewResponse = {
+  summary: string;
+  potential_issues: LegalOverviewIssue[];
+  recommended_documents: string[];
+  missing_info: string[];
+  compliance_areas: string[];
+};
+
+export async function fetchLegalOverview(
+  apiBaseUrl: string,
+): Promise<LegalOverviewResponse> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/legal/overview`);
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+  return response.json();
+}
+
+/* ── Content Chat ──────────────────────────────────────── */
+
+export type ContentChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type ContentChatResponse = {
+  reply: string;
+  follow_up_questions: string[];
+  content_ready: boolean;
+  generated_content: Record<string, string> | null;
+};
+
+export async function sendContentChat(
+  apiBaseUrl: string,
+  messages: ContentChatMessage[],
+  workflow?: string,
+): Promise<ContentChatResponse> {
+  const body: Record<string, unknown> = { messages };
+  if (workflow) body.workflow = workflow;
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/content/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

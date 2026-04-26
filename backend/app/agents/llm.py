@@ -16,9 +16,16 @@ from app.agents.models import (
     AgentCapability,
     AgentRequest,
     AgentResponse,
+    ContentChatMessage,
+    ContentChatResponse,
     ContentPackage,
     DocumentReviewResult,
+    LegalChatMessage,
+    LegalChatMode,
+    LegalChatResponse,
+    LegalDocumentDraft,
     LegalIssueScan,
+    LegalOverviewResponse,
     LLMReviewEvaluation,
     SocialPost,
     SocialPostRequest,
@@ -107,6 +114,42 @@ class LLMProvider(ABC):
         jurisdictions: list[str],
     ) -> DocumentReviewResult:
         """Review a user-uploaded document against regulatory sources."""
+
+    @abstractmethod
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        """Draft a legal document (ToS, privacy policy, NDA, etc.) for a startup."""
+
+    @abstractmethod
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
+        """Handle a multi-turn legal chat conversation."""
+
+    @abstractmethod
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        """Generate a legal overview for a company, flagging potential issues."""
+
+    @abstractmethod
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> ContentChatResponse:
+        """Handle a multi-turn content creation chat conversation."""
 
     @abstractmethod
     def generate_social_post(
@@ -349,7 +392,7 @@ class MockLLMProvider(LLMProvider):
         audience = request.target_audience or "US startup founders"
         return LegalIssueScan(
             important_notice=(
-                "This is educational issue-spotting for founders, not legal advice. "
+                "This is a legal risk scan for founders. "
                 "A qualified lawyer should review jurisdiction-specific decisions, filings, contracts, and regulated claims."
             ),
             jurisdiction_scope=(
@@ -432,7 +475,7 @@ class MockLLMProvider(LLMProvider):
         scope = ", ".join(jurisdictions) if jurisdictions else "US"
         return DocumentReviewResult(
             important_notice=(
-                "This is an automated compliance review for educational purposes, not legal advice. "
+                "This is an automated compliance review. "
                 "Have a qualified attorney review any legal documents before use."
             ),
             document_summary=f"Mock review of uploaded document ({len(document_text)} chars) against {scope} regulations.",
@@ -441,6 +484,162 @@ class MockLLMProvider(LLMProvider):
             recommendations="Mock: consider adding explicit data retention policies and user consent mechanisms.",
             applicable_regulations=source_context[:500] if source_context else "No regulations loaded.",
             next_steps="Have a qualified attorney review the full document against applicable regulations.",
+        )
+
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        doc_type = request.document_type or "Terms of Service"
+        idea = request.startup_idea or request.prompt
+        scope = ", ".join(request.jurisdictions) if request.jurisdictions else "US"
+        return LegalDocumentDraft(
+            important_notice=(
+                "This is a starter template. "
+                "A qualified attorney must review and customize this document before use."
+            ),
+            document_title=f"{doc_type} — {idea}",
+            document_body=(
+                f"DRAFT {doc_type.upper()}\n\n"
+                f"This {doc_type} governs the use of {idea}.\n\n"
+                f"1. ACCEPTANCE OF TERMS\nBy accessing or using {idea}, you agree to be bound by these terms.\n\n"
+                f"2. DESCRIPTION OF SERVICE\n{idea} provides services as described on the platform.\n\n"
+                "3. USER OBLIGATIONS\nYou agree to use the service in compliance with all applicable laws.\n\n"
+                "4. INTELLECTUAL PROPERTY\nAll content and materials remain the property of the company.\n\n"
+                "5. LIMITATION OF LIABILITY\nThe service is provided 'as is' without warranties of any kind.\n\n"
+                "6. GOVERNING LAW\n"
+                f"This agreement is governed by the laws of {scope}.\n\n"
+                "7. MODIFICATIONS\nWe reserve the right to modify these terms at any time."
+            ),
+            key_provisions=(
+                "1. Acceptance of terms and binding agreement\n"
+                "2. Service description and scope\n"
+                "3. User obligations and acceptable use\n"
+                "4. Intellectual property rights\n"
+                "5. Limitation of liability and disclaimers\n"
+                "6. Governing law and dispute resolution\n"
+                "7. Modification and termination clauses"
+            ),
+            customization_notes=(
+                f"This template needs customization for {idea}. Key areas to address with counsel:\n"
+                "- Specific service descriptions and features\n"
+                "- Data handling and privacy provisions\n"
+                "- Payment terms (if applicable)\n"
+                "- Specific liability exclusions for your industry\n"
+                "- Compliance requirements for your jurisdictions"
+            ),
+            jurisdiction_notes=f"Drafted for {scope}. Consult local counsel for jurisdiction-specific requirements.",
+            next_steps=(
+                "1. Review this draft with a qualified attorney\n"
+                "2. Customize provisions for your specific product and business model\n"
+                "3. Add industry-specific compliance clauses\n"
+                "4. Ensure alignment with your privacy policy and other legal documents\n"
+                "5. Have counsel approve before publishing"
+            ),
+        )
+
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
+        last_msg = messages[-1].content if messages else "general legal question"
+        mode_labels = {
+            LegalChatMode.LEGAL_ADVICE: "legal advice",
+            LegalChatMode.TAX: "tax guidance",
+            LegalChatMode.DOCUMENT_DRAFTING: "document drafting",
+        }
+        label = mode_labels.get(mode, "legal")
+
+        reply = (
+            f"[Mock {label} response] Based on your question about: {last_msg[:100]}. "
+            "Consult a qualified attorney for specific advice."
+        )
+
+        document = None
+        if mode == LegalChatMode.DOCUMENT_DRAFTING and document_type:
+            document = LegalDocumentDraft(
+                important_notice="This is a starter template. Have an attorney review before use.",
+                document_title=f"Draft {document_type}",
+                document_body=f"DRAFT {document_type.upper()}\n\n1. TERMS\nStandard provisions apply.\n\n2. OBLIGATIONS\nParties agree to act in good faith.",
+                key_provisions="1. Standard terms\n2. Obligations\n3. Liability",
+                customization_notes="Customize with attorney review.",
+                jurisdiction_notes="US law applies by default.",
+                next_steps="1. Review with attorney\n2. Customize\n3. Execute",
+            )
+
+        return LegalChatResponse(
+            reply=reply,
+            document=document,
+            follow_up_questions=["What jurisdictions do you operate in?", "Do you collect personal data?"],
+            mode=mode,
+            sources_used=["FTC Act", "CCPA Guidelines"],
+        )
+
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        from app.agents.models import LegalOverviewIssue
+
+        return LegalOverviewResponse(
+            summary="[Mock Overview] Based on your company profile, here is a legal overview. "
+            "Consult a qualified attorney for specific advice.",
+            potential_issues=[
+                LegalOverviewIssue(
+                    title="Privacy Policy Required",
+                    severity="high",
+                    description="Your product likely collects user data, requiring a privacy policy under GDPR/CCPA.",
+                    recommendation="Draft a privacy policy covering data collection, usage, and user rights.",
+                ),
+                LegalOverviewIssue(
+                    title="Terms of Service",
+                    severity="high",
+                    description="A Terms of Service agreement is essential to limit liability.",
+                    recommendation="Create ToS covering user responsibilities, limitations, and dispute resolution.",
+                ),
+                LegalOverviewIssue(
+                    title="Intellectual Property Protection",
+                    severity="medium",
+                    description="Consider protecting your IP through trademarks and patents.",
+                    recommendation="Consult an IP attorney to evaluate trademark and patent opportunities.",
+                ),
+            ],
+            recommended_documents=[
+                "Privacy Policy",
+                "Terms of Service",
+                "Non-Disclosure Agreement",
+                "Employee/Contractor Agreement",
+                "Cookie Policy",
+            ],
+            missing_info=[
+                "What personal data do you collect from users?",
+                "Do you have employees or only contractors?",
+                "Are you handling payment processing directly?",
+            ],
+            compliance_areas=["Data Privacy (GDPR/CCPA)", "Consumer Protection", "Employment Law"],
+        )
+
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> ContentChatResponse:
+        last_msg = messages[-1].content if messages else "content creation"
+        workflow_label = f" [{workflow}]" if workflow else ""
+        return ContentChatResponse(
+            reply=(
+                f"[Mock content response{workflow_label}] Here is the content for: {last_msg[:100]}."
+            ),
+            follow_up_questions=[],
+            content_ready=True,
+            generated_content={"draft": f"Mock generated content for: {last_msg[:100]}"},
         )
 
     def generate_social_post(
@@ -461,17 +660,27 @@ class OpenAILLMProvider(LLMProvider):
     def __init__(self, api_key: str | None = None, base_url: str | None = None) -> None:
         from langchain_openai import ChatOpenAI
 
+        resolved_key = api_key or settings.resolved_llm_api_key
+
         self.model = ChatOpenAI(
-            model=settings.resolved_llm_model,
-            api_key=api_key or settings.resolved_llm_api_key,
+            model="gpt-5.2",
+            api_key=resolved_key,
             base_url=base_url,
-            temperature=0.2,
             max_retries=0,
-            timeout=10,
+            timeout=30,
+        )
+
+        self.content_model = ChatOpenAI(
+            model="gpt-5.2",
+            api_key=resolved_key,
+            base_url=base_url,
+            temperature=1.1,
+            max_retries=0,
+            timeout=30,
         )
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
-        structured_model = self.model.with_structured_output(ContentPackage)
+        structured_model = self.content_model.with_structured_output(ContentPackage)
 
         company_context = request.context.get("company_profile", "")
         company_block = (
@@ -487,45 +696,42 @@ class OpenAILLMProvider(LLMProvider):
             else ""
         )
 
+        additional_block = ""
+        if request.additional_context:
+            additional_block = (
+                f"\n\nAdditional context from the founder:\n{request.additional_context}"
+            )
+
+        website_url = ""
+        if company_context:
+            for line in company_context.split("\n"):
+                if line.startswith("Website:"):
+                    website_url = line.split(":", 1)[1].strip()
+                    break
+
+        link_instruction = ""
+        if website_url:
+            link_instruction = (
+                f"\n\nIMPORTANT: The company website is {website_url}. "
+                "When content needs a link or CTA URL, use this actual URL instead of "
+                "placeholders like '[paste the link]', '[your-url]', or '[website]'. "
+                "Make links feel natural in context."
+            )
+
         package = structured_model.invoke(
             [
                 (
                     "system",
-                    "You are a world-class creative director and GTM strategist for B2B startups. "
-                    "Your content should be vivid, memorable, and impossible to ignore.\n\n"
-                    "CRITICAL WRITING RULES (non-negotiable):\n"
-                    "- NEVER use em dashes or long dashes. Use commas, periods, semicolons, or rewrite the sentence instead.\n"
-                    "- NEVER use these overused AI emoji: rocket, lightbulb, fire, sparkles, brain, gem, star, target, megaphone, "
-                    "pointing down, muscle, chart, check mark, crystal ball, trophy. "
-                    "If you must use emoji, pick unusual ones that feel human and specific to the context.\n"
-                    "- NEVER use phrases like 'game-changer', 'revolutionize', 'unlock', 'supercharge', 'turbocharge', "
-                    "'harness the power', 'leverage', 'cutting-edge', 'seamless', 'robust', 'elevate', "
-                    "'dive into', 'in today''s fast-paced world', 'imagine a world where', 'at the end of the day'. "
-                    "These instantly signal AI-generated text.\n"
-                    "- Write in short, punchy sentences. Vary sentence length. Use fragments for emphasis.\n"
-                    "- Sound like a sharp founder writing to a peer, not a marketing agency writing a brochure.\n\n"
-                    "Creative principles:\n"
-                    "- Lead with a story, insight, or provocative angle, not a generic claim\n"
-                    "- Use concrete details: real numbers, specific scenarios, named pain points\n"
-                    "- Write like a human who deeply understands the audience's daily frustrations\n"
-                    "- Every sentence should earn its place. Cut anything that sounds like marketing filler.\n"
-                    "- Use power words, rhythm, and surprise to make copy sticky\n\n"
-                    "Section guidelines:\n"
-                    "- positioning: a bold, memorable statement that reframes how the audience "
-                    "thinks about the problem. Not 'we do X for Y' but a paradigm shift.\n"
-                    "- landing_copy: headline that stops scrolling + subhead that explains the 'how' "
-                    "+ 3 benefit bullets that paint a before/after picture\n"
-                    "- icp_notes: vivid buyer persona with day-in-the-life details, emotional triggers, "
-                    "budget authority signals, and 'hair on fire' moments\n"
-                    "- launch_email: subject line that creates curiosity (not clickbait) + body "
-                    "that tells a mini-story leading to a single clear CTA\n"
-                    "- social_post: a hook that stops the scroll in the first line, followed by "
-                    "a punchy insight or story, ending with engagement bait. NO rocket emoji.\n\n"
-                    "If social media insights are provided, match the company's existing voice and "
-                    "content themes while pushing for higher impact.\n"
-                    "Reference actual product features, audience, and differentiators, not generic placeholders."
+                    "You are a creative content writer for startups. Write with a distinctive "
+                    "human voice. You decide the tone, style, and approach.\n\n"
+                    "Write content that sounds like a real person, not a corporate bot. "
+                    "Use the company's actual website URL for links. Never use placeholder links.\n\n"
+                    "Sections: positioning, landing_copy, icp_notes, launch_email, social_post. "
+                    "Each should be ready to use as-is."
                     + company_block
-                    + social_block,
+                    + social_block
+                    + link_instruction
+                    + additional_block,
                 ),
                 ("human", request.model_dump_json()),
             ]
@@ -722,11 +928,11 @@ class OpenAILLMProvider(LLMProvider):
                 (
                     "system",
                     "You are a startup legal issue-spotter. You help founders identify regulatory, "
-                    "compliance, and legal risks before launch. Your output is educational and "
-                    "source-grounded — clearly NOT legal advice. Always cite the specific public "
+                    "compliance, and legal risks before launch. Your output is "
+                    "source-grounded. Always cite the specific public "
                     "guidance documents provided. Be concrete and practical.\n\n"
                     "Rules:\n"
-                    "- important_notice MUST state this is educational, not legal advice\n"
+                    "- important_notice MUST include a notice that a qualified attorney should review\n"
                     "- jurisdiction_scope MUST note the geographic scope of the sources\n"
                     "- relevant_sources MUST cite each source document with title and URL\n"
                     "- risk_summary should be specific to the founder's product and audience\n"
@@ -864,39 +1070,212 @@ class OpenAILLMProvider(LLMProvider):
             ]
         )
 
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        structured_model = self.model.with_structured_output(LegalDocumentDraft)
+
+        company_context = request.context.get("company_profile", "")
+        doc_type = request.document_type or "Terms of Service"
+
+        additional_block = ""
+        if request.additional_context:
+            additional_block = (
+                f"\n\nAdditional context from the founder:\n{request.additional_context}"
+            )
+
+        context_block = ""
+        if company_context:
+            context_block = (
+                f"\n\nCompany context (use this to customize the document):\n{company_context}"
+            )
+
+        return structured_model.invoke(
+            [
+                (
+                    "system",
+                    f"You are a startup legal document drafter. You create starter templates "
+                    f"for founders that are grounded in their company context and applicable regulations.\n\n"
+                    f"You are drafting a: {doc_type}\n\n"
+                    "Rules:\n"
+                    "- important_notice MUST state this is a starter template that should be reviewed by an attorney\n"
+                    "- document_title should be the formal document name\n"
+                    "- document_body should be a complete, well-structured document with numbered sections. "
+                    "Use the company's actual name, product description, and details throughout. "
+                    "Include all standard clauses for this document type.\n"
+                    "- key_provisions should list the major provisions with brief explanations\n"
+                    "- customization_notes should flag areas that need attorney review or customization\n"
+                    "- jurisdiction_notes should note jurisdiction-specific requirements\n"
+                    "- next_steps should tell the founder what to do with this draft\n"
+                    "- follow_up_needed: if you need more information to produce a better draft, "
+                    "list specific questions. Leave empty if context is sufficient.\n\n"
+                    "Write in plain, readable language. Avoid unnecessary legalese where possible "
+                    "while maintaining legal precision where required."
+                    + context_block
+                    + additional_block,
+                ),
+                (
+                    "human",
+                    f"Draft a {doc_type} for this startup.\n\n"
+                    f"Founder request:\n{request.model_dump_json()}\n\n"
+                    f"Reference sources:\n{source_context}",
+                ),
+            ]
+        )
+
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
+        structured_model = self.model.with_structured_output(LegalChatResponse)
+
+        mode_instructions = {
+            LegalChatMode.LEGAL_ADVICE: (
+                "You are a startup legal advisor. "
+                "Help founders understand legal risks, compliance requirements, and regulatory obligations. "
+                "Cover areas like: entity formation, IP protection, employment law, data privacy, "
+                "contract essentials, securities compliance, and industry-specific regulations.\n\n"
+                "Be specific and actionable. Reference the regulatory sources provided. "
+                "When you identify areas that need more detail, include follow-up questions."
+            ),
+            LegalChatMode.TAX: (
+                "You are a startup tax advisor. "
+                "Help founders understand tax obligations, planning strategies, and compliance requirements. "
+                "Cover areas like: entity tax classification, sales tax/VAT, R&D tax credits, "
+                "employee vs contractor tax implications, international tax, state tax nexus, "
+                "and common founder tax mistakes.\n\n"
+                "Be specific about which forms, deadlines, and thresholds apply. "
+                "When you need more info about their situation, include follow-up questions."
+            ),
+            LegalChatMode.DOCUMENT_DRAFTING: (
+                "You are a legal document drafter for startups. Help founders create well-structured "
+                "legal documents. When the user asks for a document, generate it in the 'document' field "
+                "as a LegalDocumentDraft with proper formatting.\n\n"
+                "Documents should use clear markdown formatting:\n"
+                "- Use ## for major section headings\n"
+                "- Use ### for subsections\n"
+                "- Use numbered lists (1., 2., etc.) for clauses\n"
+                "- Use **bold** for defined terms and key phrases\n"
+                "- Use proper paragraph spacing\n"
+                "- Include the company's actual name and details throughout\n"
+                "- Write in plain, readable language while maintaining legal precision\n\n"
+                f"{'Document type requested: ' + document_type if document_type else 'Ask what type of document they need.'}\n\n"
+                "If you need more information before drafting, ask specific questions in follow_up_questions. "
+                "Only generate the document field when you have enough context to produce a quality draft."
+            ),
+        }
+
+        system_prompt = (
+            mode_instructions.get(mode, mode_instructions[LegalChatMode.LEGAL_ADVICE])
+            + "\n\nCRITICAL RULES:\n"
+            "- Be specific and actionable in your guidance\n"
+            "- Cite specific sources when available\n"
+            "- Be concrete and practical, not generic\n"
+            "- Return follow_up_questions as a JSON array of strings for questions you need answered\n"
+            "- Return sources_used as a JSON array of source names/URLs referenced\n"
+            "- For document_drafting mode: set document field with a LegalDocumentDraft when generating a document. "
+            "The document_body should be well-formatted with markdown headings, numbered clauses, and bold terms.\n"
+        )
+
+        if company_context:
+            system_prompt += (
+                f"\n\nCompany context (use to personalize your response):\n{company_context}\n\n"
+                "Use the company details above in your response. Don't re-ask for info already provided."
+            )
+
+        if source_context:
+            system_prompt += f"\n\nRegulatory reference sources:\n{source_context}"
+
+        chat_messages: list[tuple[str, str]] = [("system", system_prompt)]
+        for msg in messages:
+            chat_messages.append((msg.role if msg.role == "user" else "assistant", msg.content))
+
+        return structured_model.invoke(chat_messages)
+
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        structured_model = self.model.with_structured_output(LegalOverviewResponse)
+
+        system_prompt = (
+            "You are a startup legal analyst. Given a company's profile, generate a comprehensive "
+            "legal overview that identifies potential legal issues, recommends documents to prepare, "
+            "and flags compliance areas.\n\n"
+            "For each potential issue, assess severity (high/medium/low) based on:\n"
+            "- high: immediate legal risk or regulatory requirement\n"
+            "- medium: important but not immediately critical\n"
+            "- low: good practice but not urgent\n\n"
+            "In 'missing_info', list specific questions about information you'd need from the founder "
+            "to give more targeted advice. These should be practical questions about their business "
+            "operations, data practices, team structure, etc.\n\n"
+            "In 'recommended_documents', list legal documents this company should have.\n"
+            "In 'compliance_areas', list regulatory areas relevant to their business.\n\n"
+            "Provide actionable, specific guidance grounded in the company context."
+        )
+
+        human_msg = "Generate a legal overview for this company."
+        if company_context:
+            human_msg += f"\n\nCompany context:\n{company_context}"
+        if source_context:
+            human_msg += f"\n\nRegulatory reference sources:\n{source_context}"
+
+        return structured_model.invoke([("system", system_prompt), ("human", human_msg)])
+
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> ContentChatResponse:
+        structured_model = self.content_model.with_structured_output(ContentChatResponse)
+
+        workflow_hint = ""
+        if workflow:
+            workflow_hint = f"\nThe user selected the '{workflow.replace('_', ' ')}' workflow."
+
+        system_prompt = (
+            "You are a creative content writer with a distinctive human voice. "
+            "Write like a real person — not a corporate marketing bot.\n\n"
+            "Rules:\n"
+            "- Generate content immediately. Set content_ready=true and put output in generated_content.\n"
+            "- You decide the tone, style, platform specifics, and structure. "
+            "Only follow specific constraints if the user explicitly asks for them.\n"
+            "- Write with personality, opinion, and edge. Avoid generic marketing speak.\n"
+            "- Use the company's real website URL if available. Never use placeholder links.\n"
+            "- Only ask follow-up questions if you truly need specific assets (photos, screenshots).\n"
+            "- generated_content keys should be descriptive (e.g. 'linkedin_post', 'email_draft')."
+            + workflow_hint
+        )
+
+        if company_context:
+            system_prompt += (
+                f"\n\nCompany context (use to personalize):\n{company_context}\n\n"
+                "Use these details in your suggestions. Don't re-ask for info already provided."
+            )
+
+        chat_messages: list[tuple[str, str]] = [("system", system_prompt)]
+        for msg in messages:
+            chat_messages.append((msg.role if msg.role == "user" else "assistant", msg.content))
+
+        return structured_model.invoke(chat_messages)
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
         company_context: str,
     ) -> SocialPost:
-        structured_model = self.model.with_structured_output(SocialPost)
-
-        platform_guidance = {
-            "linkedin": (
-                "LinkedIn best practices: 1000-1500 chars. "
-                "Start with a bold hook line that makes people stop scrolling. "
-                "Use short paragraphs (1-2 sentences each) with line breaks between them. "
-                "Include a personal insight or contrarian take. 3-5 relevant hashtags at the end."
-            ),
-            "twitter": (
-                "Twitter/X best practices: Max 280 chars. "
-                "Punchy, provocative, or surprisingly insightful. "
-                "Make people want to retweet. 1-2 hashtags max."
-            ),
-            "instagram": (
-                "Instagram best practices: 500-1000 chars. "
-                "Open with an emotional hook. Tell a micro-story. "
-                "Use emoji strategically (not excessively). 10-15 hashtags."
-            ),
-            "facebook": (
-                "Facebook best practices: 200-500 chars. "
-                "Conversational and relatable. Ask a question or share a realization. 2-3 hashtags."
-            ),
-        }
-        guidance = platform_guidance.get(request.platform, "Professional and engaging.")
+        structured_model = self.content_model.with_structured_output(SocialPost)
 
         company_block = (
-            f"\n\nCompany context (use this to ground the post):\n{company_context}"
+            f"\n\nCompany context:\n{company_context}"
             if company_context
             else ""
         )
@@ -907,31 +1286,35 @@ class OpenAILLMProvider(LLMProvider):
             else ""
         )
 
+        website_url = ""
+        if company_context:
+            for line in company_context.split("\n"):
+                if line.startswith("Website:"):
+                    website_url = line.split(":", 1)[1].strip()
+                    break
+
+        link_instruction = ""
+        if website_url:
+            link_instruction = (
+                f"\n\nThe company website is {website_url}. "
+                "Use this actual URL where a link is needed. Never use placeholder links."
+            )
+
         return structured_model.invoke(
             [
                 (
                     "system",
-                    f"You are a top-tier social media strategist who writes posts that go viral. "
-                    f"Generate a {request.platform} post that people actually want to engage with.\n\n"
-                    f"Platform guidelines: {guidance}\n"
-                    f"Tone: {request.tone}\n\n"
-                    "CRITICAL WRITING RULES:\n"
-                    "- NEVER use em dashes or long dashes. Use commas, periods, or rewrite.\n"
-                    "- NEVER use these overused AI emoji: rocket, lightbulb, fire, sparkles, brain, gem, star, target, megaphone, "
-                    "pointing down, muscle, chart, check mark, crystal ball, trophy.\n"
-                    "- NEVER use phrases like 'game-changer', 'revolutionize', 'unlock', 'supercharge', 'seamless', "
-                    "'cutting-edge', 'robust', 'elevate', 'dive into'. These scream AI.\n"
-                    "- Sound like a real person sharing a genuine insight, not a corporate bot.\n\n"
-                    "Content rules:\n"
-                    "- caption: Start with an irresistible hook (question, bold claim, or story opener). "
-                    "The first line determines if anyone reads the rest. "
-                    "Write like a founder sharing real experience, not a marketing bot. Ready to copy-paste.\n"
-                    "- hashtags: relevant hashtags as a single string\n"
-                    "- call_to_action: specific, compelling next step (not generic 'learn more')\n"
-                    "- follow_up_needed: if you need more info from the user to write a better post, "
-                    "list specific questions here. Leave empty if context is sufficient."
+                    f"You are a creative social media writer. Write a {request.platform} post "
+                    "that sounds like a real human wrote it. You decide the tone, style, and structure. "
+                    "Write with personality and edge.\n\n"
+                    "Output:\n"
+                    "- caption: the post text, ready to copy-paste\n"
+                    "- hashtags: relevant hashtags\n"
+                    "- call_to_action: a natural next step for the reader\n"
+                    "- follow_up_needed: leave empty unless you need specific info"
                     + company_block
-                    + extra_block,
+                    + extra_block
+                    + link_instruction,
                 ),
                 (
                     "human",
@@ -1034,6 +1417,38 @@ class ResilientLLMProvider(LLMProvider):
     ) -> DocumentReviewResult:
         return self._try_primary("review_document", document_text, source_context, jurisdictions)
 
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        return self._try_primary("generate_legal_draft", request, source_context)
+
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
+        return self._try_primary("chat_legal", messages, mode, source_context, company_context, document_type)
+
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        return self._try_primary("generate_legal_overview", company_context, source_context)
+
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> ContentChatResponse:
+        return self._try_primary("chat_content", messages, company_context, workflow)
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -1115,6 +1530,38 @@ class UnconfiguredLLMProvider(LLMProvider):
         source_context: str,
         jurisdictions: list[str],
     ) -> DocumentReviewResult:
+        self._raise_unconfigured()
+
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        self._raise_unconfigured()
+
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
+        self._raise_unconfigured()
+
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        self._raise_unconfigured()
+
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> ContentChatResponse:
         self._raise_unconfigured()
 
     def generate_social_post(

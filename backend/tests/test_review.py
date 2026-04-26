@@ -35,7 +35,7 @@ def test_review_approves_complete_legal_scan() -> None:
             title="Founder Legal Issue Scan",
             summary="Generated legal scan",
             output={
-                "important_notice": "This is educational issue-spotting for founders, not legal advice.",
+                "important_notice": "This is a legal risk scan for founders. A qualified lawyer should review.",
                 "jurisdiction_scope": "Seed sources are currently United States-focused.",
                 "relevant_sources": "FTC Truth in Advertising (US): https://www.ftc.gov/business-guidance/advertising-marketing/truth-advertising",
                 "risk_summary": "Marketing claims and privacy promises need substantiation before launch.",
