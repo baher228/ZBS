@@ -188,6 +188,60 @@ export async function generateSocialPost(
   return response.json();
 }
 
+/* ── Legal Chat ─────────────────────────────────────────── */
+
+export type LegalChatMode = "legal_advice" | "tax" | "document_drafting";
+
+export type LegalChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type LegalDocumentDraft = {
+  important_notice: string;
+  document_title: string;
+  document_body: string;
+  key_provisions: string;
+  customization_notes: string;
+  jurisdiction_notes: string;
+  next_steps: string;
+  follow_up_needed?: string;
+};
+
+export type LegalChatResponse = {
+  reply: string;
+  document: LegalDocumentDraft | null;
+  follow_up_questions: string[];
+  mode: LegalChatMode;
+  sources_used: string[];
+};
+
+export async function sendLegalChat(
+  apiBaseUrl: string,
+  messages: LegalChatMessage[],
+  mode: LegalChatMode,
+  documentType?: string,
+  jurisdictions?: string[],
+): Promise<LegalChatResponse> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/legal/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages,
+      mode,
+      document_type: documentType || null,
+      jurisdictions: jurisdictions || ["US"],
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export async function deleteCompanyProfile(apiBaseUrl: string): Promise<boolean> {
   try {
     const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company`, {

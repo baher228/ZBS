@@ -62,7 +62,7 @@ def _build_contextual_prompt(section: str, section_text: str, company_context: s
 
         model = ChatOpenAI(
             model="gpt-4o-mini",
-            api_key=settings.pydantic_ai_api_key,
+            api_key=settings.resolved_gateway_api_key,
             base_url="https://ai.pydantic.dev/openai/v1",
             max_tokens=200,
             temperature=0.7,

@@ -168,3 +168,32 @@ class TaskResponse(BaseModel):
     agent_response: AgentResponse | None = None
     review: ReviewResult | None = None
     decision: OrchestratorDecision
+
+
+# ── Legal Chat Models ──────────────────────────────────────
+
+
+class LegalChatMode(StrEnum):
+    LEGAL_ADVICE = "legal_advice"
+    TAX = "tax"
+    DOCUMENT_DRAFTING = "document_drafting"
+
+
+class LegalChatMessage(BaseModel):
+    role: str = Field(..., pattern=r"^(user|assistant)$")
+    content: str = Field(..., min_length=1)
+
+
+class LegalChatRequest(BaseModel):
+    messages: list[LegalChatMessage] = Field(..., min_length=1)
+    mode: LegalChatMode = LegalChatMode.LEGAL_ADVICE
+    document_type: str | None = None
+    jurisdictions: list[str] = Field(default_factory=lambda: ["US"])
+
+
+class LegalChatResponse(BaseModel):
+    reply: str
+    document: LegalDocumentDraft | None = None
+    follow_up_questions: list[str] = Field(default_factory=list)
+    mode: LegalChatMode
+    sources_used: list[str] = Field(default_factory=list)

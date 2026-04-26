@@ -18,6 +18,9 @@ from app.agents.models import (
     AgentResponse,
     ContentPackage,
     DocumentReviewResult,
+    LegalChatMessage,
+    LegalChatMode,
+    LegalChatResponse,
     LegalDocumentDraft,
     LegalIssueScan,
     LLMReviewEvaluation,
@@ -116,6 +119,17 @@ class LLMProvider(ABC):
         source_context: str,
     ) -> LegalDocumentDraft:
         """Draft a legal document (ToS, privacy policy, NDA, etc.) for a startup."""
+
+    @abstractmethod
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
+        """Handle a multi-turn legal chat conversation."""
 
     @abstractmethod
     def generate_social_post(
@@ -503,6 +517,47 @@ class MockLLMProvider(LLMProvider):
                 "4. Ensure alignment with your privacy policy and other legal documents\n"
                 "5. Have counsel approve before publishing"
             ),
+        )
+
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
+        last_msg = messages[-1].content if messages else "general legal question"
+        mode_labels = {
+            LegalChatMode.LEGAL_ADVICE: "legal advice",
+            LegalChatMode.TAX: "tax guidance",
+            LegalChatMode.DOCUMENT_DRAFTING: "document drafting",
+        }
+        label = mode_labels.get(mode, "legal")
+
+        reply = (
+            f"[Mock {label} response] Based on your question about: {last_msg[:100]}. "
+            "This is educational guidance, not legal advice. Consult a qualified attorney."
+        )
+
+        document = None
+        if mode == LegalChatMode.DOCUMENT_DRAFTING and document_type:
+            document = LegalDocumentDraft(
+                important_notice="This is a starter template, not legal advice.",
+                document_title=f"Draft {document_type}",
+                document_body=f"DRAFT {document_type.upper()}\n\n1. TERMS\nStandard provisions apply.\n\n2. OBLIGATIONS\nParties agree to act in good faith.",
+                key_provisions="1. Standard terms\n2. Obligations\n3. Liability",
+                customization_notes="Customize with attorney review.",
+                jurisdiction_notes="US law applies by default.",
+                next_steps="1. Review with attorney\n2. Customize\n3. Execute",
+            )
+
+        return LegalChatResponse(
+            reply=reply,
+            document=document,
+            follow_up_questions=["What jurisdictions do you operate in?", "Do you collect personal data?"],
+            mode=mode,
+            sources_used=["FTC Act", "CCPA Guidelines"],
         )
 
     def generate_social_post(
@@ -1009,6 +1064,79 @@ class OpenAILLMProvider(LLMProvider):
             ]
         )
 
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
+        structured_model = self.model.with_structured_output(LegalChatResponse)
+
+        mode_instructions = {
+            LegalChatMode.LEGAL_ADVICE: (
+                "You are a startup legal advisor providing educational guidance. "
+                "Help founders understand legal risks, compliance requirements, and regulatory obligations. "
+                "Cover areas like: entity formation, IP protection, employment law, data privacy, "
+                "contract essentials, securities compliance, and industry-specific regulations.\n\n"
+                "Be specific and actionable. Reference the regulatory sources provided. "
+                "When you identify areas that need more detail, include follow-up questions."
+            ),
+            LegalChatMode.TAX: (
+                "You are a startup tax advisor providing educational guidance. "
+                "Help founders understand tax obligations, planning strategies, and compliance requirements. "
+                "Cover areas like: entity tax classification, sales tax/VAT, R&D tax credits, "
+                "employee vs contractor tax implications, international tax, state tax nexus, "
+                "and common founder tax mistakes.\n\n"
+                "Be specific about which forms, deadlines, and thresholds apply. "
+                "When you need more info about their situation, include follow-up questions."
+            ),
+            LegalChatMode.DOCUMENT_DRAFTING: (
+                "You are a legal document drafter for startups. Help founders create well-structured "
+                "legal documents. When the user asks for a document, generate it in the 'document' field "
+                "as a LegalDocumentDraft with proper formatting.\n\n"
+                "Documents should use clear markdown formatting:\n"
+                "- Use ## for major section headings\n"
+                "- Use ### for subsections\n"
+                "- Use numbered lists (1., 2., etc.) for clauses\n"
+                "- Use **bold** for defined terms and key phrases\n"
+                "- Use proper paragraph spacing\n"
+                "- Include the company's actual name and details throughout\n"
+                "- Write in plain, readable language while maintaining legal precision\n\n"
+                f"{'Document type requested: ' + document_type if document_type else 'Ask what type of document they need.'}\n\n"
+                "If you need more information before drafting, ask specific questions in follow_up_questions. "
+                "Only generate the document field when you have enough context to produce a quality draft."
+            ),
+        }
+
+        system_prompt = (
+            mode_instructions.get(mode, mode_instructions[LegalChatMode.LEGAL_ADVICE])
+            + "\n\nCRITICAL RULES:\n"
+            "- Your reply MUST state this is educational guidance, NOT legal advice\n"
+            "- Cite specific sources when available\n"
+            "- Be concrete and practical, not generic\n"
+            "- Return follow_up_questions as a JSON array of strings for questions you need answered\n"
+            "- Return sources_used as a JSON array of source names/URLs referenced\n"
+            "- For document_drafting mode: set document field with a LegalDocumentDraft when generating a document. "
+            "The document_body should be well-formatted with markdown headings, numbered clauses, and bold terms.\n"
+        )
+
+        if company_context:
+            system_prompt += (
+                f"\n\nCompany context (use to personalize your response):\n{company_context}\n\n"
+                "Use the company details above in your response. Don't re-ask for info already provided."
+            )
+
+        if source_context:
+            system_prompt += f"\n\nRegulatory reference sources:\n{source_context}"
+
+        chat_messages: list[tuple[str, str]] = [("system", system_prompt)]
+        for msg in messages:
+            chat_messages.append((msg.role if msg.role == "user" else "assistant", msg.content))
+
+        return structured_model.invoke(chat_messages)
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -1205,6 +1333,16 @@ class ResilientLLMProvider(LLMProvider):
     ) -> LegalDocumentDraft:
         return self._try_primary("generate_legal_draft", request, source_context)
 
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
+        return self._try_primary("chat_legal", messages, mode, source_context, company_context, document_type)
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -1293,6 +1431,16 @@ class UnconfiguredLLMProvider(LLMProvider):
         request: AgentRequest,
         source_context: str,
     ) -> LegalDocumentDraft:
+        self._raise_unconfigured()
+
+    def chat_legal(
+        self,
+        messages: list[LegalChatMessage],
+        mode: LegalChatMode,
+        source_context: str,
+        company_context: str,
+        document_type: str | None = None,
+    ) -> LegalChatResponse:
         self._raise_unconfigured()
 
     def generate_social_post(
