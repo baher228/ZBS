@@ -60,10 +60,15 @@ def _build_contextual_prompt(section: str, section_text: str, company_context: s
     try:
         from langchain_openai import ChatOpenAI
 
+        api_key = settings.resolved_gateway_api_key or settings.resolved_llm_api_key
+        base_url = settings.resolved_gateway_base_url
+        if not api_key:
+            return _fallback_prompt(section, section_text)
+
         model = ChatOpenAI(
             model="gpt-4o-mini",
-            api_key=settings.resolved_gateway_api_key,
-            base_url="https://ai.pydantic.dev/openai/v1",
+            api_key=api_key,
+            base_url=base_url,
             max_tokens=200,
             temperature=0.7,
         )
