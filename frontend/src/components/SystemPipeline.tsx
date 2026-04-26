@@ -50,7 +50,7 @@ export function SystemPipeline({
         <div className="flex items-center gap-4">
           <span className="label-mono">Fig. 01</span>
           <span className="text-foreground/40">/</span>
-          <span className="label-mono">Master Orchestrator — Live Pipeline</span>
+          <span className="label-mono">Master Orchestrator - Live Pipeline</span>
         </div>
         <div className="flex items-center gap-2 label-mono text-success">
           <span className="h-1.5 w-1.5 bg-success animate-pulse-glow" />

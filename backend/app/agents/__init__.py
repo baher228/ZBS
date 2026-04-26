@@ -1,6 +1,7 @@
 from app.agents.capabilities import (
     DemoAgent,
     DemoBriefAgent,
+    DemoPlanAgent,
     OrchestratorAgent,
     OutreachAgent,
     ReadinessAgent,
@@ -21,6 +22,7 @@ __all__ = [
     "ContentGeneratorAgent",
     "DemoAgent",
     "DemoBriefAgent",
+    "DemoPlanAgent",
     "DemoChatGraphRunner",
     "LegalAgent",
     "Orchestrator",

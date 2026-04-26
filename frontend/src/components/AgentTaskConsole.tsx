@@ -172,14 +172,14 @@ export function AgentTaskConsole({
           >
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
-              No company profile — <span className="text-primary">set up now</span> for better
+              No company profile - <span className="text-primary">set up now</span> for better
               results
             </span>
           </Link>
         )}
 
         <div className="mt-8 space-y-4">
-          {/* Hide API Base URL on legal page — not needed for end users */}
+          {/* Hide API Base URL on legal page - not needed for end users */}
           {!isLegal && (
             <label className="block">
               <span className="label-mono">API Base URL</span>
@@ -227,7 +227,7 @@ export function AgentTaskConsole({
             </div>
           )}
 
-          {/* Startup URL — hidden on legal page since website is already on onboarding */}
+          {/* Startup URL - hidden on legal page since website is already on onboarding */}
           {!isLegal && (
             <label className="block">
               <span className="label-mono">
@@ -243,7 +243,7 @@ export function AgentTaskConsole({
             </label>
           )}
 
-          {/* Jurisdiction selector — only when no company profile (profile has jurisdictions) */}
+          {/* Jurisdiction selector - only when no company profile (profile has jurisdictions) */}
           {isLegal && !companyProfile && (
             <div>
               <span className="label-mono">Jurisdictions</span>
@@ -266,7 +266,7 @@ export function AgentTaskConsole({
             </div>
           )}
 
-          {/* Industry selector — only when no company profile (profile has industry) */}
+          {/* Industry selector - only when no company profile (profile has industry) */}
           {isLegal && !companyProfile && (
             <div>
               <span className="label-mono">Industries (optional)</span>
@@ -289,7 +289,7 @@ export function AgentTaskConsole({
             </div>
           )}
 
-          {/* Document upload — legal page only */}
+          {/* Document upload - legal page only */}
           {isLegal && (
             <div className="space-y-2">
               <div className="flex items-center gap-3">
@@ -347,7 +347,7 @@ export function AgentTaskConsole({
             </div>
           )}
 
-          {/* Additional context — always visible */}
+          {/* Additional context - always visible */}
           <label className="block">
             <span className="label-mono">
               Additional Context{" "}
@@ -526,7 +526,7 @@ function OutputSection({
     const sectionName = sectionKey.replace("_image", "").replaceAll("_", " ");
     return (
       <article className="border border-foreground/15 bg-card/40 p-4">
-        <div className="label-mono mb-2">Generated Image — {sectionName}</div>
+        <div className="label-mono mb-2">Generated Image - {sectionName}</div>
         <img
           src={value}
           alt={`Generated visual for ${sectionName}`}

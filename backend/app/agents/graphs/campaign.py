@@ -10,6 +10,7 @@ from app.agents.campaign_models import (
 )
 from app.agents.capabilities import (
     DemoBriefAgent,
+    DemoPlanAgent,
     OrchestratorAgent,
     OutreachAgent,
     ReadinessAgent,
@@ -28,6 +29,7 @@ class CampaignGraphRunner:
         self.strategist = StrategistAgent(llm_provider)
         self.research = ResearchAgent(llm_provider)
         self.demo_brief = DemoBriefAgent(llm_provider)
+        self.demo_plan = DemoPlanAgent(llm_provider)
         self.outreach = OutreachAgent(llm_provider)
         self.readiness = ReadinessAgent()
         self.graph = self._compile_graph()
@@ -40,6 +42,7 @@ class CampaignGraphRunner:
             icp=state["icp"],
             prospect_profile=state["prospect_profile"],
             demo_brief=state["demo_brief"],
+            demo_plan=state["demo_plan"],
             outreach_message=state["outreach_message"],
             demo_room=state["demo_room"],
             readiness_score=state["readiness_score"],
@@ -52,6 +55,7 @@ class CampaignGraphRunner:
         graph.add_node("strategist", self._strategist)
         graph.add_node("research", self._research)
         graph.add_node("demo_brief", self._demo_brief)
+        graph.add_node("demo_plan", self._demo_plan)
         graph.add_node("outreach", self._outreach)
         graph.add_node("readiness", self._readiness)
         graph.add_node("persist_demo_room", self._persist_demo_room)
@@ -60,7 +64,8 @@ class CampaignGraphRunner:
         graph.add_edge("orchestrator", "strategist")
         graph.add_edge("strategist", "research")
         graph.add_edge("research", "demo_brief")
-        graph.add_edge("demo_brief", "outreach")
+        graph.add_edge("demo_brief", "demo_plan")
+        graph.add_edge("demo_plan", "outreach")
         graph.add_edge("outreach", "readiness")
         graph.add_edge("readiness", "persist_demo_room")
         graph.add_edge("persist_demo_room", END)
@@ -105,6 +110,21 @@ class CampaignGraphRunner:
             ],
         }
 
+    def _demo_plan(self, state: CampaignGraphState) -> CampaignGraphState:
+        demo_plan = self.demo_plan.create_plan(
+            state["request"],
+            state["product_profile"],
+            state["prospect_profile"],
+            state["demo_brief"],
+        )
+        return {
+            "demo_plan": demo_plan,
+            "workflow_steps": [
+                *state["workflow_steps"],
+                self.demo_plan.completed_step(),
+            ],
+        }
+
     def _outreach(self, state: CampaignGraphState) -> CampaignGraphState:
         demo_room_url = f"{settings.frontend_base_url.rstrip('/')}/demo-rooms/{state['demo_room_id']}"
         outreach_message = self.outreach.write_outreach(
@@ -141,6 +161,7 @@ class CampaignGraphRunner:
             prospect_company=prospect.company_name,
             headline=demo_brief.title,
             relevance_summary=prospect.relevance_angle,
+            demo_plan=state["demo_plan"],
             suggested_questions=demo_brief.qualifying_questions,
         )
         campaign = CampaignResponse(
@@ -149,6 +170,7 @@ class CampaignGraphRunner:
             icp=state["icp"],
             prospect_profile=state["prospect_profile"],
             demo_brief=demo_brief,
+            demo_plan=state["demo_plan"],
             outreach_message=state["outreach_message"],
             demo_room=demo_room,
             readiness_score=state["readiness_score"],

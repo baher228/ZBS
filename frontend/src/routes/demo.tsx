@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 export const Route = createFileRoute("/demo")({
   head: () => ({
     meta: [
-      { title: "Demo Room — Demeo" },
+      { title: "Demo Room - Demeo" },
       { name: "description", content: "A private AI demo room tailored to each prospect." },
       { property: "og:title", content: "Demeo Demo Room" },
       { property: "og:description", content: "Live AI sales demo, personalized to your company." },
@@ -29,9 +29,9 @@ const RESPONSES: Record<string, string> = {
   "What's the ROI?":
     "Average customer sees:\n• 6× pipeline volume in 30 days\n• 41% reply rate (vs 1.8% baseline)\n• $0.38 per qualified demo vs $180 SDR cost\n\nFor a team your size, that's roughly $2.1M in pipeline saved per quarter.",
   "How is this different from Outreach.io?":
-    "Outreach automates *sending*. We replace the *meeting itself* with an AI demo room.\n\nProspects get answers immediately, 24/7, in their language, tailored to their stack — no calendar tag, no SDR script, no friction.",
+    "Outreach automates *sending*. We replace the *meeting itself* with an AI demo room.\n\nProspects get answers immediately, 24/7, in their language, tailored to their stack - no calendar tag, no SDR script, no friction.",
   "Can it integrate with HubSpot?":
-    "Yes — native two-way sync. Every demo room conversation lands in HubSpot with lead score, objections handled, and a drafted follow-up email ready to send.",
+    "Yes - native two-way sync. Every demo room conversation lands in HubSpot with lead score, objections handled, and a drafted follow-up email ready to send.",
 };
 
 function DemoRoom() {
@@ -39,7 +39,7 @@ function DemoRoom() {
     {
       role: "ai",
       content:
-        "Hi Karri 👋 — I'm the AI demo room built specifically for Linear. I've already studied your changelog, your team structure, and how teams like Vercel and Cursor use us. Ask me anything — or pick a starting point below.",
+        "Hi Karri 👋 - I'm the AI demo room built specifically for Linear. I've already studied your changelog, your team structure, and how teams like Vercel and Cursor use us. Ask me anything - or pick a starting point below.",
     },
   ]);
   const [typing, setTyping] = useState(false);
@@ -57,7 +57,7 @@ function DemoRoom() {
     setTyping(true);
     const reply =
       RESPONSES[text] ??
-      "Great question. Based on what I know about your team, here's the short answer: our AI handles the discovery, qualification, and objection-handling work that typically eats 60% of an AE's week — leaving them to close. Want me to show you the demo flow?";
+      "Great question. Based on what I know about your team, here's the short answer: our AI handles the discovery, qualification, and objection-handling work that typically eats 60% of an AE's week - leaving them to close. Want me to show you the demo flow?";
     setTimeout(() => {
       setTyping(false);
       setMessages((m) => [...m, { role: "ai", content: reply }]);

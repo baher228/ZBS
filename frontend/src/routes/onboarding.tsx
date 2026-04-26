@@ -201,7 +201,7 @@ function OnboardingPage() {
             </div>
           </div>
           <p className="text-sm text-foreground/70 leading-relaxed max-w-lg">
-            Fill in your company details once. All agents — Content Generator, Legal, and Review —
+            Fill in your company details once. All agents - Content Generator, Legal, and Review -
             will use this context to produce tailored, specific output.
           </p>
         </div>

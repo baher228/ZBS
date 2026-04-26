@@ -177,7 +177,7 @@ function MarketingResearchPage() {
           <div className="mb-4 flex items-center gap-2 border border-success/30 bg-success/5 px-4 py-2.5">
             <Building2 className="h-4 w-4 text-success" />
             <span className="text-xs text-foreground/80">
-              Context: <strong>{companyProfile.name}</strong> — {companyProfile.industry || "General"}{" "}
+              Context: <strong>{companyProfile.name}</strong> - {companyProfile.industry || "General"}{" "}
               · {companyProfile.stage}
             </span>
             <Link
@@ -194,7 +194,7 @@ function MarketingResearchPage() {
           >
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
-              No company profile — <span className="text-primary">set up now</span> for better
+              No company profile - <span className="text-primary">set up now</span> for better
               research
             </span>
           </Link>
@@ -303,7 +303,6 @@ function MarketingResearchPage() {
     </div>
   );
 }
-
 /* ── Research Chat Bubble ─────────────────────────────────── */
 
 function ResearchChatBubble({
@@ -367,4 +366,3 @@ function ResearchChatBubble({
     </div>
   );
 }
-

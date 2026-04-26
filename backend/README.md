@@ -36,14 +36,21 @@ The main product slice uses LangGraph:
 2. Strategist Agent creates the product profile and ICP.
 3. Research Agent creates the prospect profile.
 4. Demo Brief step creates the prospect-specific demo narrative.
-5. Outreach Agent writes the cold message with the demo room link.
-6. Readiness step scores whether the room is specific enough to send.
-7. Demo room is persisted in memory for chat and qualification.
+5. Demo Plan Agent creates guided demo steps, assets needed, talk tracks, and routing rules.
+6. Outreach Agent writes the cold message with the demo room link.
+7. Readiness step scores whether the room is specific enough to send.
+8. Demo room is persisted in memory for chat and qualification.
 
 Reusable AI capabilities live under `app/agents/capabilities`. Graphs live under
 `app/agents/graphs` and compose those capabilities into workflows. This keeps the
 agents reusable for future non-demo-room workflows such as ICP-only, outreach-only,
 research-only, or post-campaign learning flows.
+
+Seeded scenarios for testing and demos:
+
+- `AI GTM Office` selling to `Mubit`
+- `TracePilot` selling to `Render`
+- `SecureShip` selling to `Linear`
 
 Example campaign request:
 

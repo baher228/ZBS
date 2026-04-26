@@ -14,3 +14,4 @@ def force_mock_llm_for_tests(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "fal_api_key", None)
     monkeypatch.setattr(settings, "mubit_enabled", False)
     monkeypatch.setattr(settings, "mubit_api_key", None)
+    monkeypatch.setattr(settings, "gemini_api_key", None)

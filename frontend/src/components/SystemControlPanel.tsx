@@ -36,7 +36,7 @@ type AgentDef = {
   role: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Icon: any;
-  badge: string; // full literal Tailwind classes — required for v4 scanner
+  badge: string; // full literal Tailwind classes - required for v4 scanner
   dot: string;
   input: string;
   output: string; // "DEMO_CHAT" triggers special render
@@ -95,7 +95,7 @@ const AGENTS: AgentDef[] = [
     dot: "bg-emerald-500",
     input: "ICP + prospect: Karri S., Head of Growth, Linear",
     output:
-      "Hi Karri — noticed Linear's onboarding is best-in-class. We help fast-shipping teams turn launches into self-serve demo rooms…",
+      "Hi Karri - noticed Linear's onboarding is best-in-class. We help fast-shipping teams turn launches into self-serve demo rooms…",
   },
   {
     id: "email",
@@ -125,7 +125,7 @@ const AGENTS: AgentDef[] = [
     Icon: Star,
     badge: "bg-stone-100 text-stone-700",
     dot: "bg-stone-500",
-    input: "Demo session transcript — 7 messages, 4m 12s",
+    input: "Demo session transcript - 7 messages, 4m 12s",
     output:
       "Lead score: 87/100. Buying intent: High. Objections: pricing, HubSpot sync. Next: technical call.",
   },
@@ -156,8 +156,8 @@ const FEED_MESSAGES: CommMessage[] = [
   { id: "m1", fromId: "code",      toId: "marketing",    summary: "Parsed product features and value proposition" },
   { id: "m2", fromId: "marketing", toId: "content",      summary: "Generated ICP: B2B SaaS, 50–500 engineers, PLG motion" },
   { id: "m3", fromId: "content",   toId: "email",        summary: "Wrote personalized outreach for 412 prospects" },
-  { id: "m4", fromId: "email",     toId: "demo",         summary: "User clicked link — demo session initializing" },
-  { id: "m5", fromId: "demo",      toId: "review",       summary: "Demo complete — objections captured, lead scored 87/100" },
+  { id: "m4", fromId: "email",     toId: "demo",         summary: "User clicked link - demo session initializing" },
+  { id: "m5", fromId: "demo",      toId: "review",       summary: "Demo complete - objections captured, lead scored 87/100" },
   { id: "m6", fromId: "review",    toId: "orchestrator", summary: "Pipeline complete. 74 demos, 87 avg lead score." },
 ];
 
@@ -603,7 +603,7 @@ function MiniDemoChat() {
           Demo Agent
         </div>
         <p className="text-sm text-foreground leading-relaxed flex-1 font-mono font-semibold">
-          Yes — HubSpot sync is two-way, 4 min to configure. Want me to show the setup flow?
+          Yes - HubSpot sync is two-way, 4 min to configure. Want me to show the setup flow?
         </p>
       </div>
     </div>

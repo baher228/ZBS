@@ -19,6 +19,7 @@ import { Route as ContentRouteImport } from './routes/content'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DemoRoomLiveRouteImport } from './routes/demo-room.live'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -70,6 +71,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoRoomLiveRoute = DemoRoomLiveRouteImport.update({
+  id: '/demo-room/live',
+  path: '/demo-room/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/legal': typeof LegalRoute
   '/marketing-research': typeof MarketingResearchRoute
   '/onboarding': typeof OnboardingRoute
+  '/demo-room/live': typeof DemoRoomLiveRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/legal': typeof LegalRoute
   '/marketing-research': typeof MarketingResearchRoute
   '/onboarding': typeof OnboardingRoute
+  '/demo-room/live': typeof DemoRoomLiveRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/legal': typeof LegalRoute
   '/marketing-research': typeof MarketingResearchRoute
   '/onboarding': typeof OnboardingRoute
+  '/demo-room/live': typeof DemoRoomLiveRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/marketing-research'
     | '/onboarding'
+    | '/demo-room/live'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/marketing-research'
     | '/onboarding'
+    | '/demo-room/live'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/marketing-research'
     | '/onboarding'
+    | '/demo-room/live'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   LegalRoute: typeof LegalRoute
   MarketingResearchRoute: typeof MarketingResearchRoute
   OnboardingRoute: typeof OnboardingRoute
+  DemoRoomLiveRoute: typeof DemoRoomLiveRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo-room/live': {
+      id: '/demo-room/live'
+      path: '/demo-room/live'
+      fullPath: '/demo-room/live'
+      preLoaderRoute: typeof DemoRoomLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalRoute: LegalRoute,
   MarketingResearchRoute: MarketingResearchRoute,
   OnboardingRoute: OnboardingRoute,
+  DemoRoomLiveRoute: DemoRoomLiveRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

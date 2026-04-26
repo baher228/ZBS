@@ -6,6 +6,8 @@ from typing import Any
 from app.agents.campaign_models import (
     CampaignCreateRequest,
     DemoBrief,
+    DemoPlan,
+    DemoStep,
     DemoRoom,
     FollowUpEmail,
     ICPProfile,
@@ -74,6 +76,16 @@ class LLMProvider(ABC):
         prospect_profile: ProspectProfile,
     ) -> DemoBrief:
         """Return the prospect-facing demo narrative."""
+
+    @abstractmethod
+    def generate_demo_plan(
+        self,
+        request: CampaignCreateRequest,
+        product_profile: ProductProfile,
+        prospect_profile: ProspectProfile,
+        demo_brief: DemoBrief,
+    ) -> DemoPlan:
+        """Return guided demo steps and talk tracks for the demo room."""
 
     @abstractmethod
     def generate_outreach(
@@ -460,37 +472,113 @@ class MockLLMProvider(LLMProvider):
                 revised[key] = f"[REVISED] {revised[key]}"
         return revised
 
+    def _product_theme(self, request: CampaignCreateRequest) -> dict[str, str | list[str]]:
+        text = f"{request.product_name} {request.product_description}".lower()
+        if "security" in text or "questionnaire" in text or "soc" in text:
+            return {
+                "category": "security review automation",
+                "core_problem": (
+                    "Enterprise security reviews slow down sales because teams repeatedly answer "
+                    "long questionnaires with fragmented, manually verified information."
+                ),
+                "value_props": [
+                    "Turns approved security knowledge into faster questionnaire responses.",
+                    "Keeps answers consistent across enterprise sales cycles.",
+                    "Reduces founder and engineering time spent on repetitive security reviews.",
+                ],
+                "proof_points": [
+                    "Uses approved company knowledge instead of ad hoc answers.",
+                    "Creates a repeatable security review workflow for sales teams.",
+                ],
+                "objections": [
+                    "Can it stay accurate as policies and infrastructure change?",
+                    "How does it avoid sharing sensitive security information?",
+                    "Will enterprise buyers trust AI-assisted questionnaire answers?",
+                ],
+                "pain_points": [
+                    "Enterprise security questionnaires create sales-cycle drag.",
+                    "Security answers need to be accurate, approved, and consistent.",
+                    "Product and engineering teams lose time to repetitive buyer diligence.",
+                ],
+                "asset": "Example security questionnaire workflow, approved answer library, and review/approval screen.",
+            }
+        if "observability" in text or "trace" in text or "agent" in text:
+            return {
+                "category": "AI observability",
+                "core_problem": (
+                    "AI engineering teams struggle to understand failures because agent runs span "
+                    "prompts, tools, state transitions, and user-facing outputs."
+                ),
+                "value_props": [
+                    "Shows agent traces, tool calls, and state transitions in one place.",
+                    "Helps teams diagnose failed or low-quality agent runs faster.",
+                    "Creates a clearer debugging workflow for production AI systems.",
+                ],
+                "proof_points": [
+                    "Captures trace-level context across an agent run.",
+                    "Connects failures to concrete tool calls and state changes.",
+                ],
+                "objections": [
+                    "How much instrumentation is required?",
+                    "Will this work with our existing AI stack?",
+                    "Can it protect sensitive prompt and user data?",
+                ],
+                "pain_points": [
+                    "Agent failures are hard to reproduce and explain.",
+                    "Tool calls and state transitions are scattered across logs.",
+                    "Engineering teams need faster incident debugging for AI workflows.",
+                ],
+                "asset": "Trace timeline, failed tool-call detail view, and alert/integration screen.",
+            }
+        return {
+            "category": "B2B workflow automation",
+            "core_problem": (
+                "Teams have a high-friction workflow that is currently handled with manual effort, "
+                "generic tools, or disconnected processes."
+            ),
+            "value_props": [
+                f"Explains how {request.product_name} applies to the prospect's workflow.",
+                "Reduces manual work in a high-friction business process.",
+                "Creates a clearer path from evaluation to next action.",
+            ],
+            "proof_points": [
+                "Uses structured product and prospect context.",
+                "Turns product claims into a concrete workflow narrative.",
+            ],
+            "objections": [
+                "How much setup is required?",
+                "How does it integrate with the existing workflow?",
+                "What proof is needed before adoption?",
+            ],
+            "pain_points": [
+                "Needs clearer context on how a product applies to its own workflow.",
+                "Wants to evaluate value before booking a live sales call.",
+                "May need evidence that the product can address account-specific needs.",
+            ],
+                "asset": "Core product workflow screenshot or sandbox view.",
+        }
+
     def generate_product_strategy(self, request: CampaignCreateRequest) -> ProductStrategy:
         audience = request.target_audience or "technical B2B founders and lean GTM teams"
+        theme = self._product_theme(request)
         product_profile = ProductProfile(
             name=request.product_name,
-            category="AI GTM workflow",
+            category=str(theme["category"]),
             one_liner=(
-                f"{request.product_name} helps {audience} turn product context into "
-                "qualified sales conversations."
+                f"{request.product_name} helps {audience} by solving this problem: "
+                f"{request.product_description}"
             ),
-            core_problem=(
-                "Founders can explain their product, but cold prospects rarely commit "
-                "time before they understand why it matters."
-            ),
-            key_value_props=[
-                "Turns static outbound into an interactive product conversation.",
-                "Personalizes the demo narrative to each prospect account.",
-                "Produces CRM-ready qualification and follow-up automatically.",
-            ],
-            proof_points=[
-                "Uses structured product, ICP, and prospect context.",
-                "Captures objections and next steps from the conversation.",
-            ],
-            likely_objections=[
-                "Will the demo agent understand our product accurately?",
-                "Will prospects engage with an AI demo instead of a human?",
-                "How much setup is required before a campaign can launch?",
-            ],
+            core_problem=str(theme["core_problem"]),
+            key_value_props=list(theme["value_props"]),
+            proof_points=list(theme["proof_points"]),
+            likely_objections=list(theme["objections"]),
         )
         icp = ICPProfile(
             primary_buyer=audience,
-            ideal_company="B2B companies selling technical products that need explanation before purchase.",
+            ideal_company=(
+                "B2B companies with a concrete operational workflow where the product's value "
+                "needs explanation before a buyer will commit to a call."
+            ),
             trigger_events=[
                 "Launching a new product",
                 "Founder-led sales is not scaling",
@@ -510,6 +598,7 @@ class MockLLMProvider(LLMProvider):
         return ProductStrategy(product_profile=product_profile, icp=icp)
 
     def generate_prospect_profile(self, request: CampaignCreateRequest) -> ProspectProfile:
+        theme = self._product_theme(request)
         description = request.prospect_description or (
             f"{request.prospect_company} appears to be a target account that could benefit "
             f"from {request.product_name}."
@@ -517,18 +606,14 @@ class MockLLMProvider(LLMProvider):
         return ProspectProfile(
             company_name=request.prospect_company,
             description=description,
-            likely_pain_points=[
-                "Needs to evaluate new tools without adding sales calls too early.",
-                "Wants clearer context on how a product applies to its own workflow.",
-                "May need evidence that the product can address account-specific needs.",
-            ],
+            likely_pain_points=list(theme["pain_points"]),
             relevance_angle=(
-                f"Position {request.product_name} as a way for {request.prospect_company} "
-                "to understand the product through a tailored conversation instead of a generic page."
+                f"Show {request.prospect_company} how {request.product_name} could help with "
+                f"{list(theme['pain_points'])[0].lower()}"
             ),
             personalization_assumptions=[
-                "The prospect is evaluating ways to improve pipeline quality.",
-                "The prospect values concise, technical product explanations.",
+                f"{request.prospect_company} has a workflow connected to {str(theme['category'])}.",
+                "The prospect values concise, specific product explanations before booking time.",
             ],
         )
 
@@ -561,6 +646,62 @@ class MockLLMProvider(LLMProvider):
             ],
         )
 
+    def generate_demo_plan(
+        self,
+        request: CampaignCreateRequest,
+        product_profile: ProductProfile,
+        prospect_profile: ProspectProfile,
+        demo_brief: DemoBrief,
+    ) -> DemoPlan:
+        return DemoPlan(
+            title=f"{product_profile.name} guided demo for {prospect_profile.company_name}",
+            overview=(
+                f"Guide {prospect_profile.company_name} through a concise demo focused on "
+                f"{prospect_profile.likely_pain_points[0].lower()}"
+            ),
+            steps=[
+                DemoStep(
+                    id="relevance",
+                    title=f"Why this matters for {prospect_profile.company_name}",
+                    objective="Make the account-specific reason for the demo obvious.",
+                    asset_type="docs",
+                    asset_needed="Product positioning summary and prospect research brief.",
+                    talk_track=prospect_profile.relevance_angle,
+                    qualification_question="Is this the kind of workflow problem your team is trying to solve now?",
+                    success_signal="Prospect confirms the pain or explains a related current workflow.",
+                ),
+                DemoStep(
+                    id="core_workflow",
+                    title=f"Show the core {product_profile.name} workflow",
+                    objective="Demonstrate the product's main value in a concrete sequence.",
+                    asset_type="screenshot",
+                    asset_needed=str(self._product_theme(request)["asset"]),
+                    talk_track=demo_brief.talking_points[0],
+                    qualification_question="Where would this fit into your current process?",
+                    success_signal="Prospect asks about implementation, integrations, or team usage.",
+                ),
+                DemoStep(
+                    id="proof_and_objections",
+                    title="Handle risk, proof, and next steps",
+                    objective="Address credibility concerns and move toward a qualified next action.",
+                    asset_type="docs",
+                    asset_needed="Proof points, security notes, pricing notes, and objection handlers.",
+                    talk_track=demo_brief.objection_handlers[0] if demo_brief.objection_handlers else product_profile.proof_points[0],
+                    qualification_question="What would you need to see before trying this with a real campaign?",
+                    success_signal="Prospect names a concrete requirement, blocker, or next stakeholder.",
+                ),
+            ],
+            step_selection_rules=[
+                "If the prospect asks why this is relevant, start with the relevance step.",
+                "If the prospect asks how it works, move to the core workflow step.",
+                "If the prospect asks about trust, pricing, or risk, move to proof and objections.",
+            ],
+            fallback_response=(
+                "If the question does not map to a step, answer from the product and prospect context, "
+                "then suggest the most relevant next demo step."
+            ),
+        )
+
     def generate_outreach(
         self,
         request: CampaignCreateRequest,
@@ -584,6 +725,12 @@ class MockLLMProvider(LLMProvider):
 
     def generate_demo_reply(self, demo_room: DemoRoom, message: str) -> str:
         lower_message = message.lower()
+        if demo_room.demo_plan and any(term in lower_message for term in ["show", "demo", "walk", "step"]):
+            step = demo_room.demo_plan.steps[0]
+            return (
+                f"I would start with '{step.title}'. {step.talk_track} "
+                f"The key question for your team is: {step.qualification_question}"
+            )
         if "price" in lower_message or "cost" in lower_message:
             return (
                 "Pricing depends on campaign volume and the depth of product context, but the value case is "
@@ -1132,6 +1279,34 @@ class OpenAILLMProvider(LLMProvider):
                             product_profile.model_dump_json(),
                             icp.model_dump_json(),
                             prospect_profile.model_dump_json(),
+                        ]
+                    ),
+                ),
+            ]
+        )
+
+    def generate_demo_plan(
+        self,
+        request: CampaignCreateRequest,
+        product_profile: ProductProfile,
+        prospect_profile: ProspectProfile,
+        demo_brief: DemoBrief,
+    ) -> DemoPlan:
+        structured_model = self.model.with_structured_output(DemoPlan)
+        return structured_model.invoke(
+            [
+                (
+                    "system",
+                    "Create a guided product demo plan. Include 3-5 steps, assets needed, talk tracks, qualification questions, and routing rules.",
+                ),
+                (
+                    "human",
+                    "\n".join(
+                        [
+                            request.model_dump_json(),
+                            product_profile.model_dump_json(),
+                            prospect_profile.model_dump_json(),
+                            demo_brief.model_dump_json(),
                         ]
                     ),
                 ),
@@ -1764,6 +1939,21 @@ class ResilientLLMProvider(LLMProvider):
             prospect_profile,
         )
 
+    def generate_demo_plan(
+        self,
+        request: CampaignCreateRequest,
+        product_profile: ProductProfile,
+        prospect_profile: ProspectProfile,
+        demo_brief: DemoBrief,
+    ) -> DemoPlan:
+        return self._try_primary(
+            "generate_demo_plan",
+            request,
+            product_profile,
+            prospect_profile,
+            demo_brief,
+        )
+
     def generate_outreach(
         self,
         request: CampaignCreateRequest,
@@ -1910,6 +2100,15 @@ class UnconfiguredLLMProvider(LLMProvider):
         icp: ICPProfile,
         prospect_profile: ProspectProfile,
     ) -> DemoBrief:
+        self._raise_unconfigured()
+
+    def generate_demo_plan(
+        self,
+        request: CampaignCreateRequest,
+        product_profile: ProductProfile,
+        prospect_profile: ProspectProfile,
+        demo_brief: DemoBrief,
+    ) -> DemoPlan:
         self._raise_unconfigured()
 
     def generate_outreach(

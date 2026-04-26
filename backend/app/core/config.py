@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     cors_allow_origins: str = (
         "http://localhost:5173,"
         "http://127.0.0.1:5173,"
+        "http://localhost:5174,"
+        "http://127.0.0.1:5174,"
+        "http://localhost:5175,"
+        "http://127.0.0.1:5175,"
         "http://localhost:8080,"
         "http://127.0.0.1:8080,"
         "http://localhost:3000,"
@@ -42,6 +46,10 @@ class Settings(BaseSettings):
     mubit_http_endpoint: str | None = None
     mubit_grpc_endpoint: str | None = None
     mubit_transport: str = "auto"
+    gemini_api_key: str | None = None
+    gemini_live_model: str = "gemini-3.1-flash-live-preview"
+    gemini_live_voice: str = "Zephyr"
+    gemini_live_enabled: bool = True
 
     model_config = SettingsConfigDict(
         env_file=(str(REPO_ROOT / ".env"), str(BACKEND_ROOT / ".env")),

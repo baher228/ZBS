@@ -4,10 +4,10 @@ import { SiteHeader } from "@/components/SiteHeader";
 export const Route = createFileRoute("/crm")({
   head: () => ({
     meta: [
-      { title: "CRM Summary — Demeo" },
+      { title: "CRM Summary - Demeo" },
       { name: "description", content: "Auto-generated CRM summary, lead score and follow-up." },
       { property: "og:title", content: "Demeo CRM Summary" },
-      { property: "og:description", content: "Lead score, objections, next steps and follow-up email — generated automatically." },
+      { property: "og:description", content: "Lead score, objections, next steps and follow-up email - generated automatically." },
     ],
   }),
   component: CRM,
@@ -175,7 +175,7 @@ function CRM() {
               </div>
               <p>Hi Karri,</p>
               <p>
-                Loved the demo room session — especially your point on keeping AE bandwidth on
+                Loved the demo room session - especially your point on keeping AE bandwidth on
                 strategic accounts only. Based on what we covered:
               </p>
               <ul className="list-disc pl-5 space-y-1 text-foreground/85">
@@ -188,7 +188,7 @@ function CRM() {
                 better window.
               </p>
               <p>
-                — Demeo
+                - Demeo
                 <br />
                 <span className="text-muted-foreground">on behalf of your team</span>
               </p>

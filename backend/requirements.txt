@@ -9,3 +9,8 @@ langchain-openai==0.3.33
 mubit-sdk
 fal-client==0.5.9
 beautifulsoup4==4.13.4
+google-genai==1.73.1
+opencv-python==4.11.0.86
+pyaudio==0.2.14
+pillow==10.3.0
+mss==10.2.0

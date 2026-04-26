@@ -4,9 +4,9 @@ import { SiteHeader } from "@/components/SiteHeader";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — Demeo" },
-      { name: "description", content: "Meet the team behind Demeo — AI-powered GTM operations for founders." },
-      { property: "og:title", content: "About — Demeo" },
+      { title: "About - Demeo" },
+      { name: "description", content: "Meet the team behind Demeo - AI-powered GTM operations for founders." },
+      { property: "og:title", content: "About - Demeo" },
     ],
   }),
   component: About,
@@ -16,19 +16,19 @@ const FOUNDERS = [
   {
     name: "Daria Konstantinova",
     role: "Co-Founder",
-    bio: "Daria brings deep product intuition and a relentless focus on user experience. She leads the vision for how AI agents deliver actionable outputs — from legal documents to marketing strategies.",
+    bio: "Daria decides what DEMEO feels like. She turns complex agent output into product decisions founders can actually use - and makes sure nothing ships that doesn't earn its place.",
     initial: "DK",
   },
   {
     name: "Grigorii Lukianov",
     role: "Co-Founder",
-    bio: "Grigorii architects the AI pipeline that powers Demeo end-to-end. From context enrichment to agent orchestration, he ensures every agent in the chain is fast, accurate, and production-ready.",
+    bio: "Grigorii built the system that makes DEMEO run. Agent orchestration, context pipelines, production infrastructure - if it powers the office, he designed it.",
     initial: "GL",
   },
   {
     name: "Din Iskakov",
     role: "Co-Founder",
-    bio: "Din drives go-to-market strategy and the commercial engine behind Demeo. He has a background in scaling B2B operations and believes the future of GTM is AI-assisted, not manual.",
+    bio: "Din takes DEMEO to market. He knows how early-stage companies stall - and built the commercial engine to make sure DEMEO doesn't let that happen to founders.",
     initial: "DI",
   },
 ];
@@ -41,7 +41,7 @@ function About() {
       {/* Masthead band */}
       <div className="border-b border-foreground/15 bg-card/40">
         <div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between label-mono">
-          <span>Vol. I — Issue 02</span>
+          <span>Vol. I - Issue 02</span>
           <span className="hidden md:inline">The people behind the operator</span>
           <span>EST. ZBS</span>
         </div>
@@ -56,19 +56,22 @@ function About() {
               <span className="label-mono">About № 01</span>
             </div>
             <h1 className="font-display font-medium text-5xl md:text-7xl lg:text-[80px] leading-[0.95] tracking-tight">
-              Built by people who{" "}
-              <span className="italic text-primary">believed</span>{" "}
+              <span className="block text-foreground/40 text-2xl md:text-3xl lg:text-4xl font-medium mb-4 tracking-normal">
+                Built by people who believed
+              </span>
+              the back office{" "}
+              <span className="italic text-primary">should run itself</span>
               <span className="relative inline-block">
-                founders deserve better tools
+                .
                 <span className="absolute -bottom-2 left-0 right-0 h-px bg-foreground/40" />
               </span>
-              .
             </h1>
           </div>
           <div className="lg:col-span-4 lg:pl-8 lg:border-l border-foreground/20">
             <p className="text-base md:text-lg text-foreground/75 leading-relaxed">
-              Demeo was founded on a simple conviction — that founders shouldn't spend their best
-              hours on legal paperwork, content drafts, and market research they could delegate to AI.
+              Founders keep avoiding the same things - legal, content, research. Not because they
+              don't matter. Because they're slow, painful, and not why you started building.
+              DEMEO exists to take that off your plate for good.
             </p>
           </div>
         </div>
@@ -79,7 +82,7 @@ function About() {
         <div className="mx-auto max-w-7xl px-6 py-16">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <div className="label-mono mb-2">§ I — Founders</div>
+              <div className="label-mono mb-2">§ I - Founders</div>
               <h2 className="font-display text-3xl md:text-4xl font-medium">
                 Three builders. One platform.
               </h2>
@@ -116,17 +119,17 @@ function About() {
       <section className="border-b border-foreground/15 bg-foreground text-background">
         <div className="mx-auto max-w-7xl px-6 py-16 grid md:grid-cols-12 gap-8 items-center">
           <div className="md:col-span-7">
-            <div className="label-mono text-background/60 mb-4">§ II — Mission</div>
+            <div className="label-mono text-background/60 mb-4">§ II - Mission</div>
             <h2 className="font-display text-3xl md:text-5xl font-medium leading-[1.05]">
-              We believe the next generation of GTM operations will be{" "}
-              <span className="italic text-accent">AI-first</span>.
+              Founders should build.{" "}
+              <span className="italic text-accent">Not manage chaos.</span>
             </h2>
           </div>
           <div className="md:col-span-5 md:pl-8 md:border-l border-background/20">
             <p className="text-background/70 leading-relaxed">
-              Not because people aren't valuable — but because legal reviews, content drafts, and
-              competitive research shouldn't consume the best hours of the sharpest minds. We
-              build the agents so you can focus on building.
+              The best founders we know aren't blocked by ambition - they're blocked by the
+              operational weight no one warned them about. We built DEMEO to clear that weight,
+              so the only thing left is the work that actually matters.
             </p>
           </div>
         </div>
@@ -134,9 +137,9 @@ function About() {
 
       <footer className="border-t border-foreground/15">
         <div className="mx-auto max-w-7xl px-6 py-6 flex items-center justify-between label-mono">
-          <span>© ZBS — Demeo</span>
+          <span>© ZBS - Demeo</span>
           <span>AI agents for founders</span>
-          <span>End — Issue 02</span>
+          <span>End - Issue 02</span>
         </div>
       </footer>
     </div>

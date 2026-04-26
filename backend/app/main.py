@@ -6,8 +6,10 @@ from app.api.routes.context import router as context_router
 from app.api.routes.dashboard import router as dashboard_router
 from app.api.routes.company import router as company_router
 from app.api.routes.content_chat import router as content_chat_router
+from app.api.routes.demo_sessions import router as demo_sessions_router
 from app.api.routes.health import router as health_router
 from app.api.routes.legal_chat import router as legal_chat_router
+from app.api.routes.live_demo import router as live_demo_router
 from app.api.routes.marketing_research import router as marketing_research_router
 from app.api.routes.tasks import router as tasks_router
 from app.core.config import settings
@@ -32,6 +34,8 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(campaigns_router)
     api_v1_router.include_router(company_router)
     api_v1_router.include_router(tasks_router)
+    api_v1_router.include_router(demo_sessions_router)
+    api_v1_router.include_router(live_demo_router)
     api_v1_router.include_router(legal_chat_router)
     api_v1_router.include_router(content_chat_router)
     api_v1_router.include_router(marketing_research_router)
