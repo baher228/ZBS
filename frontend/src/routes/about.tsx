@@ -5,7 +5,7 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — Demeo" },
-      { name: "description", content: "Meet the founders behind Demeo." },
+      { name: "description", content: "Meet the team behind Demeo — AI-powered GTM operations for founders." },
       { property: "og:title", content: "About — Demeo" },
     ],
   }),
@@ -16,19 +16,19 @@ const FOUNDERS = [
   {
     name: "Daria Konstantinova",
     role: "Co-Founder",
-    bio: "Daria brings deep product intuition and a relentless focus on user experience. She leads the vision for how AI agents communicate with buyers — making every demo room feel human, not robotic.",
+    bio: "Daria brings deep product intuition and a relentless focus on user experience. She leads the vision for how AI agents deliver actionable outputs — from legal documents to marketing strategies.",
     initial: "DK",
   },
   {
     name: "Grigorii Lukianov",
     role: "Co-Founder",
-    bio: "Grigorii architects the AI pipeline that powers Demeo end-to-end. From prospect research to demo delivery, he ensures every agent in the chain is fast, accurate, and production-ready.",
+    bio: "Grigorii architects the AI pipeline that powers Demeo end-to-end. From context enrichment to agent orchestration, he ensures every agent in the chain is fast, accurate, and production-ready.",
     initial: "GL",
   },
   {
     name: "Din Iskakov",
     role: "Co-Founder",
-    bio: "Din drives go-to-market strategy and the commercial engine behind Demeo. He has a background in scaling B2B sales motions and believes the future of revenue is autonomous, not manual.",
+    bio: "Din drives go-to-market strategy and the commercial engine behind Demeo. He has a background in scaling B2B operations and believes the future of GTM is AI-assisted, not manual.",
     initial: "DI",
   },
 ];
@@ -59,7 +59,7 @@ function About() {
               Built by people who{" "}
               <span className="italic text-primary">believed</span>{" "}
               <span className="relative inline-block">
-                sales could be smarter
+                founders deserve better tools
                 <span className="absolute -bottom-2 left-0 right-0 h-px bg-foreground/40" />
               </span>
               .
@@ -67,8 +67,8 @@ function About() {
           </div>
           <div className="lg:col-span-4 lg:pl-8 lg:border-l border-foreground/20">
             <p className="text-base md:text-lg text-foreground/75 leading-relaxed">
-              Demeo was founded on a simple conviction — that the best sales motion is one that
-              never sleeps, never misses context, and treats every buyer as an individual.
+              Demeo was founded on a simple conviction — that founders shouldn't spend their best
+              hours on legal paperwork, content drafts, and market research they could delegate to AI.
             </p>
           </div>
         </div>
@@ -81,7 +81,7 @@ function About() {
             <div>
               <div className="label-mono mb-2">§ I — Founders</div>
               <h2 className="font-display text-3xl md:text-4xl font-medium">
-                Three builders. One operator.
+                Three builders. One platform.
               </h2>
             </div>
           </div>
@@ -118,15 +118,15 @@ function About() {
           <div className="md:col-span-7">
             <div className="label-mono text-background/60 mb-4">§ II — Mission</div>
             <h2 className="font-display text-3xl md:text-5xl font-medium leading-[1.05]">
-              We believe the next generation of revenue teams will be{" "}
-              <span className="italic text-accent">mostly AI</span>.
+              We believe the next generation of GTM operations will be{" "}
+              <span className="italic text-accent">AI-first</span>.
             </h2>
           </div>
           <div className="md:col-span-5 md:pl-8 md:border-l border-background/20">
             <p className="text-background/70 leading-relaxed">
-              Not because people aren't valuable — but because repetitive, scalable tasks should
-              never consume the best hours of the sharpest minds. We build the operator so you
-              don't have to.
+              Not because people aren't valuable — but because legal reviews, content drafts, and
+              competitive research shouldn't consume the best hours of the sharpest minds. We
+              build the agents so you can focus on building.
             </p>
           </div>
         </div>
@@ -135,7 +135,7 @@ function About() {
       <footer className="border-t border-foreground/15">
         <div className="mx-auto max-w-7xl px-6 py-6 flex items-center justify-between label-mono">
           <span>© ZBS — Demeo</span>
-          <span>Built for the future of go-to-market</span>
+          <span>AI agents for founders</span>
           <span>End — Issue 02</span>
         </div>
       </footer>
