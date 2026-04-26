@@ -18,6 +18,7 @@ from app.agents.models import (
     AgentResponse,
     ContentPackage,
     DocumentReviewResult,
+    LegalDocumentDraft,
     LegalIssueScan,
     LLMReviewEvaluation,
     SocialPost,
@@ -107,6 +108,14 @@ class LLMProvider(ABC):
         jurisdictions: list[str],
     ) -> DocumentReviewResult:
         """Review a user-uploaded document against regulatory sources."""
+
+    @abstractmethod
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        """Draft a legal document (ToS, privacy policy, NDA, etc.) for a startup."""
 
     @abstractmethod
     def generate_social_post(
@@ -443,6 +452,59 @@ class MockLLMProvider(LLMProvider):
             next_steps="Have a qualified attorney review the full document against applicable regulations.",
         )
 
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        doc_type = request.document_type or "Terms of Service"
+        idea = request.startup_idea or request.prompt
+        scope = ", ".join(request.jurisdictions) if request.jurisdictions else "US"
+        return LegalDocumentDraft(
+            important_notice=(
+                "This is a starter template for educational purposes only, not legal advice. "
+                "A qualified attorney must review and customize this document before use."
+            ),
+            document_title=f"{doc_type} — {idea}",
+            document_body=(
+                f"DRAFT {doc_type.upper()}\n\n"
+                f"This {doc_type} governs the use of {idea}.\n\n"
+                f"1. ACCEPTANCE OF TERMS\nBy accessing or using {idea}, you agree to be bound by these terms.\n\n"
+                f"2. DESCRIPTION OF SERVICE\n{idea} provides services as described on the platform.\n\n"
+                "3. USER OBLIGATIONS\nYou agree to use the service in compliance with all applicable laws.\n\n"
+                "4. INTELLECTUAL PROPERTY\nAll content and materials remain the property of the company.\n\n"
+                "5. LIMITATION OF LIABILITY\nThe service is provided 'as is' without warranties of any kind.\n\n"
+                "6. GOVERNING LAW\n"
+                f"This agreement is governed by the laws of {scope}.\n\n"
+                "7. MODIFICATIONS\nWe reserve the right to modify these terms at any time."
+            ),
+            key_provisions=(
+                "1. Acceptance of terms and binding agreement\n"
+                "2. Service description and scope\n"
+                "3. User obligations and acceptable use\n"
+                "4. Intellectual property rights\n"
+                "5. Limitation of liability and disclaimers\n"
+                "6. Governing law and dispute resolution\n"
+                "7. Modification and termination clauses"
+            ),
+            customization_notes=(
+                f"This template needs customization for {idea}. Key areas to address with counsel:\n"
+                "- Specific service descriptions and features\n"
+                "- Data handling and privacy provisions\n"
+                "- Payment terms (if applicable)\n"
+                "- Specific liability exclusions for your industry\n"
+                "- Compliance requirements for your jurisdictions"
+            ),
+            jurisdiction_notes=f"Drafted for {scope}. Consult local counsel for jurisdiction-specific requirements.",
+            next_steps=(
+                "1. Review this draft with a qualified attorney\n"
+                "2. Customize provisions for your specific product and business model\n"
+                "3. Add industry-specific compliance clauses\n"
+                "4. Ensure alignment with your privacy policy and other legal documents\n"
+                "5. Have counsel approve before publishing"
+            ),
+        )
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -487,6 +549,28 @@ class OpenAILLMProvider(LLMProvider):
             else ""
         )
 
+        additional_block = ""
+        if request.additional_context:
+            additional_block = (
+                f"\n\nAdditional context from the founder:\n{request.additional_context}"
+            )
+
+        website_url = ""
+        if company_context:
+            for line in company_context.split("\n"):
+                if line.startswith("Website:"):
+                    website_url = line.split(":", 1)[1].strip()
+                    break
+
+        link_instruction = ""
+        if website_url:
+            link_instruction = (
+                f"\n\nIMPORTANT: The company website is {website_url}. "
+                "When content needs a link or CTA URL, use this actual URL instead of "
+                "placeholders like '[paste the link]', '[your-url]', or '[website]'. "
+                "Make links feel natural in context."
+            )
+
         package = structured_model.invoke(
             [
                 (
@@ -502,6 +586,9 @@ class OpenAILLMProvider(LLMProvider):
                     "'harness the power', 'leverage', 'cutting-edge', 'seamless', 'robust', 'elevate', "
                     "'dive into', 'in today''s fast-paced world', 'imagine a world where', 'at the end of the day'. "
                     "These instantly signal AI-generated text.\n"
+                    "- NEVER use placeholder links like '[paste the link]', '[your-url]', or '[website]'. "
+                    "If the company website URL is available, use the actual URL. If not available, "
+                    "write the CTA without a URL placeholder.\n"
                     "- Write in short, punchy sentences. Vary sentence length. Use fragments for emphasis.\n"
                     "- Sound like a sharp founder writing to a peer, not a marketing agency writing a brochure.\n\n"
                     "Creative principles:\n"
@@ -525,7 +612,9 @@ class OpenAILLMProvider(LLMProvider):
                     "content themes while pushing for higher impact.\n"
                     "Reference actual product features, audience, and differentiators, not generic placeholders."
                     + company_block
-                    + social_block,
+                    + social_block
+                    + link_instruction
+                    + additional_block,
                 ),
                 ("human", request.model_dump_json()),
             ]
@@ -864,6 +953,62 @@ class OpenAILLMProvider(LLMProvider):
             ]
         )
 
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        structured_model = self.model.with_structured_output(LegalDocumentDraft)
+
+        company_context = request.context.get("company_profile", "")
+        doc_type = request.document_type or "Terms of Service"
+
+        additional_block = ""
+        if request.additional_context:
+            additional_block = (
+                f"\n\nAdditional context from the founder:\n{request.additional_context}"
+            )
+
+        context_block = ""
+        if company_context:
+            context_block = (
+                f"\n\nCompany context (use this to customize the document):\n{company_context}"
+            )
+
+        return structured_model.invoke(
+            [
+                (
+                    "system",
+                    f"You are a startup legal document drafter. You create starter templates "
+                    f"for founders that are grounded in their company context and applicable regulations. "
+                    f"Your output is educational and clearly NOT legal advice.\n\n"
+                    f"You are drafting a: {doc_type}\n\n"
+                    "Rules:\n"
+                    "- important_notice MUST state this is a starter template, not legal advice\n"
+                    "- document_title should be the formal document name\n"
+                    "- document_body should be a complete, well-structured document with numbered sections. "
+                    "Use the company's actual name, product description, and details throughout. "
+                    "Include all standard clauses for this document type.\n"
+                    "- key_provisions should list the major provisions with brief explanations\n"
+                    "- customization_notes should flag areas that need attorney review or customization\n"
+                    "- jurisdiction_notes should note jurisdiction-specific requirements\n"
+                    "- next_steps should tell the founder what to do with this draft\n"
+                    "- follow_up_needed: if you need more information to produce a better draft, "
+                    "list specific questions. Leave empty if context is sufficient.\n\n"
+                    "Write in plain, readable language. Avoid unnecessary legalese where possible "
+                    "while maintaining legal precision where required."
+                    + context_block
+                    + additional_block,
+                ),
+                (
+                    "human",
+                    f"Draft a {doc_type} for this startup.\n\n"
+                    f"Founder request:\n{request.model_dump_json()}\n\n"
+                    f"Reference sources:\n{source_context}",
+                ),
+            ]
+        )
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -907,6 +1052,21 @@ class OpenAILLMProvider(LLMProvider):
             else ""
         )
 
+        website_url = ""
+        if company_context:
+            for line in company_context.split("\n"):
+                if line.startswith("Website:"):
+                    website_url = line.split(":", 1)[1].strip()
+                    break
+
+        link_instruction = ""
+        if website_url:
+            link_instruction = (
+                f"\n\nIMPORTANT: The company website is {website_url}. "
+                "Use this actual URL in the call_to_action and anywhere a link is needed. "
+                "NEVER use placeholders like '[paste the link]' or '[your-url]'."
+            )
+
         return structured_model.invoke(
             [
                 (
@@ -921,17 +1081,21 @@ class OpenAILLMProvider(LLMProvider):
                     "pointing down, muscle, chart, check mark, crystal ball, trophy.\n"
                     "- NEVER use phrases like 'game-changer', 'revolutionize', 'unlock', 'supercharge', 'seamless', "
                     "'cutting-edge', 'robust', 'elevate', 'dive into'. These scream AI.\n"
+                    "- NEVER use placeholder links like '[paste the link]', '[your-url]', or '[website]'. "
+                    "Use the actual company URL if available, or omit the link.\n"
                     "- Sound like a real person sharing a genuine insight, not a corporate bot.\n\n"
                     "Content rules:\n"
                     "- caption: Start with an irresistible hook (question, bold claim, or story opener). "
                     "The first line determines if anyone reads the rest. "
                     "Write like a founder sharing real experience, not a marketing bot. Ready to copy-paste.\n"
                     "- hashtags: relevant hashtags as a single string\n"
-                    "- call_to_action: specific, compelling next step (not generic 'learn more')\n"
+                    "- call_to_action: specific, compelling next step (not generic 'learn more'). "
+                    "Include the actual website URL if available.\n"
                     "- follow_up_needed: if you need more info from the user to write a better post, "
                     "list specific questions here. Leave empty if context is sufficient."
                     + company_block
-                    + extra_block,
+                    + extra_block
+                    + link_instruction,
                 ),
                 (
                     "human",
@@ -1034,6 +1198,13 @@ class ResilientLLMProvider(LLMProvider):
     ) -> DocumentReviewResult:
         return self._try_primary("review_document", document_text, source_context, jurisdictions)
 
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        return self._try_primary("generate_legal_draft", request, source_context)
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -1115,6 +1286,13 @@ class UnconfiguredLLMProvider(LLMProvider):
         source_context: str,
         jurisdictions: list[str],
     ) -> DocumentReviewResult:
+        self._raise_unconfigured()
+
+    def generate_legal_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
         self._raise_unconfigured()
 
     def generate_social_post(

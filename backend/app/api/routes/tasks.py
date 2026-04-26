@@ -83,6 +83,8 @@ async def create_task_with_upload(
     industries: str = Form(default=""),
     startup_url: str = Form(default=""),
     review_mode: bool = Form(default=False),
+    additional_context: str = Form(default=""),
+    document_type: str = Form(default=""),
     document: UploadFile | None = File(default=None),
 ) -> TaskResponse:
     uploaded_doc_text: str | None = None
@@ -105,6 +107,8 @@ async def create_task_with_upload(
         uploaded_doc_text=uploaded_doc_text,
         startup_url=startup_url or None,
         review_mode=review_mode,
+        additional_context=additional_context or None,
+        document_type=document_type or None,
     )
     enriched = _enrich_with_company_context(request)
     return get_orchestrator().handle_task(enriched)

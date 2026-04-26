@@ -39,6 +39,8 @@ class AgentRequest(BaseModel):
     uploaded_doc_text: str | None = None
     startup_url: str | None = None
     review_mode: bool = False
+    additional_context: str | None = None
+    document_type: str | None = None
 
 
 class ContentPackage(BaseModel):
@@ -59,6 +61,20 @@ class LegalIssueScan(BaseModel):
     risk_summary: str
     founder_checklist: str
     questions_for_counsel: str
+    next_steps: str
+    follow_up_needed: str = ""
+
+    def as_output_dict(self) -> dict[str, str]:
+        return {k: v for k, v in self.model_dump().items() if v}
+
+
+class LegalDocumentDraft(BaseModel):
+    important_notice: str
+    document_title: str
+    document_body: str
+    key_provisions: str
+    customization_notes: str
+    jurisdiction_notes: str
     next_steps: str
     follow_up_needed: str = ""
 

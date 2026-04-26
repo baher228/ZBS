@@ -10,6 +10,8 @@ export type AgentTaskPayload = {
   industries?: string[];
   startup_url?: string;
   review_mode?: boolean;
+  additional_context?: string;
+  document_type?: string;
 };
 
 export type AgentTaskResponse = {
@@ -72,6 +74,8 @@ export async function runAgentTaskWithUpload(
   formData.append("industries", (payload.industries ?? []).join(","));
   formData.append("startup_url", payload.startup_url ?? "");
   formData.append("review_mode", String(payload.review_mode ?? false));
+  formData.append("additional_context", payload.additional_context ?? "");
+  formData.append("document_type", payload.document_type ?? "");
   if (file) {
     formData.append("document", file);
   }
@@ -139,9 +143,7 @@ export async function saveCompanyProfile(
   return response.json();
 }
 
-export async function fetchCompanyProfile(
-  apiBaseUrl: string,
-): Promise<CompanyProfile | null> {
+export async function fetchCompanyProfile(apiBaseUrl: string): Promise<CompanyProfile | null> {
   try {
     const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company`);
     if (response.status === 404) return null;

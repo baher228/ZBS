@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from app.agents.legal_knowledge import LegalKnowledgeBase
 from app.agents.llm import LLMProvider
-from app.agents.models import AgentCapability, AgentRequest, AgentResponse, LegalIssueScan
+from app.agents.models import AgentCapability, AgentRequest, AgentResponse, LegalDocumentDraft, LegalIssueScan
 
 _INDUSTRY_MAP: dict[str, list[str]] = {
     "fintech": ["FinTech"],
@@ -107,8 +107,27 @@ class LegalAgent:
             extra_context += f"\n\nUploaded document excerpt:\n{request.uploaded_doc_text[:3000]}"
         if request.startup_url:
             extra_context += f"\n\nStartup URL: {request.startup_url}"
+        if request.additional_context:
+            extra_context += f"\n\nAdditional context from founder:\n{request.additional_context}"
 
         full_source_context = source_context + extra_context
+
+        if request.document_type and self.llm_provider is not None:
+            draft = self.llm_provider.generate_legal_draft(request, full_source_context)
+            return AgentResponse(
+                agent=self.capability,
+                title=f"Draft: {request.document_type}",
+                output=draft.as_output_dict(),
+                summary=f"Generated a starter {request.document_type} draft grounded in company context and regulatory sources.",
+            )
+        if request.document_type:
+            draft = self._build_fallback_draft(request, source_context)
+            return AgentResponse(
+                agent=self.capability,
+                title=f"Draft: {request.document_type}",
+                output=draft.as_output_dict(),
+                summary=f"Generated a starter {request.document_type} draft with standard provisions.",
+            )
 
         if self.llm_provider is not None:
             scan = self.llm_provider.generate_legal_scan(request, full_source_context)
@@ -120,6 +139,58 @@ class LegalAgent:
             title="Founder Legal Issue Scan",
             output=scan.as_output_dict(),
             summary="Generated a source-grounded legal issue scan with citations and counsel handoff questions.",
+        )
+
+    def _build_fallback_draft(
+        self,
+        request: AgentRequest,
+        source_context: str,
+    ) -> LegalDocumentDraft:
+        doc_type = request.document_type or "Terms of Service"
+        idea = request.startup_idea or request.prompt
+        scope = ", ".join(request.jurisdictions) if request.jurisdictions else "US"
+        return LegalDocumentDraft(
+            important_notice=(
+                "This is a starter template for educational purposes only, not legal advice. "
+                "A qualified attorney must review and customize this document before use."
+            ),
+            document_title=f"{doc_type} — {idea}",
+            document_body=(
+                f"DRAFT {doc_type.upper()}\n\n"
+                f"This {doc_type} governs the use of {idea}.\n\n"
+                f"1. ACCEPTANCE OF TERMS\nBy accessing or using {idea}, you agree to be bound by these terms.\n\n"
+                f"2. DESCRIPTION OF SERVICE\n{idea} provides services as described on the platform.\n\n"
+                "3. USER OBLIGATIONS\nYou agree to use the service in compliance with all applicable laws.\n\n"
+                "4. INTELLECTUAL PROPERTY\nAll content and materials remain the property of the company.\n\n"
+                "5. LIMITATION OF LIABILITY\nThe service is provided 'as is' without warranties of any kind.\n\n"
+                f"6. GOVERNING LAW\nThis agreement is governed by the laws of {scope}.\n\n"
+                "7. MODIFICATIONS\nWe reserve the right to modify these terms at any time."
+            ),
+            key_provisions=(
+                "1. Acceptance of terms and binding agreement\n"
+                "2. Service description and scope\n"
+                "3. User obligations and acceptable use\n"
+                "4. Intellectual property rights\n"
+                "5. Limitation of liability and disclaimers\n"
+                "6. Governing law and dispute resolution\n"
+                "7. Modification and termination clauses"
+            ),
+            customization_notes=(
+                f"This template needs customization for {idea}. Key areas to address with counsel:\n"
+                "- Specific service descriptions and features\n"
+                "- Data handling and privacy provisions\n"
+                "- Payment terms (if applicable)\n"
+                "- Specific liability exclusions for your industry\n"
+                "- Compliance requirements for your jurisdictions"
+            ),
+            jurisdiction_notes=f"Drafted for {scope}. Consult local counsel for jurisdiction-specific requirements.",
+            next_steps=(
+                "1. Review this draft with a qualified attorney\n"
+                "2. Customize provisions for your specific product and business model\n"
+                "3. Add industry-specific compliance clauses\n"
+                "4. Ensure alignment with your privacy policy and other legal documents\n"
+                "5. Have counsel approve before publishing"
+            ),
         )
 
     def _build_fallback_scan(

@@ -34,8 +34,7 @@ export const Route = createFileRoute("/content")({
   component: ContentPage,
 });
 
-const defaultApiBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
+const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
 const CONTENT_SECTIONS = [
   { key: "positioning", label: "Positioning", icon: "🎯" },
@@ -56,9 +55,8 @@ function ContentPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [providerInfo, setProviderInfo] = useState<ProviderInfo | null>(null);
-  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
-    null,
-  );
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+  const [additionalContext, setAdditionalContext] = useState("");
 
   useEffect(() => {
     fetchProviderInfo(apiBaseUrl).then(setProviderInfo);
@@ -68,10 +66,7 @@ function ContentPage() {
   const output = result?.agent_response?.output ?? {};
 
   const textSections = useMemo(
-    () =>
-      CONTENT_SECTIONS.filter(
-        (s) => output[s.key] !== undefined,
-      ),
+    () => CONTENT_SECTIONS.filter((s) => output[s.key] !== undefined),
     [output],
   );
 
@@ -101,6 +96,7 @@ function ContentPage() {
       goal: "book first customer discovery calls",
       tone: "practical and confident",
       channel: "landing page, email, and social",
+      additional_context: additionalContext || undefined,
       context: { task_type: "content" },
     };
 
@@ -154,8 +150,8 @@ function ContentPage() {
               >
                 <Building2 className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">
-                  No company profile —{" "}
-                  <span className="text-primary">set up now</span> for better results
+                  No company profile — <span className="text-primary">set up now</span> for better
+                  results
                 </span>
               </Link>
             )}
@@ -167,6 +163,20 @@ function ContentPage() {
               placeholder="Describe what content you need…"
               className="w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none resize-none"
             />
+
+            <label className="block">
+              <span className="label-mono">
+                Additional Context{" "}
+                <span className="text-muted-foreground text-[10px]">(optional)</span>
+              </span>
+              <textarea
+                value={additionalContext}
+                onChange={(e) => setAdditionalContext(e.target.value)}
+                rows={2}
+                placeholder="Brand guidelines, specific policies, reference materials, links to include…"
+                className="mt-1 w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none resize-none focus:border-primary transition-colors"
+              />
+            </label>
           </div>
 
           <div className="flex flex-col justify-end gap-2">
@@ -307,7 +317,9 @@ function ContentPage() {
                   Review Agent Feedback
                 </summary>
                 <div className="px-5 pb-4 pt-2 border-t border-foreground/10">
-                  <p className="text-sm leading-relaxed text-foreground/75">{result.review.feedback}</p>
+                  <p className="text-sm leading-relaxed text-foreground/75">
+                    {result.review.feedback}
+                  </p>
                   {result.review.revision_instruction && (
                     <div className="mt-3 border-t border-foreground/10 pt-3">
                       <span className="label-mono text-warning">Revision needed</span>
@@ -343,7 +355,9 @@ function PostGenerator({
   apiBaseUrl: string;
   companyProfile: CompanyProfile | null;
 }) {
-  const [platform, setPlatform] = useState<"linkedin" | "twitter" | "instagram" | "facebook">("linkedin");
+  const [platform, setPlatform] = useState<"linkedin" | "twitter" | "instagram" | "facebook">(
+    "linkedin",
+  );
   const [topic, setTopic] = useState("");
   const [extraContext, setExtraContext] = useState("");
   const [tone, setTone] = useState("professional");
@@ -554,7 +568,9 @@ function PostGenerator({
                 {result.post.follow_up_needed && (
                   <div className="mt-3 border border-warning/40 bg-warning/5 p-3">
                     <span className="label-mono text-[10px] text-warning">More Info Needed</span>
-                    <p className="mt-1 text-xs text-foreground/70">{result.post.follow_up_needed}</p>
+                    <p className="mt-1 text-xs text-foreground/70">
+                      {result.post.follow_up_needed}
+                    </p>
                   </div>
                 )}
               </article>
@@ -640,8 +656,7 @@ function ContentCard({
 
 function MiniScore({ label, value }: { label: string; value: number }) {
   const pct = Math.round(value * 100);
-  const color =
-    pct >= 75 ? "text-success" : pct >= 50 ? "text-warning" : "text-destructive";
+  const color = pct >= 75 ? "text-success" : pct >= 50 ? "text-warning" : "text-destructive";
   return (
     <div className="text-center">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>

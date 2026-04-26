@@ -68,6 +68,7 @@ export function AgentTaskConsole({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+  const [additionalContext, setAdditionalContext] = useState("");
 
   const isLegal = taskType === "legal";
 
@@ -101,10 +102,19 @@ export function AgentTaskConsole({
 
     const enrichedPayload: AgentTaskPayload = {
       ...payload,
-      jurisdictions,
+      ...(companyProfile
+        ? {
+            startup_idea: undefined,
+            target_audience: undefined,
+            goal: undefined,
+            channel: undefined,
+          }
+        : {}),
+      jurisdictions: companyProfile ? companyProfile.jurisdictions : jurisdictions,
       industries,
       startup_url: startupUrl || undefined,
       review_mode: reviewMode,
+      additional_context: additionalContext || undefined,
       context: {
         ...(payload.context ?? {}),
         task_type: taskType,
@@ -336,6 +346,25 @@ export function AgentTaskConsole({
               />
             </div>
           )}
+
+          {/* Additional context — always visible */}
+          <label className="block">
+            <span className="label-mono">
+              Additional Context{" "}
+              <span className="text-muted-foreground text-[10px]">(optional)</span>
+            </span>
+            <textarea
+              value={additionalContext}
+              onChange={(e) => setAdditionalContext(e.target.value)}
+              rows={3}
+              placeholder={
+                isLegal
+                  ? "Any additional policies, regulations, or specific concerns you want the agent to consider…"
+                  : "Brand guidelines, reference materials, specific requirements…"
+              }
+              className="mt-2 w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none"
+            />
+          </label>
 
           <button
             onClick={submit}
