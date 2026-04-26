@@ -127,3 +127,42 @@ def test_legal_chat_document_without_type():
     assert response.status_code == 200
     data = response.json()
     assert data["mode"] == "document_drafting"
+
+
+def test_legal_overview_basic():
+    """Legal overview endpoint returns 200 with expected structure."""
+    response = client.get("/api/v1/legal/overview")
+    assert response.status_code == 200
+    data = response.json()
+    assert "summary" in data
+    assert len(data["summary"]) > 0
+    assert isinstance(data["potential_issues"], list)
+    assert isinstance(data["recommended_documents"], list)
+    assert isinstance(data["missing_info"], list)
+    assert isinstance(data["compliance_areas"], list)
+
+
+def test_legal_overview_response_structure():
+    """Verify the full response structure of legal overview."""
+    response = client.get("/api/v1/legal/overview")
+    assert response.status_code == 200
+    data = response.json()
+    assert set(data.keys()) == {
+        "summary",
+        "potential_issues",
+        "recommended_documents",
+        "missing_info",
+        "compliance_areas",
+    }
+
+
+def test_legal_overview_issues_have_severity():
+    """Each potential issue should have a severity field."""
+    response = client.get("/api/v1/legal/overview")
+    assert response.status_code == 200
+    data = response.json()
+    for issue in data["potential_issues"]:
+        assert issue["severity"] in ("high", "medium", "low")
+        assert "title" in issue
+        assert "description" in issue
+        assert "recommendation" in issue

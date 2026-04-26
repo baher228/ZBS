@@ -3,26 +3,19 @@ import { SiteHeader } from "@/components/SiteHeader";
 import {
   AlertCircle,
   Building2,
-  CheckCircle2,
   ClipboardCopy,
   ImagePlus,
   Loader2,
-  MessageSquare,
   Send,
   Sparkles,
-  XCircle,
-  Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   fetchCompanyProfile,
   fetchProviderInfo,
   generateSocialPost,
-  runAgentTask,
   sendContentChat,
-  type AgentTaskPayload,
-  type AgentTaskResponse,
   type CompanyProfile,
   type ContentChatMessage,
   type ContentChatResponse,
@@ -42,14 +35,6 @@ export const Route = createFileRoute("/content")({
 
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
-const CONTENT_SECTIONS = [
-  { key: "positioning", label: "Positioning", icon: "🎯" },
-  { key: "landing_copy", label: "Landing Copy", icon: "📄" },
-  { key: "icp_notes", label: "ICP Notes", icon: "👤" },
-  { key: "launch_email", label: "Launch Email", icon: "📧" },
-  { key: "social_post", label: "Social Post", icon: "📱" },
-] as const;
-
 type ContentChatEntry = {
   role: "user" | "assistant";
   content: string;
@@ -62,15 +47,8 @@ function ContentPage() {
   const [apiBaseUrl] = useState(
     () => localStorage.getItem("zbs-api-base-url") ?? defaultApiBaseUrl,
   );
-  const [prompt, setPrompt] = useState(
-    "Create landing page copy, a launch email, ICP notes, and a social post.",
-  );
-  const [result, setResult] = useState<AgentTaskResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [providerInfo, setProviderInfo] = useState<ProviderInfo | null>(null);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
-  const [additionalContext, setAdditionalContext] = useState("");
 
   // Chat state
   const [chatMessages, setChatMessages] = useState<ContentChatEntry[]>([]);
@@ -87,53 +65,6 @@ function ContentPage() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, chatLoading]);
-
-  const output = result?.agent_response?.output ?? {};
-
-  const textSections = useMemo(
-    () => CONTENT_SECTIONS.filter((s) => output[s.key] !== undefined),
-    [output],
-  );
-
-  const imageSections = useMemo(
-    () =>
-      Object.entries(output)
-        .filter(([k]) => k.endsWith("_image"))
-        .map(([k, v]) => ({
-          key: k,
-          label: k.replace("_image", "").replaceAll("_", " "),
-          url: v,
-        })),
-    [output],
-  );
-
-  const submit = async () => {
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    const payload: AgentTaskPayload = {
-      prompt,
-      startup_idea: companyProfile
-        ? `${companyProfile.name}: ${companyProfile.description}`
-        : "GTM AI office for founders",
-      target_audience: companyProfile?.target_audience || "solo founders and lean B2B teams",
-      goal: "book first customer discovery calls",
-      tone: "practical and confident",
-      channel: "landing page, email, and social",
-      additional_context: additionalContext || undefined,
-      context: { task_type: "content" },
-    };
-
-    try {
-      const response = await runAgentTask(apiBaseUrl, payload);
-      setResult(response);
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Request failed");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleChatSend = async (text?: string) => {
     const msgText = text ?? chatInput.trim();
@@ -185,314 +116,138 @@ function ContentPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-6 py-10">
+      <main className="flex-1 flex flex-col mx-auto w-full max-w-4xl px-4 py-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="label-mono mb-3">Content Agent</div>
-          <h1 className="font-display text-3xl md:text-5xl font-medium leading-tight">
-            Generate launch-ready GTM assets.
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/70">
-            Create positioning, landing page copy, ICP notes, launch email, and social posts — all
-            tailored to your company. Images are generated from your actual content context.
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <h1 className="font-display text-2xl font-medium">Content Agent</h1>
+          </div>
+          <p className="text-sm text-foreground/60">
+            Tell me what content you need — landing pages, emails, social posts, blog copy. I'll
+            ask for details like team photos, brand guidelines, or links, then generate it for you.
           </p>
         </div>
 
         {/* Company context */}
-        <div className="mb-8">
-          {companyProfile ? (
-            <div className="flex items-center gap-2 border border-success/30 bg-success/5 px-4 py-2.5">
-              <Building2 className="h-4 w-4 text-success" />
-              <span className="text-xs text-foreground/80">
-                Context loaded: <strong>{companyProfile.name}</strong> —{" "}
-                {companyProfile.industry || "General"} · {companyProfile.stage}
-              </span>
-              <Link
-                to="/onboarding"
-                className="ml-auto text-xs text-primary hover:text-foreground transition-colors"
-              >
-                Edit
-              </Link>
-            </div>
-          ) : (
+        {companyProfile ? (
+          <div className="mb-4 flex items-center gap-2 border border-success/30 bg-success/5 px-4 py-2.5">
+            <Building2 className="h-4 w-4 text-success" />
+            <span className="text-xs text-foreground/80">
+              Context: <strong>{companyProfile.name}</strong> — {companyProfile.industry || "General"}{" "}
+              · {companyProfile.stage}
+            </span>
             <Link
               to="/onboarding"
-              className="flex items-center gap-2 border border-foreground/15 bg-card/30 px-4 py-2.5 hover:border-primary/30 transition-colors"
+              className="ml-auto text-xs text-primary hover:text-foreground transition-colors"
             >
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                No company profile — <span className="text-primary">set up now</span> for better
-                results
-              </span>
+              Edit
             </Link>
-          )}
-        </div>
-
-        {/* ── Content Chat ─────────────────────────────── */}
-        <div className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <MessageSquare className="h-4 w-4 text-primary" />
-            <span className="label-mono">Content Assistant</span>
           </div>
-          <p className="text-xs text-foreground/60 mb-4 max-w-lg">
-            Chat with the content agent to brainstorm ideas, share materials (team photos, brand
-            guidelines, links), and get content suggestions before generating.
-          </p>
-
-          <div className="border border-foreground/10 bg-card/20 flex flex-col min-h-[300px] max-h-[500px]">
-            {/* Chat messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {chatMessages.length === 0 && !chatLoading && (
-                <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                  <Sparkles className="h-8 w-8 text-muted-foreground/40 mb-3" />
-                  <p className="text-sm text-muted-foreground mb-1">Content Assistant</p>
-                  <p className="text-xs text-foreground/40 max-w-sm">
-                    Tell me about your content needs. I&apos;ll ask for team photos, brand assets,
-                    or specific details to create better content.
-                  </p>
-                </div>
-              )}
-
-              {chatMessages.map((entry, i) => (
-                <ContentChatBubble
-                  key={i}
-                  entry={entry}
-                  onFollowUp={handleChatSend}
-                />
-              ))}
-
-              {chatLoading && (
-                <div className="flex items-start gap-3">
-                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <div className="bg-foreground/5 border border-foreground/10 px-4 py-3 max-w-[80%]">
-                    <div className="flex items-center gap-2 text-sm text-foreground/60">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Thinking…
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Chat input */}
-            <div className="border-t border-foreground/10 p-3">
-              <div className="flex gap-2">
-                <textarea
-                  ref={chatInputRef}
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={handleChatKeyDown}
-                  placeholder="Describe your content needs, paste links, share brand details…"
-                  rows={2}
-                  className="flex-1 border border-foreground/15 bg-card/50 px-3 py-2 text-sm outline-none resize-none focus:border-primary transition-colors"
-                />
-                <button
-                  onClick={() => handleChatSend()}
-                  disabled={!chatInput.trim() || chatLoading}
-                  className="self-end px-4 py-2 bg-primary text-primary-foreground text-sm font-medium hover:bg-foreground disabled:opacity-40 transition-colors"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Generate Content Section ─────────────────── */}
-        <div className="border-t border-foreground/10 pt-8 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="h-4 w-4 text-primary" />
-            <span className="label-mono">Generate Full Content Package</span>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
-            <div className="space-y-3">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                rows={2}
-                placeholder="Describe what content you need…"
-                className="w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none resize-none"
-              />
-
-              <label className="block">
-                <span className="label-mono">
-                  Additional Context{" "}
-                  <span className="text-muted-foreground text-[10px]">(optional)</span>
-                </span>
-                <textarea
-                  value={additionalContext}
-                  onChange={(e) => setAdditionalContext(e.target.value)}
-                  rows={2}
-                  placeholder="Brand guidelines, specific policies, reference materials, links to include…"
-                  className="mt-1 w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none resize-none focus:border-primary transition-colors"
-                />
-              </label>
-            </div>
-
-            <div className="flex flex-col justify-end gap-2">
-              <button
-                onClick={submit}
-                disabled={loading || !prompt.trim()}
-                className="inline-flex items-center justify-center gap-2 bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-foreground disabled:opacity-60 whitespace-nowrap"
-              >
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {loading ? "Generating…" : "Generate Content"}
-              </button>
-              {providerInfo && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground justify-end">
-                  <Zap className="h-3 w-3" />
-                  <span>
-                    {providerInfo.provider === "mock"
-                      ? "Mock provider"
-                      : `${providerInfo.provider} · ${providerInfo.model}`}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 flex gap-3 border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
+        ) : (
+          <Link
+            to="/onboarding"
+            className="mb-4 flex items-center gap-2 border border-foreground/15 bg-card/30 px-4 py-2.5 hover:border-primary/30 transition-colors"
+          >
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              No company profile — <span className="text-primary">set up now</span> for better
+              content
+            </span>
+          </Link>
         )}
 
-        {/* Empty state */}
-        {!result && !error && !loading && (
-          <div className="flex min-h-[300px] items-center justify-center border border-dashed border-foreground/15">
-            <div className="text-center">
-              <div className="label-mono mb-2">Ready</div>
-              <p className="text-sm text-muted-foreground">
-                Hit <strong>Generate Content</strong> to create your GTM assets.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Loading state */}
-        {loading && (
-          <div className="flex min-h-[300px] items-center justify-center border border-dashed border-primary/30 bg-primary/5">
-            <div className="text-center space-y-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-              <p className="text-sm text-foreground/70">
-                Generating content + context-aware images…
-              </p>
-              <p className="text-xs text-muted-foreground">This usually takes 15–30 seconds.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Results */}
-        {result && (
-          <div className="space-y-8">
-            {/* Review summary bar */}
-            <div className="flex items-center gap-4 border border-foreground/15 bg-card/40 px-5 py-3">
-              {result.decision.status === "completed" ? (
-                <CheckCircle2 className="h-5 w-5 text-success" />
-              ) : (
-                <XCircle className="h-5 w-5 text-destructive" />
-              )}
-              <div className="flex-1">
-                <span className="text-sm font-medium">{result.agent_response?.title}</span>
-                {result.agent_response?.summary?.includes("revised") && (
-                  <span className="ml-2 text-[10px] border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">
-                    Iteratively refined
-                  </span>
-                )}
-                {result.review && (
-                  <span className="ml-3 text-xs text-muted-foreground">
-                    Score: {(result.review.score * 100).toFixed(0)}%
-                  </span>
-                )}
-              </div>
-              {result.review && (
-                <div className="hidden sm:flex items-center gap-3">
-                  <MiniScore label="Rel" value={result.review.relevance} />
-                  <MiniScore label="Comp" value={result.review.completeness} />
-                  <MiniScore label="Clar" value={result.review.clarity} />
-                  <MiniScore label="Act" value={result.review.actionability} />
-                </div>
-              )}
-            </div>
-
-            {/* Content sections */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              {textSections.map((section) => (
-                <ContentCard
-                  key={section.key}
-                  icon={section.icon}
-                  label={section.label}
-                  content={output[section.key]}
-                  imageUrl={output[`${section.key}_image`]}
-                />
-              ))}
-            </div>
-
-            {/* Image gallery */}
-            {imageSections.length > 0 && (
-              <div>
-                <h2 className="font-display text-xl font-medium mb-4">Generated Images</h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {imageSections.map((img) => (
-                    <a
-                      key={img.key}
-                      href={img.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group border border-foreground/15 overflow-hidden hover:border-primary/40 transition-colors"
+        {/* Chat area */}
+        <div className="flex-1 border border-foreground/10 bg-card/20 flex flex-col min-h-[500px] max-h-[700px]">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {chatMessages.length === 0 && !chatLoading && (
+              <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                <Sparkles className="h-10 w-10 text-muted-foreground/40 mb-4" />
+                <p className="text-sm text-muted-foreground mb-2">Content Assistant</p>
+                <p className="text-xs text-foreground/40 max-w-md mb-6">
+                  Describe what content you need. I'll ask for team photos, brand assets,
+                  specific details, and generate content right here.
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+                  {[
+                    "Create landing page copy for our launch",
+                    "Draft a launch email for our beta",
+                    "Write LinkedIn posts about our product",
+                    "Help me create a content strategy",
+                  ].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => handleChatSend(suggestion)}
+                      className="text-xs px-3 py-2 border border-primary/20 text-primary/70 hover:bg-primary/5 hover:border-primary/40 transition-colors"
                     >
-                      <img
-                        src={img.url}
-                        alt={`Generated visual for ${img.label}`}
-                        className="w-full aspect-video object-cover"
-                        loading="lazy"
-                      />
-                      <div className="px-3 py-2 bg-card/60">
-                        <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors capitalize">
-                          {img.label}
-                        </span>
-                      </div>
-                    </a>
+                      {suggestion}
+                    </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Review feedback */}
-            {result.review?.feedback && (
-              <details className="border border-foreground/15 bg-card/40">
-                <summary className="px-5 py-3 cursor-pointer text-sm font-medium hover:bg-card/60 transition-colors">
-                  Review Agent Feedback
-                </summary>
-                <div className="px-5 pb-4 pt-2 border-t border-foreground/10">
-                  <p className="text-sm leading-relaxed text-foreground/75">
-                    {result.review.feedback}
-                  </p>
-                  {result.review.revision_instruction && (
-                    <div className="mt-3 border-t border-foreground/10 pt-3">
-                      <span className="label-mono text-warning">Revision needed</span>
-                      <p className="mt-1 text-xs text-foreground/60">
-                        {result.review.revision_instruction}
-                      </p>
-                    </div>
-                  )}
+            {chatMessages.map((entry, i) => (
+              <ContentChatBubble
+                key={i}
+                entry={entry}
+                onFollowUp={handleChatSend}
+              />
+            ))}
+
+            {chatLoading && (
+              <div className="flex items-start gap-3">
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
                 </div>
-              </details>
+                <div className="bg-foreground/5 border border-foreground/10 px-4 py-3 max-w-[80%]">
+                  <div className="flex items-center gap-2 text-sm text-foreground/60">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Thinking…
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Input area */}
+          <div className="border-t border-foreground/10 p-3">
+            <div className="flex gap-2">
+              <textarea
+                ref={chatInputRef}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleChatKeyDown}
+                placeholder="Describe what content you need, paste links, share brand details…"
+                rows={2}
+                className="flex-1 border border-foreground/15 bg-card/50 px-3 py-2 text-sm outline-none resize-none focus:border-primary transition-colors"
+              />
+              <button
+                onClick={() => handleChatSend()}
+                disabled={!chatInput.trim() || chatLoading}
+                className="self-end px-4 py-2 bg-primary text-primary-foreground text-sm font-medium hover:bg-foreground disabled:opacity-40 transition-colors"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
+            {providerInfo && (
+              <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span>
+                  {providerInfo.provider === "mock"
+                    ? "Mock provider"
+                    : `${providerInfo.provider} · ${providerInfo.model}`}
+                </span>
+              </div>
             )}
           </div>
-        )}
+        </div>
 
-        {/* ── Generate Post Section ─────────────────────── */}
+        {/* Social Post Generator (kept as secondary tool) */}
         <PostGenerator apiBaseUrl={apiBaseUrl} companyProfile={companyProfile} />
       </main>
     </div>
@@ -656,7 +411,7 @@ function PostGenerator({
   };
 
   return (
-    <div className="mt-12 border-t border-foreground/10 pt-10">
+    <div className="mt-10 border-t border-foreground/10 pt-8">
       <div className="mb-6">
         <div className="label-mono mb-3">
           <Send className="inline h-3 w-3 mr-1" />
@@ -855,70 +610,6 @@ function PostGenerator({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ── Shared Components ────────────────────────────────────── */
-
-function ContentCard({
-  icon,
-  label,
-  content,
-  imageUrl,
-}: {
-  icon: string;
-  label: string;
-  content: string;
-  imageUrl?: string;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    navigator.clipboard.writeText(content).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  return (
-    <article className="border border-foreground/15 bg-card/40 overflow-hidden">
-      {imageUrl && (
-        <img
-          src={imageUrl}
-          alt={`Visual for ${label}`}
-          className="w-full aspect-video object-cover border-b border-foreground/10"
-          loading="lazy"
-        />
-      )}
-      <div className="p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-base">{icon}</span>
-            <span className="label-mono">{label}</span>
-          </div>
-          <button
-            onClick={copy}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            title="Copy to clipboard"
-          >
-            <ClipboardCopy className="h-3 w-3" />
-            {copied ? "Copied!" : "Copy"}
-          </button>
-        </div>
-        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/80">{content}</p>
-      </div>
-    </article>
-  );
-}
-
-function MiniScore({ label, value }: { label: string; value: number }) {
-  const pct = Math.round(value * 100);
-  const color = pct >= 75 ? "text-success" : pct >= 50 ? "text-warning" : "text-destructive";
-  return (
-    <div className="text-center">
-      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className={`font-mono text-xs font-semibold ${color}`}>{pct}%</div>
     </div>
   );
 }
