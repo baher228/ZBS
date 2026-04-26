@@ -7,19 +7,25 @@ import {
   ClipboardCopy,
   ImagePlus,
   Loader2,
+  MessageSquare,
   Send,
+  Sparkles,
   XCircle,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   fetchCompanyProfile,
   fetchProviderInfo,
   generateSocialPost,
   runAgentTask,
+  sendContentChat,
   type AgentTaskPayload,
   type AgentTaskResponse,
   type CompanyProfile,
+  type ContentChatMessage,
+  type ContentChatResponse,
   type ProviderInfo,
   type SocialPostResponse,
 } from "@/lib/agentApi";
@@ -44,6 +50,14 @@ const CONTENT_SECTIONS = [
   { key: "social_post", label: "Social Post", icon: "📱" },
 ] as const;
 
+type ContentChatEntry = {
+  role: "user" | "assistant";
+  content: string;
+  followUpQuestions?: string[];
+  generatedContent?: Record<string, string> | null;
+  timestamp: number;
+};
+
 function ContentPage() {
   const [apiBaseUrl] = useState(
     () => localStorage.getItem("zbs-api-base-url") ?? defaultApiBaseUrl,
@@ -58,10 +72,21 @@ function ContentPage() {
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
   const [additionalContext, setAdditionalContext] = useState("");
 
+  // Chat state
+  const [chatMessages, setChatMessages] = useState<ContentChatEntry[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
     fetchProviderInfo(apiBaseUrl).then(setProviderInfo);
     fetchCompanyProfile(apiBaseUrl).then(setCompanyProfile);
   }, [apiBaseUrl]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatLoading]);
 
   const output = result?.agent_response?.output ?? {};
 
@@ -110,6 +135,55 @@ function ContentPage() {
     }
   };
 
+  const handleChatSend = async (text?: string) => {
+    const msgText = text ?? chatInput.trim();
+    if (!msgText || chatLoading) return;
+
+    const userEntry: ContentChatEntry = {
+      role: "user",
+      content: msgText,
+      timestamp: Date.now(),
+    };
+    setChatMessages((prev) => [...prev, userEntry]);
+    setChatInput("");
+    setChatLoading(true);
+
+    const history: ContentChatMessage[] = [
+      ...chatMessages.map((m) => ({ role: m.role, content: m.content })),
+      { role: "user" as const, content: msgText },
+    ];
+
+    try {
+      const response: ContentChatResponse = await sendContentChat(apiBaseUrl, history);
+
+      const assistantEntry: ContentChatEntry = {
+        role: "assistant",
+        content: response.reply,
+        followUpQuestions: response.follow_up_questions,
+        generatedContent: response.generated_content,
+        timestamp: Date.now(),
+      };
+      setChatMessages((prev) => [...prev, assistantEntry]);
+    } catch (err) {
+      const errorEntry: ContentChatEntry = {
+        role: "assistant",
+        content: `Error: ${err instanceof Error ? err.message : "Request failed"}`,
+        timestamp: Date.now(),
+      };
+      setChatMessages((prev) => [...prev, errorEntry]);
+    } finally {
+      setChatLoading(false);
+      chatInputRef.current?.focus();
+    }
+  };
+
+  const handleChatKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleChatSend();
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -126,78 +200,162 @@ function ContentPage() {
           </p>
         </div>
 
-        {/* Company context + prompt row */}
-        <div className="mb-8 grid gap-4 lg:grid-cols-[1fr_auto]">
-          <div className="space-y-3">
-            {companyProfile ? (
-              <div className="flex items-center gap-2 border border-success/30 bg-success/5 px-4 py-2.5">
-                <Building2 className="h-4 w-4 text-success" />
-                <span className="text-xs text-foreground/80">
-                  Context loaded: <strong>{companyProfile.name}</strong> —{" "}
-                  {companyProfile.industry || "General"} · {companyProfile.stage}
-                </span>
-                <Link
-                  to="/onboarding"
-                  className="ml-auto text-xs text-primary hover:text-foreground transition-colors"
-                >
-                  Edit
-                </Link>
-              </div>
-            ) : (
+        {/* Company context */}
+        <div className="mb-8">
+          {companyProfile ? (
+            <div className="flex items-center gap-2 border border-success/30 bg-success/5 px-4 py-2.5">
+              <Building2 className="h-4 w-4 text-success" />
+              <span className="text-xs text-foreground/80">
+                Context loaded: <strong>{companyProfile.name}</strong> —{" "}
+                {companyProfile.industry || "General"} · {companyProfile.stage}
+              </span>
               <Link
                 to="/onboarding"
-                className="flex items-center gap-2 border border-foreground/15 bg-card/30 px-4 py-2.5 hover:border-primary/30 transition-colors"
+                className="ml-auto text-xs text-primary hover:text-foreground transition-colors"
               >
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  No company profile — <span className="text-primary">set up now</span> for better
-                  results
-                </span>
+                Edit
               </Link>
-            )}
-
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={2}
-              placeholder="Describe what content you need…"
-              className="w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none resize-none"
-            />
-
-            <label className="block">
-              <span className="label-mono">
-                Additional Context{" "}
-                <span className="text-muted-foreground text-[10px]">(optional)</span>
+            </div>
+          ) : (
+            <Link
+              to="/onboarding"
+              className="flex items-center gap-2 border border-foreground/15 bg-card/30 px-4 py-2.5 hover:border-primary/30 transition-colors"
+            >
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                No company profile — <span className="text-primary">set up now</span> for better
+                results
               </span>
-              <textarea
-                value={additionalContext}
-                onChange={(e) => setAdditionalContext(e.target.value)}
-                rows={2}
-                placeholder="Brand guidelines, specific policies, reference materials, links to include…"
-                className="mt-1 w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none resize-none focus:border-primary transition-colors"
-              />
-            </label>
+            </Link>
+          )}
+        </div>
+
+        {/* ── Content Chat ─────────────────────────────── */}
+        <div className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="h-4 w-4 text-primary" />
+            <span className="label-mono">Content Assistant</span>
+          </div>
+          <p className="text-xs text-foreground/60 mb-4 max-w-lg">
+            Chat with the content agent to brainstorm ideas, share materials (team photos, brand
+            guidelines, links), and get content suggestions before generating.
+          </p>
+
+          <div className="border border-foreground/10 bg-card/20 flex flex-col min-h-[300px] max-h-[500px]">
+            {/* Chat messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {chatMessages.length === 0 && !chatLoading && (
+                <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                  <Sparkles className="h-8 w-8 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm text-muted-foreground mb-1">Content Assistant</p>
+                  <p className="text-xs text-foreground/40 max-w-sm">
+                    Tell me about your content needs. I&apos;ll ask for team photos, brand assets,
+                    or specific details to create better content.
+                  </p>
+                </div>
+              )}
+
+              {chatMessages.map((entry, i) => (
+                <ContentChatBubble
+                  key={i}
+                  entry={entry}
+                  onFollowUp={handleChatSend}
+                />
+              ))}
+
+              {chatLoading && (
+                <div className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div className="bg-foreground/5 border border-foreground/10 px-4 py-3 max-w-[80%]">
+                    <div className="flex items-center gap-2 text-sm text-foreground/60">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Thinking…
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Chat input */}
+            <div className="border-t border-foreground/10 p-3">
+              <div className="flex gap-2">
+                <textarea
+                  ref={chatInputRef}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={handleChatKeyDown}
+                  placeholder="Describe your content needs, paste links, share brand details…"
+                  rows={2}
+                  className="flex-1 border border-foreground/15 bg-card/50 px-3 py-2 text-sm outline-none resize-none focus:border-primary transition-colors"
+                />
+                <button
+                  onClick={() => handleChatSend()}
+                  disabled={!chatInput.trim() || chatLoading}
+                  className="self-end px-4 py-2 bg-primary text-primary-foreground text-sm font-medium hover:bg-foreground disabled:opacity-40 transition-colors"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Generate Content Section ─────────────────── */}
+        <div className="border-t border-foreground/10 pt-8 mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className="h-4 w-4 text-primary" />
+            <span className="label-mono">Generate Full Content Package</span>
           </div>
 
-          <div className="flex flex-col justify-end gap-2">
-            <button
-              onClick={submit}
-              disabled={loading || !prompt.trim()}
-              className="inline-flex items-center justify-center gap-2 bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-foreground disabled:opacity-60 whitespace-nowrap"
-            >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {loading ? "Generating…" : "Generate Content"}
-            </button>
-            {providerInfo && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground justify-end">
-                <Zap className="h-3 w-3" />
-                <span>
-                  {providerInfo.provider === "mock"
-                    ? "Mock provider"
-                    : `${providerInfo.provider} · ${providerInfo.model}`}
+          <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
+            <div className="space-y-3">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={2}
+                placeholder="Describe what content you need…"
+                className="w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none resize-none"
+              />
+
+              <label className="block">
+                <span className="label-mono">
+                  Additional Context{" "}
+                  <span className="text-muted-foreground text-[10px]">(optional)</span>
                 </span>
-              </div>
-            )}
+                <textarea
+                  value={additionalContext}
+                  onChange={(e) => setAdditionalContext(e.target.value)}
+                  rows={2}
+                  placeholder="Brand guidelines, specific policies, reference materials, links to include…"
+                  className="mt-1 w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none resize-none focus:border-primary transition-colors"
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-col justify-end gap-2">
+              <button
+                onClick={submit}
+                disabled={loading || !prompt.trim()}
+                className="inline-flex items-center justify-center gap-2 bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-foreground disabled:opacity-60 whitespace-nowrap"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loading ? "Generating…" : "Generate Content"}
+              </button>
+              {providerInfo && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground justify-end">
+                  <Zap className="h-3 w-3" />
+                  <span>
+                    {providerInfo.provider === "mock"
+                      ? "Mock provider"
+                      : `${providerInfo.provider} · ${providerInfo.model}`}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -340,6 +498,104 @@ function ContentPage() {
     </div>
   );
 }
+
+/* ── Content Chat Bubble ─────────────────────────────────── */
+
+function ContentChatBubble({
+  entry,
+  onFollowUp,
+}: {
+  entry: ContentChatEntry;
+  onFollowUp: (text: string) => void;
+}) {
+  if (entry.role === "user") {
+    return (
+      <div className="flex justify-end">
+        <div className="bg-primary/10 border border-primary/20 px-4 py-3 max-w-[80%]">
+          <p className="text-sm whitespace-pre-wrap">{entry.content}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-3">
+      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <Sparkles className="h-3.5 w-3.5 text-primary" />
+      </div>
+      <div className="max-w-[85%] space-y-3">
+        <div className="bg-foreground/5 border border-foreground/10 px-4 py-3">
+          <div className="prose-chat text-sm leading-relaxed">
+            <ReactMarkdown>{entry.content}</ReactMarkdown>
+          </div>
+        </div>
+
+        {/* Generated content blocks */}
+        {entry.generatedContent && Object.keys(entry.generatedContent).length > 0 && (
+          <div className="space-y-2">
+            {Object.entries(entry.generatedContent).map(([key, value]) => (
+              <GeneratedContentBlock key={key} title={key} content={value} />
+            ))}
+          </div>
+        )}
+
+        {/* Follow-up questions */}
+        {entry.followUpQuestions && entry.followUpQuestions.length > 0 && (
+          <div className="space-y-1.5">
+            <span className="text-[10px] text-foreground/40 uppercase tracking-wider">
+              I might need from you
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {entry.followUpQuestions.map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => onFollowUp(q)}
+                  className="text-left text-xs px-3 py-1.5 border border-primary/20 text-primary/80 hover:bg-primary/5 hover:border-primary/40 transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GeneratedContentBlock({ title, content }: { title: string; content: string }) {
+  const [copied, setCopied] = useState(false);
+  const label = title.replaceAll("_", " ");
+
+  const copy = () => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="border border-foreground/15 bg-card/40 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-foreground/10 bg-foreground/[0.03]">
+        <span className="label-mono text-[10px] capitalize">{label}</span>
+        <button
+          onClick={copy}
+          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ClipboardCopy className="h-3 w-3" />
+          {copied ? "Copied!" : "Copy"}
+        </button>
+      </div>
+      <div className="px-4 py-3">
+        <div className="prose-chat text-xs leading-relaxed">
+          <ReactMarkdown>{content}</ReactMarkdown>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Social Post Generator ───────────────────────────────── */
 
 const PLATFORM_OPTIONS = [
   { value: "linkedin" as const, label: "LinkedIn", icon: "in" },
@@ -602,6 +858,8 @@ function PostGenerator({
     </div>
   );
 }
+
+/* ── Shared Components ────────────────────────────────────── */
 
 function ContentCard({
   icon,

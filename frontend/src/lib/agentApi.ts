@@ -242,6 +242,66 @@ export async function sendLegalChat(
   return response.json();
 }
 
+/* ── Legal Overview ─────────────────────────────────────── */
+
+export type LegalOverviewIssue = {
+  title: string;
+  severity: "high" | "medium" | "low";
+  description: string;
+  recommendation: string;
+};
+
+export type LegalOverviewResponse = {
+  summary: string;
+  potential_issues: LegalOverviewIssue[];
+  recommended_documents: string[];
+  missing_info: string[];
+  compliance_areas: string[];
+};
+
+export async function fetchLegalOverview(
+  apiBaseUrl: string,
+): Promise<LegalOverviewResponse> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/legal/overview`);
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+  return response.json();
+}
+
+/* ── Content Chat ──────────────────────────────────────── */
+
+export type ContentChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type ContentChatResponse = {
+  reply: string;
+  follow_up_questions: string[];
+  content_ready: boolean;
+  generated_content: Record<string, string> | null;
+};
+
+export async function sendContentChat(
+  apiBaseUrl: string,
+  messages: ContentChatMessage[],
+): Promise<ContentChatResponse> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/content/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export async function deleteCompanyProfile(apiBaseUrl: string): Promise<boolean> {
   try {
     const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company`, {

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.campaigns import router as campaigns_router
 from app.api.routes.company import router as company_router
+from app.api.routes.content_chat import router as content_chat_router
 from app.api.routes.health import router as health_router
 from app.api.routes.legal_chat import router as legal_chat_router
 from app.api.routes.tasks import router as tasks_router
@@ -29,6 +30,7 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(company_router)
     api_v1_router.include_router(tasks_router)
     api_v1_router.include_router(legal_chat_router)
+    api_v1_router.include_router(content_chat_router)
 
     @app.get("/")
     def root() -> dict[str, str]:

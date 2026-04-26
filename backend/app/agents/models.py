@@ -174,6 +174,7 @@ class TaskResponse(BaseModel):
 
 
 class LegalChatMode(StrEnum):
+    OVERVIEW = "overview"
     LEGAL_ADVICE = "legal_advice"
     TAX = "tax"
     DOCUMENT_DRAFTING = "document_drafting"
@@ -197,3 +198,37 @@ class LegalChatResponse(BaseModel):
     follow_up_questions: list[str] = Field(default_factory=list)
     mode: LegalChatMode
     sources_used: list[str] = Field(default_factory=list)
+
+
+class LegalOverviewIssue(BaseModel):
+    title: str
+    severity: str = Field(..., pattern=r"^(high|medium|low)$")
+    description: str
+    recommendation: str
+
+
+class LegalOverviewResponse(BaseModel):
+    summary: str
+    potential_issues: list[LegalOverviewIssue] = Field(default_factory=list)
+    recommended_documents: list[str] = Field(default_factory=list)
+    missing_info: list[str] = Field(default_factory=list)
+    compliance_areas: list[str] = Field(default_factory=list)
+
+
+# ── Content Chat Models ──────────────────────────────────────
+
+
+class ContentChatMessage(BaseModel):
+    role: str = Field(..., pattern=r"^(user|assistant)$")
+    content: str = Field(..., min_length=1)
+
+
+class ContentChatRequest(BaseModel):
+    messages: list[ContentChatMessage] = Field(..., min_length=1)
+
+
+class ContentChatResponse(BaseModel):
+    reply: str
+    follow_up_questions: list[str] = Field(default_factory=list)
+    content_ready: bool = False
+    generated_content: dict[str, str] | None = None

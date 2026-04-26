@@ -16,6 +16,8 @@ from app.agents.models import (
     AgentCapability,
     AgentRequest,
     AgentResponse,
+    ContentChatMessage,
+    ContentChatResponse,
     ContentPackage,
     DocumentReviewResult,
     LegalChatMessage,
@@ -23,6 +25,7 @@ from app.agents.models import (
     LegalChatResponse,
     LegalDocumentDraft,
     LegalIssueScan,
+    LegalOverviewResponse,
     LLMReviewEvaluation,
     SocialPost,
     SocialPostRequest,
@@ -130,6 +133,22 @@ class LLMProvider(ABC):
         document_type: str | None = None,
     ) -> LegalChatResponse:
         """Handle a multi-turn legal chat conversation."""
+
+    @abstractmethod
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        """Generate a legal overview for a company, flagging potential issues."""
+
+    @abstractmethod
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+    ) -> ContentChatResponse:
+        """Handle a multi-turn content creation chat conversation."""
 
     @abstractmethod
     def generate_social_post(
@@ -558,6 +577,69 @@ class MockLLMProvider(LLMProvider):
             follow_up_questions=["What jurisdictions do you operate in?", "Do you collect personal data?"],
             mode=mode,
             sources_used=["FTC Act", "CCPA Guidelines"],
+        )
+
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        from app.agents.models import LegalOverviewIssue
+
+        return LegalOverviewResponse(
+            summary="[Mock Overview] Based on your company profile, here is a legal overview. "
+            "This is educational guidance — consult a qualified attorney for specific advice.",
+            potential_issues=[
+                LegalOverviewIssue(
+                    title="Privacy Policy Required",
+                    severity="high",
+                    description="Your product likely collects user data, requiring a privacy policy under GDPR/CCPA.",
+                    recommendation="Draft a privacy policy covering data collection, usage, and user rights.",
+                ),
+                LegalOverviewIssue(
+                    title="Terms of Service",
+                    severity="high",
+                    description="A Terms of Service agreement is essential to limit liability.",
+                    recommendation="Create ToS covering user responsibilities, limitations, and dispute resolution.",
+                ),
+                LegalOverviewIssue(
+                    title="Intellectual Property Protection",
+                    severity="medium",
+                    description="Consider protecting your IP through trademarks and patents.",
+                    recommendation="Consult an IP attorney to evaluate trademark and patent opportunities.",
+                ),
+            ],
+            recommended_documents=[
+                "Privacy Policy",
+                "Terms of Service",
+                "Non-Disclosure Agreement",
+                "Employee/Contractor Agreement",
+                "Cookie Policy",
+            ],
+            missing_info=[
+                "What personal data do you collect from users?",
+                "Do you have employees or only contractors?",
+                "Are you handling payment processing directly?",
+            ],
+            compliance_areas=["Data Privacy (GDPR/CCPA)", "Consumer Protection", "Employment Law"],
+        )
+
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+    ) -> ContentChatResponse:
+        last_msg = messages[-1].content if messages else "content creation"
+        return ContentChatResponse(
+            reply=(
+                f"[Mock content response] I can help with: {last_msg[:100]}. "
+                "To create the best content, I might need some additional materials from you."
+            ),
+            follow_up_questions=[
+                "Do you have team photos you'd like to include?",
+                "What's the main call-to-action URL?",
+                "Any specific brand colors or guidelines to follow?",
+            ],
         )
 
     def generate_social_post(
@@ -1137,6 +1219,74 @@ class OpenAILLMProvider(LLMProvider):
 
         return structured_model.invoke(chat_messages)
 
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        structured_model = self.model.with_structured_output(LegalOverviewResponse)
+
+        system_prompt = (
+            "You are a startup legal analyst. Given a company's profile, generate a comprehensive "
+            "legal overview that identifies potential legal issues, recommends documents to prepare, "
+            "and flags compliance areas.\n\n"
+            "For each potential issue, assess severity (high/medium/low) based on:\n"
+            "- high: immediate legal risk or regulatory requirement\n"
+            "- medium: important but not immediately critical\n"
+            "- low: good practice but not urgent\n\n"
+            "In 'missing_info', list specific questions about information you'd need from the founder "
+            "to give more targeted advice. These should be practical questions about their business "
+            "operations, data practices, team structure, etc.\n\n"
+            "In 'recommended_documents', list legal documents this company should have.\n"
+            "In 'compliance_areas', list regulatory areas relevant to their business.\n\n"
+            "CRITICAL: This is educational guidance, NOT legal advice. State this in the summary."
+        )
+
+        human_msg = "Generate a legal overview for this company."
+        if company_context:
+            human_msg += f"\n\nCompany context:\n{company_context}"
+        if source_context:
+            human_msg += f"\n\nRegulatory reference sources:\n{source_context}"
+
+        return structured_model.invoke([("system", system_prompt), ("human", human_msg)])
+
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+    ) -> ContentChatResponse:
+        structured_model = self.model.with_structured_output(ContentChatResponse)
+
+        system_prompt = (
+            "You are a startup content creation assistant. You help founders create marketing content "
+            "including landing page copy, launch emails, social posts, blog posts, and more.\n\n"
+            "IMPORTANT BEHAVIORS:\n"
+            "- Actively request materials from the user: team photos, product screenshots, logos, "
+            "brand guidelines, testimonials, metrics, case studies\n"
+            "- Ask clarifying questions about tone, target audience, key messages, and calls-to-action\n"
+            "- When the user pastes or describes content (URLs, text, images), incorporate it naturally\n"
+            "- Suggest content improvements and alternatives\n"
+            "- Use follow_up_questions to ask for specific materials or information you need\n"
+            "- Set content_ready=true and populate generated_content when you have enough info to "
+            "produce final content\n"
+            "- generated_content keys should be descriptive: 'landing_copy', 'email_draft', "
+            "'social_post', 'blog_outline', etc.\n\n"
+            "Be conversational and collaborative. Help the founder feel like they have a content "
+            "strategist working with them."
+        )
+
+        if company_context:
+            system_prompt += (
+                f"\n\nCompany context (use to personalize):\n{company_context}\n\n"
+                "Use these details in your suggestions. Don't re-ask for info already provided."
+            )
+
+        chat_messages: list[tuple[str, str]] = [("system", system_prompt)]
+        for msg in messages:
+            chat_messages.append((msg.role if msg.role == "user" else "assistant", msg.content))
+
+        return structured_model.invoke(chat_messages)
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -1343,6 +1493,20 @@ class ResilientLLMProvider(LLMProvider):
     ) -> LegalChatResponse:
         return self._try_primary("chat_legal", messages, mode, source_context, company_context, document_type)
 
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        return self._try_primary("generate_legal_overview", company_context, source_context)
+
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+    ) -> ContentChatResponse:
+        return self._try_primary("chat_content", messages, company_context)
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -1441,6 +1605,20 @@ class UnconfiguredLLMProvider(LLMProvider):
         company_context: str,
         document_type: str | None = None,
     ) -> LegalChatResponse:
+        self._raise_unconfigured()
+
+    def generate_legal_overview(
+        self,
+        company_context: str,
+        source_context: str,
+    ) -> LegalOverviewResponse:
+        self._raise_unconfigured()
+
+    def chat_content(
+        self,
+        messages: list[ContentChatMessage],
+        company_context: str,
+    ) -> ContentChatResponse:
         self._raise_unconfigured()
 
     def generate_social_post(
