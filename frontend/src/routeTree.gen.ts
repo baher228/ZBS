@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as MarketingResearchRouteImport } from './routes/marketing-research'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -23,6 +24,11 @@ import { Route as DemoRoomLiveRouteImport } from './routes/demo-room.live'
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingResearchRoute = MarketingResearchRouteImport.update({
+  id: '/marketing-research',
+  path: '/marketing-research',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalRoute = LegalRouteImport.update({
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
   '/legal': typeof LegalRoute
+  '/marketing-research': typeof MarketingResearchRoute
   '/onboarding': typeof OnboardingRoute
   '/demo-room/live': typeof DemoRoomLiveRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
   '/legal': typeof LegalRoute
+  '/marketing-research': typeof MarketingResearchRoute
   '/onboarding': typeof OnboardingRoute
   '/demo-room/live': typeof DemoRoomLiveRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
   '/legal': typeof LegalRoute
+  '/marketing-research': typeof MarketingResearchRoute
   '/onboarding': typeof OnboardingRoute
   '/demo-room/live': typeof DemoRoomLiveRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/legal'
+    | '/marketing-research'
     | '/onboarding'
     | '/demo-room/live'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/legal'
+    | '/marketing-research'
     | '/onboarding'
     | '/demo-room/live'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/legal'
+    | '/marketing-research'
     | '/onboarding'
     | '/demo-room/live'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DemoRoute: typeof DemoRoute
   LegalRoute: typeof LegalRoute
+  MarketingResearchRoute: typeof MarketingResearchRoute
   OnboardingRoute: typeof OnboardingRoute
   DemoRoomLiveRoute: typeof DemoRoomLiveRoute
 }
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketing-research': {
+      id: '/marketing-research'
+      path: '/marketing-research'
+      fullPath: '/marketing-research'
+      preLoaderRoute: typeof MarketingResearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal': {
@@ -244,6 +264,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DemoRoute: DemoRoute,
   LegalRoute: LegalRoute,
+  MarketingResearchRoute: MarketingResearchRoute,
   OnboardingRoute: OnboardingRoute,
   DemoRoomLiveRoute: DemoRoomLiveRoute,
 }

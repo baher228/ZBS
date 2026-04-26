@@ -28,12 +28,17 @@ class Settings(BaseSettings):
     )
     llm_provider: str = "mock"
     llm_model: str = "mock-gtm-v1"
+    llm_timeout_seconds: int = 240
+    llm_content_timeout_seconds: int = 420
+    llm_max_retries: int = 2
     llm_api_key: str | None = None
     openai_api_key: str | None = None
     pydantic_ai_gateway_api_key: str | None = None
     pydantic_ai_gateway_base_url: str | None = None
     pydantic: str | None = None
     fal_api_key: str | None = None
+    fal_image_model: str = "openai/gpt-image-2"
+    fal_image_edit_model: str = "openai/gpt-image-2/edit"
     gemini_api_key: str | None = None
     gemini_live_model: str = "gemini-3.1-flash-live-preview"
     gemini_live_voice: str = "Zephyr"
@@ -80,8 +85,8 @@ class Settings(BaseSettings):
         if self.llm_model != "mock-gtm-v1":
             return self.llm_model
         if self.resolved_llm_provider == "gateway":
-            return "gpt-4o"
-        return "gpt-4o"
+            return "gpt-5.2"
+        return "gpt-5.2"
 
     @property
     def resolved_cors_allow_origins(self) -> list[str]:

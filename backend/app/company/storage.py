@@ -6,6 +6,7 @@ from pathlib import Path
 
 from app.company.models import CompanyProfile
 from app.core.config import BACKEND_ROOT
+from app.company.context_store import get_enriched_context
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,10 @@ def delete_profile() -> bool:
 
 def get_company_context() -> str | None:
     profile = load_profile()
+    enriched = get_enriched_context()
     if profile is None:
-        return None
-    return profile.to_context_string()
+        return enriched or None
+    base = profile.to_context_string()
+    if enriched:
+        return base + "\n\n" + enriched
+    return base

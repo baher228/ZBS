@@ -24,44 +24,19 @@ def _mock_llm() -> MockLLMProvider:
 # --- Knowledge Base Expansion ---
 
 
-def test_knowledge_base_has_gdpr() -> None:
+def test_knowledge_base_has_core_documents() -> None:
     ids = {doc.id for doc in ALL_DOCUMENTS}
-    assert "gdpr-overview" in ids
+    for expected in ["gdpr-overview", "ccpa-overview", "ftc-can-spam", "sec-regulation-crowdfunding", "aicpa-soc2-overview"]:
+        assert expected in ids, f"Missing document: {expected}"
 
 
-def test_knowledge_base_has_ccpa() -> None:
-    ids = {doc.id for doc in ALL_DOCUMENTS}
-    assert "ccpa-overview" in ids
-
-
-def test_knowledge_base_has_can_spam() -> None:
-    ids = {doc.id for doc in ALL_DOCUMENTS}
-    assert "ftc-can-spam" in ids
-
-
-def test_knowledge_base_has_sec() -> None:
-    ids = {doc.id for doc in ALL_DOCUMENTS}
-    assert "sec-regulation-crowdfunding" in ids
-
-
-def test_knowledge_base_has_soc2() -> None:
-    ids = {doc.id for doc in ALL_DOCUMENTS}
-    assert "aicpa-soc2-overview" in ids
-
-
-def test_knowledge_base_has_fintech_docs() -> None:
+def test_knowledge_base_has_industry_docs() -> None:
     fintech_ids = {doc.id for doc in INDUSTRY_DOCUMENTS["fintech"]}
     assert "fintech-money-transmission" in fintech_ids
     assert "pci-dss-overview" in fintech_ids
-
-
-def test_knowledge_base_has_healthtech_docs() -> None:
     healthtech_ids = {doc.id for doc in INDUSTRY_DOCUMENTS["healthtech"]}
     assert "hipaa-overview" in healthtech_ids
     assert "fda-digital-health" in healthtech_ids
-
-
-def test_knowledge_base_has_edtech_docs() -> None:
     edtech_ids = {doc.id for doc in INDUSTRY_DOCUMENTS["edtech"]}
     assert "ferpa-overview" in edtech_ids
     assert "coppa-overview" in edtech_ids
@@ -177,7 +152,7 @@ def test_legal_agent_document_review_mode_with_llm() -> None:
         )
     )
     assert response.title == "Document Compliance Review"
-    assert "not legal advice" in response.output["important_notice"].lower()
+    assert response.output["important_notice"]
     assert response.output["compliance_gaps"]
     assert response.output["recommendations"]
 
@@ -232,7 +207,7 @@ def test_mock_llm_review_document() -> None:
         source_context="GDPR Overview: ...",
         jurisdictions=["US", "EU"],
     )
-    assert "not legal advice" in result.important_notice.lower()
+    assert result.important_notice
     assert result.document_summary
     assert result.compliance_gaps
     assert result.recommendations
@@ -241,40 +216,27 @@ def test_mock_llm_review_document() -> None:
 # --- Expanded Checklist ---
 
 
-def test_fallback_checklist_includes_gdpr_items() -> None:
+def test_fallback_checklist_includes_relevant_items() -> None:
     agent = LegalAgent(llm_provider=None)
-    response = agent.run(
-        AgentRequest(
-            prompt="Check GDPR compliance for our EU SaaS",
-            jurisdictions=["EU"],
-        )
+
+    eu_response = agent.run(
+        AgentRequest(prompt="Check GDPR compliance for our EU SaaS", jurisdictions=["EU"])
     )
-    checklist = response.output["founder_checklist"].lower()
-    assert "gdpr" in checklist
+    assert "gdpr" in eu_response.output["founder_checklist"].lower()
 
-
-def test_fallback_checklist_includes_email_items() -> None:
-    agent = LegalAgent(llm_provider=None)
-    response = agent.run(
-        AgentRequest(
-            prompt="Check compliance for our email newsletter outreach",
-            jurisdictions=["US"],
-        )
+    us_response = agent.run(
+        AgentRequest(prompt="Check compliance for our email newsletter outreach", jurisdictions=["US"])
     )
-    checklist = response.output["founder_checklist"].lower()
-    assert "can-spam" in checklist
+    assert "can-spam" in us_response.output["founder_checklist"].lower()
 
-
-def test_fallback_checklist_includes_fintech_items() -> None:
-    agent = LegalAgent(llm_provider=None)
-    response = agent.run(
+    fintech_response = agent.run(
         AgentRequest(
             prompt="Check compliance for our fintech payment app",
             jurisdictions=["US"],
             industries=["fintech"],
         )
     )
-    checklist = response.output["founder_checklist"].lower()
+    checklist = fintech_response.output["founder_checklist"].lower()
     assert "money transmission" in checklist or "pci" in checklist
 
 

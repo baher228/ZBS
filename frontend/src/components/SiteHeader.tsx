@@ -14,8 +14,6 @@ export function SiteHeader() {
             { to: "/onboarding", label: "Setup" },
             { to: "/agents", label: "Agents" },
             { to: "/dashboard", label: "Dashboard" },
-            { to: "/demo", label: "Demo Room" },
-            { to: "/crm", label: "CRM" },
             { to: "/about", label: "About" },
           ].map((l) => (
             <Link

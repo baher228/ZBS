@@ -68,6 +68,7 @@ export function AgentTaskConsole({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+  const [additionalContext, setAdditionalContext] = useState("");
 
   const isLegal = taskType === "legal";
 
@@ -101,10 +102,19 @@ export function AgentTaskConsole({
 
     const enrichedPayload: AgentTaskPayload = {
       ...payload,
-      jurisdictions,
+      ...(companyProfile
+        ? {
+            startup_idea: undefined,
+            target_audience: undefined,
+            goal: undefined,
+            channel: undefined,
+          }
+        : {}),
+      jurisdictions: companyProfile ? companyProfile.jurisdictions : jurisdictions,
       industries,
       startup_url: startupUrl || undefined,
       review_mode: reviewMode,
+      additional_context: additionalContext || undefined,
       context: {
         ...(payload.context ?? {}),
         task_type: taskType,
@@ -162,24 +172,27 @@ export function AgentTaskConsole({
           >
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
-              No company profile — <span className="text-primary">set up now</span> for better
+              No company profile - <span className="text-primary">set up now</span> for better
               results
             </span>
           </Link>
         )}
 
         <div className="mt-8 space-y-4">
-          <label className="block">
-            <span className="label-mono">API Base URL</span>
-            <div className="mt-2 flex items-center gap-2 border border-foreground/20 bg-card/50 px-3 py-2">
-              <Server className="h-4 w-4 text-muted-foreground" />
-              <input
-                value={apiBaseUrl}
-                onChange={(event) => setApiBaseUrl(event.target.value)}
-                className="w-full bg-transparent text-sm outline-none"
-              />
-            </div>
-          </label>
+          {/* Hide API Base URL on legal page - not needed for end users */}
+          {!isLegal && (
+            <label className="block">
+              <span className="label-mono">API Base URL</span>
+              <div className="mt-2 flex items-center gap-2 border border-foreground/20 bg-card/50 px-3 py-2">
+                <Server className="h-4 w-4 text-muted-foreground" />
+                <input
+                  value={apiBaseUrl}
+                  onChange={(event) => setApiBaseUrl(event.target.value)}
+                  className="w-full bg-transparent text-sm outline-none"
+                />
+              </div>
+            </label>
+          )}
 
           <label className="block">
             <span className="label-mono">Prompt</span>
@@ -191,42 +204,47 @@ export function AgentTaskConsole({
             />
           </label>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              ["startup_idea", "Startup idea"],
-              ["target_audience", "Audience"],
-              ["goal", "Goal"],
-              ["channel", "Channel"],
-            ].map(([field, label]) => (
-              <label key={field} className="block">
-                <span className="label-mono">{label}</span>
-                <input
-                  value={(payload[field as keyof AgentTaskPayload] as string | undefined) ?? ""}
-                  onChange={(event) =>
-                    updatePayload(field as keyof AgentTaskPayload, event.target.value)
-                  }
-                  className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
-                />
-              </label>
-            ))}
-          </div>
+          {/* Only show manual context fields when no company profile is loaded */}
+          {!companyProfile && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                ["startup_idea", "Startup idea"],
+                ["target_audience", "Audience"],
+                ["goal", "Goal"],
+                ["channel", "Channel"],
+              ].map(([field, label]) => (
+                <label key={field} className="block">
+                  <span className="label-mono">{label}</span>
+                  <input
+                    value={(payload[field as keyof AgentTaskPayload] as string | undefined) ?? ""}
+                    onChange={(event) =>
+                      updatePayload(field as keyof AgentTaskPayload, event.target.value)
+                    }
+                    className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
+                  />
+                </label>
+              ))}
+            </div>
+          )}
 
-          {/* Startup URL */}
-          <label className="block">
-            <span className="label-mono">
-              <Globe className="inline h-3 w-3 mr-1" />
-              Startup URL (optional)
-            </span>
-            <input
-              value={startupUrl}
-              onChange={(e) => setStartupUrl(e.target.value)}
-              placeholder="https://your-startup.com"
-              className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
-            />
-          </label>
+          {/* Startup URL - hidden on legal page since website is already on onboarding */}
+          {!isLegal && (
+            <label className="block">
+              <span className="label-mono">
+                <Globe className="inline h-3 w-3 mr-1" />
+                Startup URL (optional)
+              </span>
+              <input
+                value={startupUrl}
+                onChange={(e) => setStartupUrl(e.target.value)}
+                placeholder="https://your-startup.com"
+                className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
+              />
+            </label>
+          )}
 
-          {/* Jurisdiction selector — legal page only */}
-          {isLegal && (
+          {/* Jurisdiction selector - only when no company profile (profile has jurisdictions) */}
+          {isLegal && !companyProfile && (
             <div>
               <span className="label-mono">Jurisdictions</span>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -248,8 +266,8 @@ export function AgentTaskConsole({
             </div>
           )}
 
-          {/* Industry selector — legal page only */}
-          {isLegal && (
+          {/* Industry selector - only when no company profile (profile has industry) */}
+          {isLegal && !companyProfile && (
             <div>
               <span className="label-mono">Industries (optional)</span>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -271,7 +289,7 @@ export function AgentTaskConsole({
             </div>
           )}
 
-          {/* Document upload — legal page only */}
+          {/* Document upload - legal page only */}
           {isLegal && (
             <div className="space-y-2">
               <div className="flex items-center gap-3">
@@ -328,6 +346,25 @@ export function AgentTaskConsole({
               />
             </div>
           )}
+
+          {/* Additional context - always visible */}
+          <label className="block">
+            <span className="label-mono">
+              Additional Context{" "}
+              <span className="text-muted-foreground text-[10px]">(optional)</span>
+            </span>
+            <textarea
+              value={additionalContext}
+              onChange={(e) => setAdditionalContext(e.target.value)}
+              rows={3}
+              placeholder={
+                isLegal
+                  ? "Any additional policies, regulations, or specific concerns you want the agent to consider…"
+                  : "Brand guidelines, reference materials, specific requirements…"
+              }
+              className="mt-2 w-full border border-foreground/20 bg-card/50 p-3 text-sm outline-none"
+            />
+          </label>
 
           <button
             onClick={submit}
@@ -481,6 +518,7 @@ function OutputSection({
   taskType: string;
 }) {
   const isLegalSources = taskType === "legal" && sectionKey === "relevant_sources";
+  const isFollowUp = sectionKey === "follow_up_needed";
   const isImage = sectionKey.endsWith("_image");
   const displayLabel = sectionKey.replaceAll("_", " ");
 
@@ -488,13 +526,22 @@ function OutputSection({
     const sectionName = sectionKey.replace("_image", "").replaceAll("_", " ");
     return (
       <article className="border border-foreground/15 bg-card/40 p-4">
-        <div className="label-mono mb-2">Generated Image — {sectionName}</div>
+        <div className="label-mono mb-2">Generated Image - {sectionName}</div>
         <img
           src={value}
           alt={`Generated visual for ${sectionName}`}
           className="w-full rounded border border-foreground/10"
           loading="lazy"
         />
+      </article>
+    );
+  }
+
+  if (isFollowUp) {
+    return (
+      <article className="border border-warning/40 bg-warning/5 p-4">
+        <div className="label-mono mb-2 text-warning">Follow-up Information Needed</div>
+        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/80">{value}</p>
       </article>
     );
   }

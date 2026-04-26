@@ -2,6 +2,7 @@ import pytest
 
 from app.agents.campaign_models import CampaignCreateRequest
 from app.agents.llm import MockLLMProvider, ResilientLLMProvider, UnconfiguredLLMProvider
+from app.agents.models import MarketingResearchMessage
 from app.core.config import Settings
 
 
@@ -34,7 +35,7 @@ def test_resilient_provider_falls_back_to_mock_campaign_output() -> None:
     strategy = provider.generate_product_strategy(request)
 
     assert strategy.product_profile.name == "DemoRoom AI"
-    assert provider.last_error == "RuntimeError"
+    assert provider.last_error == "generate_product_strategy: RuntimeError"
 
 
 def test_settings_infer_gateway_provider_and_eu_base_url() -> None:
@@ -45,3 +46,16 @@ def test_settings_infer_gateway_provider_and_eu_base_url() -> None:
 
     assert settings.resolved_llm_provider == "gateway"
     assert settings.resolved_gateway_base_url == "https://gateway-eu.pydantic.dev/proxy/chat/"
+
+
+def test_resilient_provider_does_not_mock_marketing_research_chat() -> None:
+    provider = ResilientLLMProvider(UnconfiguredLLMProvider(), MockLLMProvider())
+
+    with pytest.raises(RuntimeError):
+        provider.chat_marketing_research(
+            [MarketingResearchMessage(role="user", content="Analyze competitors")],
+            company_context="",
+            workflow="competitor_analysis",
+        )
+
+    assert provider.last_error == "chat_marketing_research: RuntimeError"
