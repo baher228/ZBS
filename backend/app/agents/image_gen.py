@@ -66,7 +66,7 @@ def _build_contextual_prompt(section: str, section_text: str, company_context: s
             return _fallback_prompt(section, section_text)
 
         model = ChatOpenAI(
-            model="gpt-4o-mini",
+            model="gpt-5.2",
             api_key=api_key,
             base_url=base_url,
             max_tokens=200,

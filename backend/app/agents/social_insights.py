@@ -98,9 +98,9 @@ def extract_social_insights(
         from langchain_openai import ChatOpenAI
 
         model = ChatOpenAI(
-            model="gpt-4o",
-            api_key=settings.pydantic_ai_api_key,
-            base_url="https://ai.pydantic.dev/openai/v1",
+            model="gpt-5.2",
+            api_key=settings.resolved_gateway_api_key,
+            base_url=settings.resolved_gateway_base_url,
             max_tokens=800,
             temperature=0.3,
         )
