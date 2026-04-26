@@ -449,6 +449,62 @@ export async function fetchEnrichedContext(
   }
 }
 
+/* ── Dashboard ─────────────────────────────────────────── */
+
+export type CompanySummary = {
+  has_profile: boolean;
+  name: string;
+  description: string;
+  industry: string;
+  stage: string;
+  website: string;
+  jurisdictions: string[];
+  key_features: string[];
+  differentiators: string;
+  target_audience: string;
+  social_links_count: number;
+};
+
+export type ContextStatus = {
+  website_parsed: boolean;
+  website_url: string;
+  pages_count: number;
+  company_summary: string;
+  insights_count: number;
+  insights_by_agent: Record<string, number>;
+};
+
+export type ProviderStatus = {
+  provider: string;
+  model: string;
+  status: string;
+  last_error: string | null;
+};
+
+export type AgentInfo = {
+  name: string;
+  slug: string;
+  description: string;
+  status: string;
+};
+
+export type DashboardData = {
+  company: CompanySummary;
+  context: ContextStatus;
+  provider: ProviderStatus;
+  agents: AgentInfo[];
+};
+
+export async function fetchDashboard(apiBaseUrl: string): Promise<DashboardData | null> {
+  try {
+    const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/dashboard`);
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function clearEnrichedContext(apiBaseUrl: string): Promise<boolean> {
   try {
     const response = await fetch(
