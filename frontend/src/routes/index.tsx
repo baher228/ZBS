@@ -5,16 +5,16 @@ import { SystemControlPanel } from "@/components/SystemControlPanel";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Demeo — Cold outreach becomes AI demo rooms" },
+      { title: "Demeo — AI-powered GTM operations for founders" },
       {
         name: "description",
         content:
-          "We turn cold outreach into personalized AI demo rooms and qualified sales conversations. One AI operator runs your entire GTM.",
+          "AI agents that handle legal compliance, content creation, and market research — grounded in your company context.",
       },
       { property: "og:title", content: "Demeo" },
       {
         property: "og:description",
-        content: "Cold outreach → personalized AI demo rooms → qualified pipeline.",
+        content: "AI agents for legal, content, and market research — powered by your company context.",
       },
     ],
   }),
@@ -30,7 +30,7 @@ function Landing() {
       <div className="border-b border-foreground/15 bg-card/40 animate-slide-down">
         <div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between label-mono">
           <span>Vol. I — Issue 01</span>
-          <span className="hidden md:inline">Established 2026 · The AI Go-To-Market Operator</span>
+          <span className="hidden md:inline">Established 2026 · AI-Powered GTM Operations</span>
           <span>EST. ZBS</span>
         </div>
       </div>
@@ -54,20 +54,20 @@ function Landing() {
                 className="block animate-fade-up-hero"
                 style={{ animationDelay: "180ms" }}
               >
-                We turn cold outreach into
+                Your GTM team,
               </span>
               <span
                 className="block italic text-primary animate-fade-up-hero"
                 style={{ animationDelay: "340ms" }}
               >
-                personalized
+                powered by
               </span>
               <span
                 className="block animate-fade-up-hero"
                 style={{ animationDelay: "480ms" }}
               >
                 <span className="relative inline-block">
-                  AI demo rooms
+                  specialised AI agents
                   <span className="absolute -bottom-2 left-0 right-0 h-px bg-foreground/40" />
                 </span>
                 .
@@ -81,15 +81,15 @@ function Landing() {
             style={{ animationDelay: "640ms" }}
           >
             <p className="text-base md:text-lg text-foreground/75 leading-relaxed">
-              One AI operator finds your buyers, writes the message, runs the demo, and books the
-              meeting. Your sales team — replaced by intelligence.
+              Legal compliance, content creation, and market research — handled by AI agents
+              that learn your company context from your website, documents, and conversations.
             </p>
             <div className="mt-8 flex flex-col gap-2">
               <Link
-                to="/demo"
+                to="/onboarding"
                 className="group inline-flex items-center justify-between bg-primary text-primary-foreground px-6 py-4 label-mono hover:bg-foreground transition-colors"
               >
-                <span>Try the Demo Room</span>
+                <span>Get Started</span>
                 <span className="text-base">→</span>
               </Link>
               <Link
@@ -107,10 +107,10 @@ function Landing() {
         <div className="border-y border-foreground/15 bg-card/40">
           <div className="mx-auto max-w-7xl px-6 grid grid-cols-2 md:grid-cols-4">
             {[
-              { k: "412", l: "Qualified leads / mo" },
-              { k: "41%", l: "Reply rate" },
-              { k: "$0.38", l: "Per AI demo" },
-              { k: "10", l: "Specialised agents" },
+              { k: "4", l: "Specialised agents" },
+              { k: "gpt-5.2", l: "Frontier model" },
+              { k: "4", l: "Content workflows" },
+              { k: "∞", l: "Context memory" },
             ].map((s, i) => (
               <div
                 key={s.k}
@@ -130,7 +130,7 @@ function Landing() {
             <div>
               <div className="label-mono mb-2">§ I — The System</div>
               <h2 className="font-display text-3xl md:text-4xl font-medium">
-                A single operator. Ten disciplines.
+                One platform. Four specialised agents.
               </h2>
             </div>
             <div className="hidden md:block label-mono text-right">
@@ -156,18 +156,18 @@ function Landing() {
             {[
               {
                 n: "01",
-                title: "Knows your product",
-                desc: "Reads your site, docs, and pitch. Builds an ICP that converts — not a guess.",
+                title: "Legal & compliance",
+                desc: "Jurisdiction-aware legal advice, tax guidance, and document drafting — grounded in real regulatory sources.",
               },
               {
                 n: "02",
-                title: "Writes like a human",
-                desc: "Personalised outreach, per prospect. No templates, no spam, no recycled lines.",
+                title: "Content creation",
+                desc: "Social posts, emails, landing pages, and blog posts — generated with creative AI using your brand context.",
               },
               {
                 n: "03",
-                title: "Runs the demo",
-                desc: "Each prospect enters a private AI demo room — branded, tailored, on-brand.",
+                title: "Market research",
+                desc: "Competitor analysis, market sizing, audience insights, and trend intelligence — all from a single chat.",
               },
             ].map((f, i) => (
               <div
@@ -196,8 +196,8 @@ function Landing() {
           <div className="md:col-span-8">
             <div className="label-mono text-background/60 mb-4">§ III — Begin</div>
             <h2 className="font-display text-4xl md:text-6xl font-medium leading-[1.05]">
-              This is what sales <br />
-              <span className="italic text-accent">looks like</span> in two years.
+              Your AI back office <br />
+              <span className="italic text-accent">starts here</span>.
             </h2>
           </div>
           <div className="md:col-span-4 flex md:justify-end">
@@ -205,7 +205,7 @@ function Landing() {
               to="/dashboard"
               className="inline-flex items-center justify-between gap-6 bg-background text-foreground px-7 py-5 label-mono hover:bg-primary hover:text-primary-foreground transition-colors w-full md:w-auto"
             >
-              <span>Generate my GTM flow</span>
+              <span>Open Dashboard</span>
               <span className="text-base">→</span>
             </Link>
           </div>
@@ -215,7 +215,7 @@ function Landing() {
       <footer className="border-t border-foreground/15">
         <div className="mx-auto max-w-7xl px-6 py-6 flex items-center justify-between label-mono">
           <span>© ZBS — Demeo</span>
-          <span>Built for the future of go-to-market</span>
+          <span>AI agents for founders</span>
           <span>End — Issue 01</span>
         </div>
       </footer>
