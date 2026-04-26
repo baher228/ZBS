@@ -663,7 +663,7 @@ class OpenAILLMProvider(LLMProvider):
         resolved_key = api_key or settings.resolved_llm_api_key
 
         self.model = ChatOpenAI(
-            model="o3",
+            model="gpt-5.2",
             api_key=resolved_key,
             base_url=base_url,
             max_retries=0,
@@ -671,12 +671,12 @@ class OpenAILLMProvider(LLMProvider):
         )
 
         self.content_model = ChatOpenAI(
-            model="gpt-4.1",
+            model="gpt-5.2",
             api_key=resolved_key,
             base_url=base_url,
             temperature=1.1,
             max_retries=0,
-            timeout=20,
+            timeout=30,
         )
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
