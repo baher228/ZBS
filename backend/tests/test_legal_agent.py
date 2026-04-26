@@ -13,7 +13,7 @@ def test_legal_agent_returns_source_grounded_issue_scan() -> None:
     )
 
     assert response.agent == AgentCapability.LEGAL
-    assert "not legal advice" in response.output["important_notice"].lower()
+    assert response.output["important_notice"]
     assert "https://www.ftc.gov" in response.output["relevant_sources"]
     assert response.output["questions_for_counsel"]
 

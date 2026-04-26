@@ -287,11 +287,14 @@ export type ContentChatResponse = {
 export async function sendContentChat(
   apiBaseUrl: string,
   messages: ContentChatMessage[],
+  workflow?: string,
 ): Promise<ContentChatResponse> {
+  const body: Record<string, unknown> = { messages };
+  if (workflow) body.workflow = workflow;
   const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/content/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

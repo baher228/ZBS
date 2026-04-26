@@ -151,7 +151,7 @@ class LegalAgent:
         scope = ", ".join(request.jurisdictions) if request.jurisdictions else "US"
         return LegalDocumentDraft(
             important_notice=(
-                "This is a starter template for educational purposes only, not legal advice. "
+                "This is a starter template. "
                 "A qualified attorney must review and customize this document before use."
             ),
             document_title=f"{doc_type} — {idea}",
@@ -208,7 +208,7 @@ class LegalAgent:
         scope = ", ".join(request.jurisdictions) if request.jurisdictions else "US"
         return LegalIssueScan(
             important_notice=(
-                "This is educational issue-spotting for founders, not legal advice. "
+                "This is a legal risk scan for founders. "
                 "A qualified lawyer should review jurisdiction-specific decisions, filings, contracts, and regulated claims."
             ),
             jurisdiction_scope=(

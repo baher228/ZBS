@@ -147,6 +147,7 @@ class LLMProvider(ABC):
         self,
         messages: list[ContentChatMessage],
         company_context: str,
+        workflow: str | None = None,
     ) -> ContentChatResponse:
         """Handle a multi-turn content creation chat conversation."""
 
@@ -391,7 +392,7 @@ class MockLLMProvider(LLMProvider):
         audience = request.target_audience or "US startup founders"
         return LegalIssueScan(
             important_notice=(
-                "This is educational issue-spotting for founders, not legal advice. "
+                "This is a legal risk scan for founders. "
                 "A qualified lawyer should review jurisdiction-specific decisions, filings, contracts, and regulated claims."
             ),
             jurisdiction_scope=(
@@ -474,7 +475,7 @@ class MockLLMProvider(LLMProvider):
         scope = ", ".join(jurisdictions) if jurisdictions else "US"
         return DocumentReviewResult(
             important_notice=(
-                "This is an automated compliance review for educational purposes, not legal advice. "
+                "This is an automated compliance review. "
                 "Have a qualified attorney review any legal documents before use."
             ),
             document_summary=f"Mock review of uploaded document ({len(document_text)} chars) against {scope} regulations.",
@@ -495,7 +496,7 @@ class MockLLMProvider(LLMProvider):
         scope = ", ".join(request.jurisdictions) if request.jurisdictions else "US"
         return LegalDocumentDraft(
             important_notice=(
-                "This is a starter template for educational purposes only, not legal advice. "
+                "This is a starter template. "
                 "A qualified attorney must review and customize this document before use."
             ),
             document_title=f"{doc_type} — {idea}",
@@ -556,13 +557,13 @@ class MockLLMProvider(LLMProvider):
 
         reply = (
             f"[Mock {label} response] Based on your question about: {last_msg[:100]}. "
-            "This is educational guidance, not legal advice. Consult a qualified attorney."
+            "Consult a qualified attorney for specific advice."
         )
 
         document = None
         if mode == LegalChatMode.DOCUMENT_DRAFTING and document_type:
             document = LegalDocumentDraft(
-                important_notice="This is a starter template, not legal advice.",
+                important_notice="This is a starter template. Have an attorney review before use.",
                 document_title=f"Draft {document_type}",
                 document_body=f"DRAFT {document_type.upper()}\n\n1. TERMS\nStandard provisions apply.\n\n2. OBLIGATIONS\nParties agree to act in good faith.",
                 key_provisions="1. Standard terms\n2. Obligations\n3. Liability",
@@ -588,7 +589,7 @@ class MockLLMProvider(LLMProvider):
 
         return LegalOverviewResponse(
             summary="[Mock Overview] Based on your company profile, here is a legal overview. "
-            "This is educational guidance — consult a qualified attorney for specific advice.",
+            "Consult a qualified attorney for specific advice.",
             potential_issues=[
                 LegalOverviewIssue(
                     title="Privacy Policy Required",
@@ -628,18 +629,17 @@ class MockLLMProvider(LLMProvider):
         self,
         messages: list[ContentChatMessage],
         company_context: str,
+        workflow: str | None = None,
     ) -> ContentChatResponse:
         last_msg = messages[-1].content if messages else "content creation"
+        workflow_label = f" [{workflow}]" if workflow else ""
         return ContentChatResponse(
             reply=(
-                f"[Mock content response] I can help with: {last_msg[:100]}. "
-                "To create the best content, I might need some additional materials from you."
+                f"[Mock content response{workflow_label}] Here is the content for: {last_msg[:100]}."
             ),
-            follow_up_questions=[
-                "Do you have team photos you'd like to include?",
-                "What's the main call-to-action URL?",
-                "Any specific brand colors or guidelines to follow?",
-            ],
+            follow_up_questions=[],
+            content_ready=True,
+            generated_content={"draft": f"Mock generated content for: {last_msg[:100]}"},
         )
 
     def generate_social_post(
@@ -948,11 +948,11 @@ class OpenAILLMProvider(LLMProvider):
                 (
                     "system",
                     "You are a startup legal issue-spotter. You help founders identify regulatory, "
-                    "compliance, and legal risks before launch. Your output is educational and "
-                    "source-grounded — clearly NOT legal advice. Always cite the specific public "
+                    "compliance, and legal risks before launch. Your output is "
+                    "source-grounded. Always cite the specific public "
                     "guidance documents provided. Be concrete and practical.\n\n"
                     "Rules:\n"
-                    "- important_notice MUST state this is educational, not legal advice\n"
+                    "- important_notice MUST include a notice that a qualified attorney should review\n"
                     "- jurisdiction_scope MUST note the geographic scope of the sources\n"
                     "- relevant_sources MUST cite each source document with title and URL\n"
                     "- risk_summary should be specific to the founder's product and audience\n"
@@ -1117,11 +1117,10 @@ class OpenAILLMProvider(LLMProvider):
                 (
                     "system",
                     f"You are a startup legal document drafter. You create starter templates "
-                    f"for founders that are grounded in their company context and applicable regulations. "
-                    f"Your output is educational and clearly NOT legal advice.\n\n"
+                    f"for founders that are grounded in their company context and applicable regulations.\n\n"
                     f"You are drafting a: {doc_type}\n\n"
                     "Rules:\n"
-                    "- important_notice MUST state this is a starter template, not legal advice\n"
+                    "- important_notice MUST state this is a starter template that should be reviewed by an attorney\n"
                     "- document_title should be the formal document name\n"
                     "- document_body should be a complete, well-structured document with numbered sections. "
                     "Use the company's actual name, product description, and details throughout. "
@@ -1158,7 +1157,7 @@ class OpenAILLMProvider(LLMProvider):
 
         mode_instructions = {
             LegalChatMode.LEGAL_ADVICE: (
-                "You are a startup legal advisor providing educational guidance. "
+                "You are a startup legal advisor. "
                 "Help founders understand legal risks, compliance requirements, and regulatory obligations. "
                 "Cover areas like: entity formation, IP protection, employment law, data privacy, "
                 "contract essentials, securities compliance, and industry-specific regulations.\n\n"
@@ -1166,7 +1165,7 @@ class OpenAILLMProvider(LLMProvider):
                 "When you identify areas that need more detail, include follow-up questions."
             ),
             LegalChatMode.TAX: (
-                "You are a startup tax advisor providing educational guidance. "
+                "You are a startup tax advisor. "
                 "Help founders understand tax obligations, planning strategies, and compliance requirements. "
                 "Cover areas like: entity tax classification, sales tax/VAT, R&D tax credits, "
                 "employee vs contractor tax implications, international tax, state tax nexus, "
@@ -1195,7 +1194,7 @@ class OpenAILLMProvider(LLMProvider):
         system_prompt = (
             mode_instructions.get(mode, mode_instructions[LegalChatMode.LEGAL_ADVICE])
             + "\n\nCRITICAL RULES:\n"
-            "- Your reply MUST state this is educational guidance, NOT legal advice\n"
+            "- Be specific and actionable in your guidance\n"
             "- Cite specific sources when available\n"
             "- Be concrete and practical, not generic\n"
             "- Return follow_up_questions as a JSON array of strings for questions you need answered\n"
@@ -1239,7 +1238,7 @@ class OpenAILLMProvider(LLMProvider):
             "operations, data practices, team structure, etc.\n\n"
             "In 'recommended_documents', list legal documents this company should have.\n"
             "In 'compliance_areas', list regulatory areas relevant to their business.\n\n"
-            "CRITICAL: This is educational guidance, NOT legal advice. State this in the summary."
+            "Provide actionable, specific guidance grounded in the company context."
         )
 
         human_msg = "Generate a legal overview for this company."
@@ -1254,25 +1253,52 @@ class OpenAILLMProvider(LLMProvider):
         self,
         messages: list[ContentChatMessage],
         company_context: str,
+        workflow: str | None = None,
     ) -> ContentChatResponse:
         structured_model = self.model.with_structured_output(ContentChatResponse)
 
+        workflow_instructions = {
+            "social_post": (
+                "You are creating social media posts. Generate platform-ready posts "
+                "(LinkedIn, Twitter/X, Instagram, Facebook) with proper formatting, hashtags, "
+                "and calls-to-action. Use the company's actual website URL for links. "
+                "Output the posts directly in generated_content with keys like 'linkedin_post', "
+                "'twitter_post', etc."
+            ),
+            "launch_email": (
+                "You are drafting a launch/marketing email. Create a complete, send-ready email "
+                "with subject line, body, and call-to-action. Use the company's actual website URL. "
+                "Output in generated_content with key 'email_draft'."
+            ),
+            "landing_page": (
+                "You are writing landing page copy. Create headline, subheadline, hero section, "
+                "features/benefits, social proof section, and CTA. Output in generated_content "
+                "with keys like 'hero_section', 'features', 'cta_section'."
+            ),
+            "blog_post": (
+                "You are writing a blog post. Create a complete post with title, introduction, "
+                "body sections with subheadings, and conclusion. Make it SEO-friendly. "
+                "Output in generated_content with key 'blog_post'."
+            ),
+        }
+
+        workflow_context = ""
+        if workflow and workflow in workflow_instructions:
+            workflow_context = f"\n\nWORKFLOW: {workflow}\n{workflow_instructions[workflow]}"
+
         system_prompt = (
-            "You are a startup content creation assistant. You help founders create marketing content "
-            "including landing page copy, launch emails, social posts, blog posts, and more.\n\n"
-            "IMPORTANT BEHAVIORS:\n"
-            "- Actively request materials from the user: team photos, product screenshots, logos, "
-            "brand guidelines, testimonials, metrics, case studies\n"
-            "- Ask clarifying questions about tone, target audience, key messages, and calls-to-action\n"
-            "- When the user pastes or describes content (URLs, text, images), incorporate it naturally\n"
-            "- Suggest content improvements and alternatives\n"
-            "- Use follow_up_questions to ask for specific materials or information you need\n"
-            "- Set content_ready=true and populate generated_content when you have enough info to "
-            "produce final content\n"
-            "- generated_content keys should be descriptive: 'landing_copy', 'email_draft', "
-            "'social_post', 'blog_outline', etc.\n\n"
-            "Be conversational and collaborative. Help the founder feel like they have a content "
-            "strategist working with them."
+            "You are a startup content creation assistant. You help founders create marketing content.\n\n"
+            "CRITICAL: Be direct and output-focused. Do NOT be overly chatty.\n"
+            "- On the FIRST message, generate the requested content immediately in generated_content.\n"
+            "- Set content_ready=true and populate generated_content right away.\n"
+            "- Only ask follow-up questions if you genuinely need specific materials " 
+            "(team photos, screenshots, brand assets) to improve the output.\n"
+            "- Keep follow_up_questions to 1-2 max, and only for things like photos or brand assets.\n"
+            "- generated_content keys should be descriptive: 'linkedin_post', 'email_draft', "
+            "'landing_copy', 'blog_post', etc.\n"
+            "- Use the company's actual website URL for any links.\n"
+            "- NEVER use placeholder links like '[paste the link]' or '[your-url]'."
+            + workflow_context
         )
 
         if company_context:
@@ -1504,8 +1530,9 @@ class ResilientLLMProvider(LLMProvider):
         self,
         messages: list[ContentChatMessage],
         company_context: str,
+        workflow: str | None = None,
     ) -> ContentChatResponse:
-        return self._try_primary("chat_content", messages, company_context)
+        return self._try_primary("chat_content", messages, company_context, workflow)
 
     def generate_social_post(
         self,
@@ -1618,6 +1645,7 @@ class UnconfiguredLLMProvider(LLMProvider):
         self,
         messages: list[ContentChatMessage],
         company_context: str,
+        workflow: str | None = None,
     ) -> ContentChatResponse:
         self._raise_unconfigured()
 

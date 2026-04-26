@@ -225,6 +225,7 @@ class ContentChatMessage(BaseModel):
 
 class ContentChatRequest(BaseModel):
     messages: list[ContentChatMessage] = Field(..., min_length=1)
+    workflow: str | None = None
 
 
 class ContentChatResponse(BaseModel):

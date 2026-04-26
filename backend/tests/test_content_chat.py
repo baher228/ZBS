@@ -88,3 +88,33 @@ def test_content_chat_empty_content_rejected():
         },
     )
     assert response.status_code == 422
+
+
+def test_content_chat_with_workflow():
+    """Content chat with workflow parameter."""
+    response = client.post(
+        "/api/v1/content/chat",
+        json={
+            "messages": [{"role": "user", "content": "Write a LinkedIn post about our launch"}],
+            "workflow": "social_post",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "reply" in data
+    assert data["content_ready"] is True
+    assert data["generated_content"] is not None
+
+
+def test_content_chat_with_unknown_workflow():
+    """Content chat with unknown workflow still works."""
+    response = client.post(
+        "/api/v1/content/chat",
+        json={
+            "messages": [{"role": "user", "content": "Help me create content"}],
+            "workflow": "unknown_workflow",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "reply" in data

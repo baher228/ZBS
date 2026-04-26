@@ -177,7 +177,7 @@ def test_legal_agent_document_review_mode_with_llm() -> None:
         )
     )
     assert response.title == "Document Compliance Review"
-    assert "not legal advice" in response.output["important_notice"].lower()
+    assert response.output["important_notice"]
     assert response.output["compliance_gaps"]
     assert response.output["recommendations"]
 
@@ -232,7 +232,7 @@ def test_mock_llm_review_document() -> None:
         source_context="GDPR Overview: ...",
         jurisdictions=["US", "EU"],
     )
-    assert "not legal advice" in result.important_notice.lower()
+    assert result.important_notice
     assert result.document_summary
     assert result.compliance_gaps
     assert result.recommendations

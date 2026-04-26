@@ -16,4 +16,5 @@ def content_chat(request: ContentChatRequest) -> ContentChatResponse:
     return llm.chat_content(
         messages=request.messages,
         company_context=company_context,
+        workflow=request.workflow,
     )
