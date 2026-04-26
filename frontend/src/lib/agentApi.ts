@@ -263,9 +263,7 @@ export type LegalOverviewResponse = {
   compliance_areas: string[];
 };
 
-export async function fetchLegalOverview(
-  apiBaseUrl: string,
-): Promise<LegalOverviewResponse> {
+export async function fetchLegalOverview(apiBaseUrl: string): Promise<LegalOverviewResponse> {
   const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/legal/overview`);
   if (!response.ok) {
     const detail = await response.text();
@@ -306,7 +304,8 @@ export async function sendContentChat(
   if (options?.imageMode) body.image_mode = options.imageMode;
   if (options?.referenceImageUrls) body.reference_image_urls = options.referenceImageUrls;
   if (options?.existingImageNote) body.existing_image_note = options.existingImageNote;
-  if (options?.existingGeneratedContent) body.existing_generated_content = options.existingGeneratedContent;
+  if (options?.existingGeneratedContent)
+    body.existing_generated_content = options.existingGeneratedContent;
   const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/content/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -355,7 +354,6 @@ export async function sendMarketingResearchChat(
 
   return response.json();
 }
-
 
 export async function deleteCompanyProfile(apiBaseUrl: string): Promise<boolean> {
   try {
@@ -439,9 +437,7 @@ export async function fetchEnrichedContext(
   apiBaseUrl: string,
 ): Promise<EnrichedContextResponse | null> {
   try {
-    const response = await fetch(
-      `${apiBaseUrl.replace(/\/$/, "")}/api/v1/company/context`,
-    );
+    const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company/context`);
     if (!response.ok) return null;
     return response.json();
   } catch {
@@ -507,10 +503,9 @@ export async function fetchDashboard(apiBaseUrl: string): Promise<DashboardData 
 
 export async function clearEnrichedContext(apiBaseUrl: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `${apiBaseUrl.replace(/\/$/, "")}/api/v1/company/context`,
-      { method: "DELETE" },
-    );
+    const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company/context`, {
+      method: "DELETE",
+    });
     return response.ok;
   } catch {
     return false;

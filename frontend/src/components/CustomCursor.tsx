@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useRouterState } from "@tanstack/react-router";
 
 /**
  * Custom green cursor: small filled dot tracks the mouse 1:1, and a larger
@@ -6,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
  * Hidden on touch devices.
  */
 export function CustomCursor() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const [enabled, setEnabled] = useState(false);
@@ -16,6 +18,13 @@ export function CustomCursor() {
   useEffect(() => {
     const isFine = window.matchMedia("(pointer: fine)").matches;
     if (!isFine) return;
+    const isEmbeddedDemo = new URLSearchParams(window.location.search).has("demo_embed");
+    const shouldUseNativeCursor = pathname === "/demo-room/live" || isEmbeddedDemo;
+    if (shouldUseNativeCursor) {
+      setEnabled(false);
+      document.documentElement.classList.remove("custom-cursor");
+      return;
+    }
     setEnabled(true);
     document.documentElement.classList.add("custom-cursor");
 
@@ -67,7 +76,7 @@ export function CustomCursor() {
       document.removeEventListener("mouseenter", onEnter);
       document.documentElement.classList.remove("custom-cursor");
     };
-  }, [visible]);
+  }, [pathname, visible]);
 
   if (!enabled) return null;
 
@@ -89,9 +98,7 @@ export function CustomCursor() {
             width: hovering ? 56 : 36,
             height: hovering ? 56 : 36,
             borderColor: "oklch(0.36 0.07 155)",
-            backgroundColor: hovering
-              ? "oklch(0.36 0.07 155 / 0.12)"
-              : "transparent",
+            backgroundColor: hovering ? "oklch(0.36 0.07 155 / 0.12)" : "transparent",
             borderRadius: 0,
             transform: pressed ? "scale(0.85) rotate(45deg)" : "rotate(0deg)",
             transitionProperty: "width,height,transform,background-color",

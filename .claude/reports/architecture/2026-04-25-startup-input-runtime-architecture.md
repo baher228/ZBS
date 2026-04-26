@@ -345,3 +345,94 @@ frontend focused eslint: clean for demo-room.live.tsx and agentApi.ts
 frontend build: completed; Wrangler emitted a log-write EPERM warning for
 ~/Library/Preferences but generated client/server assets successfully.
 ```
+
+Important clarification:
+
+- The current live runtime does **not** call an LLM yet.
+- It uses deterministic intent matching over a manual manifest.
+- This proves the UI/event contract, but not final agent reasoning.
+
+The intended LLM context for the next runtime version:
+
+```text
+system: demo-agent policy and action rules
+global knowledge: product facts, approved Q&A, CTA, qualification rubric
+flow graph: allowed demo paths and goals
+current session: transcript, lead profile, current page, active goal
+current page manifest: visible concepts, elements, allowed local actions
+frontend telemetry: visible element IDs and current route
+user message: latest prospect question
+```
+
+The LLM should return a typed decision:
+
+```json
+{
+  "reply": "natural language answer",
+  "goal": "demonstrate_feature | answer_question | qualify_lead",
+  "target_page_id": "flow",
+  "events": [
+    { "type": "navigate", "page_id": "flow" },
+    { "type": "cursor.move", "element_id": "page-actions" },
+    { "type": "highlight.show", "element_id": "page-actions" }
+  ],
+  "lead_patch": { "interested_features": ["safe guided actions"] }
+}
+```
+
+The backend validates the typed decision against the manifest before the
+frontend plays it.
+
+## Extraction Hypotheses To Test
+
+Before committing to one onboarding mode, test several input strategies against
+the same target app and score the generated manifest quality.
+
+Hypotheses:
+
+1. **URL + credentials + founder walkthrough** is the best MVP setup.
+2. **Docs-only** is good for answers but weak for knowing where to click.
+3. **Screenshots-only** is good for visual explanation but weak for reliable
+   selectors and real interactions.
+4. **URL-only** can discover controls, but often lacks business intent.
+5. **Codebase ingestion** can improve semantics, but is too high-friction for
+   first-run onboarding.
+
+Recommended test harness:
+
+```text
+input bundle
+  -> extractor creates draft DemoManifest
+  -> evaluator scores:
+       page coverage
+       selector validity
+       action safety
+       flow correctness
+       answer accuracy
+       founder effort
+       time to usable demo
+```
+
+Use Playwright first for extraction:
+
+- login with sandbox credentials
+- crawl founder-approved routes
+- collect DOM text, headings, links, buttons, forms, roles, and screenshots
+- validate selectors by resolving them in the browser
+- optionally run candidate flows in a sandbox account
+
+Use LLM summarization for:
+
+- page purpose
+- element business meaning
+- matching founder walkthrough steps to UI controls
+- drafting talk tracks and Q&A
+
+Use Stagehand optionally for:
+
+- discovering actions when deterministic DOM extraction is insufficient
+- exploring unfamiliar pages
+- suggesting selectors/actions for founder review
+
+Do not use Stagehand as the live prospect runtime until actions are reviewed
+and cached into the manifest.

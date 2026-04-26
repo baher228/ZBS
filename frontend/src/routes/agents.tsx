@@ -33,15 +33,14 @@ const agents = [
     icon: Search,
     name: "Marketing Research",
     status: "Live",
-    description:
-      "Competitor analysis, market sizing, audience research, and trend intelligence.",
+    description: "Competitor analysis, market sizing, audience research, and trend intelligence.",
   },
   {
-    to: "/demo",
+    to: "/demo-room/live",
     icon: MonitorPlay,
     name: "Demo Agent",
-    status: "Demo room",
-    description: "Open the existing prospect-facing demo room interface.",
+    status: "Live self-demo",
+    description: "Open Demeo's own AI-guided demo room with cursor, highlights, chat, and voice.",
   },
 ] as const;
 

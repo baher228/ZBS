@@ -42,8 +42,8 @@ class LiveDemoRuntime:
             current_page = self.manifest.pages[0]
 
         decision = (
-            self._decide_with_llm(session, request, current_page)
-            or self._decide_guided_walkthrough(request.message)
+            self._decide_guided_walkthrough(request.message)
+            or self._decide_with_llm(session, request, current_page)
             or self._decide(request.message, current_page)
         )
         target_page = self._page_by_id(decision["page_id"]) or current_page

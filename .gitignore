@@ -77,3 +77,6 @@ business-logic/
 *.sqlite
 *.sqlite3
 *.db
+
+*.png
+AI_DEMO*

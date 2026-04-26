@@ -34,7 +34,8 @@ const AGENTS: AgentDef[] = [
     name: "Legal Agent",
     description: "Source-grounded founder legal issue scans with citations and counsel questions.",
     taskType: "legal",
-    placeholder: "What do I need to know about GDPR compliance for a SaaS product handling EU user data?",
+    placeholder:
+      "What do I need to know about GDPR compliance for a SaaS product handling EU user data?",
     Icon: Scale,
     badge: "bg-amber-100 text-amber-800",
     dot: "bg-amber-500",
@@ -44,7 +45,8 @@ const AGENTS: AgentDef[] = [
     name: "Research Agent",
     description: "Competitor analysis, market sizing, audience research, and trend intelligence.",
     taskType: "research",
-    placeholder: "Analyse the competitive landscape for zero-config analytics tools for developers…",
+    placeholder:
+      "Analyse the competitive landscape for zero-config analytics tools for developers…",
     Icon: Search,
     badge: "bg-violet-100 text-violet-800",
     dot: "bg-violet-500",
@@ -52,13 +54,14 @@ const AGENTS: AgentDef[] = [
   {
     id: "demo",
     name: "Demo Agent",
-    description: "Open the live prospect-facing demo room interface.",
+    description:
+      "Open Demeo's self-demo: a live AI guide, cursor, highlights, and voice over the product.",
     taskType: "demo",
     placeholder: "",
     Icon: MonitorPlay,
     badge: "bg-indigo-100 text-indigo-800",
     dot: "bg-indigo-500",
-    linkTo: "/demo",
+    linkTo: "/demo-room/live",
   },
 ];
 
@@ -100,7 +103,6 @@ export function AgentsShowcase() {
 
   return (
     <div className="relative bg-card border-2 border-foreground/25 overflow-hidden">
-
       {/* ── Header ── */}
       <div className="flex items-center justify-between border-b border-foreground/20 px-5 py-3 bg-card flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -111,17 +113,20 @@ export function AgentsShowcase() {
         </div>
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 bg-success" />
-          <span className="font-mono text-[11px] font-bold text-success tracking-wider">4 AGENTS LIVE</span>
+          <span className="font-mono text-[11px] font-bold text-success tracking-wider">
+            4 AGENTS LIVE
+          </span>
         </div>
       </div>
 
       {/* ── Three-panel body ── */}
       <div className="blueprint flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-foreground/20">
-
         {/* ── LEFT: Agent list ── */}
         <div className="lg:w-[250px] flex-shrink-0">
           <div className="px-4 py-2.5 border-b border-foreground/20 bg-foreground/5 flex items-center justify-between">
-            <span className="font-mono text-[11px] font-bold tracking-widest text-foreground/70 uppercase">Agents</span>
+            <span className="font-mono text-[11px] font-bold tracking-widest text-foreground/70 uppercase">
+              Agents
+            </span>
             <span className="font-mono text-[11px] text-foreground/50">4 registered</span>
           </div>
           <div className="divide-y divide-foreground/10">
@@ -142,15 +147,23 @@ export function AgentsShowcase() {
                   </span>
                   <agent.Icon
                     size={13}
-                    className={isSelected ? "text-primary flex-shrink-0" : "text-foreground/50 flex-shrink-0"}
+                    className={
+                      isSelected ? "text-primary flex-shrink-0" : "text-foreground/50 flex-shrink-0"
+                    }
                   />
-                  <span className={`font-mono text-[11px] font-semibold flex-1 text-left truncate ${isSelected ? "text-primary" : "text-foreground/75"}`}>
+                  <span
+                    className={`font-mono text-[11px] font-semibold flex-1 text-left truncate ${isSelected ? "text-primary" : "text-foreground/75"}`}
+                  >
                     {agent.name}
                   </span>
                   {agent.linkTo ? (
-                    <span className="font-mono text-[9px] font-bold text-foreground/35 bg-foreground/5 px-1.5 py-0.5 border border-foreground/10">ROOM</span>
+                    <span className="font-mono text-[9px] font-bold text-foreground/35 bg-foreground/5 px-1.5 py-0.5 border border-foreground/10">
+                      ROOM
+                    </span>
                   ) : (
-                    <span className="font-mono text-[9px] font-bold text-success bg-success/10 px-1.5 py-0.5 border border-success/30">LIVE</span>
+                    <span className="font-mono text-[9px] font-bold text-success bg-success/10 px-1.5 py-0.5 border border-success/30">
+                      LIVE
+                    </span>
                   )}
                 </button>
               );
@@ -176,14 +189,15 @@ export function AgentsShowcase() {
               /* Demo agent - link out */
               <div className="flex flex-col items-start gap-4">
                 <p className="text-sm text-foreground/65 font-mono leading-relaxed">
-                  The Demo Agent runs as a live, prospect-facing room - open it to see a full interactive session.
+                  The Demo Agent is the live guide inside a Demeo room. Open the self-demo to see
+                  the cursor, highlights, chat, and voice-ready walkthrough over the actual product.
                 </p>
                 <Link
                   to={selected.linkTo}
-                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 font-mono text-xs font-bold tracking-wider hover:bg-foreground transition-colors"
+                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 font-mono text-xs font-bold tracking-wider shadow-[4px_4px_0_rgba(0,0,0,0.22)] transition-colors hover:bg-foreground"
                 >
                   <MonitorPlay size={13} />
-                  Open Demo Room →
+                  Open Live Self-Demo →
                 </Link>
               </div>
             ) : (
@@ -193,7 +207,9 @@ export function AgentsShowcase() {
                   <div className="px-4 py-2 border-b border-foreground/20 bg-foreground/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 bg-foreground/40" />
-                      <span className="font-mono text-[11px] font-bold tracking-widest text-foreground/70 uppercase">Prompt</span>
+                      <span className="font-mono text-[11px] font-bold tracking-widest text-foreground/70 uppercase">
+                        Prompt
+                      </span>
                     </div>
                   </div>
                   <textarea
@@ -228,19 +244,29 @@ export function AgentsShowcase() {
         <div className="lg:w-[340px] flex-shrink-0 flex flex-col">
           <div className="px-4 py-2.5 border-b border-foreground/20 bg-foreground/5 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className={`h-2 w-2 ${loading ? "bg-primary animate-pulse-glow" : result ? "bg-success" : "bg-foreground/30"}`} />
-              <span className="font-mono text-[11px] font-bold tracking-widest text-foreground/70 uppercase">Output</span>
+              <span
+                className={`h-2 w-2 ${loading ? "bg-primary animate-pulse-glow" : result ? "bg-success" : "bg-foreground/30"}`}
+              />
+              <span className="font-mono text-[11px] font-bold tracking-widest text-foreground/70 uppercase">
+                Output
+              </span>
             </div>
             {result?.selected_agent && (
-              <span className="font-mono text-[10px] font-semibold text-foreground/50">{result.selected_agent}</span>
+              <span className="font-mono text-[10px] font-semibold text-foreground/50">
+                {result.selected_agent}
+              </span>
             )}
           </div>
 
           <div className="flex-1 overflow-y-auto max-h-[420px] scrollbar-thin p-4 flex flex-col gap-3">
             {!result && !error && !loading && (
               <div className="flex flex-col items-start justify-center h-40 gap-2">
-                <span className="font-mono text-xs font-bold text-foreground/40 tracking-wider">AWAITING INPUT</span>
-                <span className="font-mono text-[11px] text-foreground/35">› select an agent and enter a prompt</span>
+                <span className="font-mono text-xs font-bold text-foreground/40 tracking-wider">
+                  AWAITING INPUT
+                </span>
+                <span className="font-mono text-[11px] text-foreground/35">
+                  › select an agent and enter a prompt
+                </span>
               </div>
             )}
 
@@ -248,9 +274,17 @@ export function AgentsShowcase() {
               <div className="flex flex-col items-start justify-center h-40 gap-3">
                 <div className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 bg-primary animate-blink" />
-                  <span className="h-1.5 w-1.5 bg-primary animate-blink" style={{ animationDelay: "0.2s" }} />
-                  <span className="h-1.5 w-1.5 bg-primary animate-blink" style={{ animationDelay: "0.4s" }} />
-                  <span className="font-mono text-[11px] font-semibold text-foreground/55 ml-1">Agent processing…</span>
+                  <span
+                    className="h-1.5 w-1.5 bg-primary animate-blink"
+                    style={{ animationDelay: "0.2s" }}
+                  />
+                  <span
+                    className="h-1.5 w-1.5 bg-primary animate-blink"
+                    style={{ animationDelay: "0.4s" }}
+                  />
+                  <span className="font-mono text-[11px] font-semibold text-foreground/55 ml-1">
+                    Agent processing…
+                  </span>
                 </div>
               </div>
             )}
@@ -266,8 +300,12 @@ export function AgentsShowcase() {
               <>
                 {result.agent_response?.title && (
                   <div className="border border-foreground/20 px-4 py-3 bg-foreground/[0.02]">
-                    <span className="font-mono text-[10px] font-bold text-foreground/50 uppercase tracking-widest block mb-1">Title</span>
-                    <span className="font-mono text-sm font-semibold text-foreground">{result.agent_response.title}</span>
+                    <span className="font-mono text-[10px] font-bold text-foreground/50 uppercase tracking-widest block mb-1">
+                      Title
+                    </span>
+                    <span className="font-mono text-sm font-semibold text-foreground">
+                      {result.agent_response.title}
+                    </span>
                   </div>
                 )}
 
@@ -279,14 +317,18 @@ export function AgentsShowcase() {
                       </span>
                     </div>
                     <div className="px-4 py-3">
-                      <p className="text-xs text-foreground/75 leading-relaxed font-mono whitespace-pre-line">{value}</p>
+                      <p className="text-xs text-foreground/75 leading-relaxed font-mono whitespace-pre-line">
+                        {value}
+                      </p>
                     </div>
                   </div>
                 ))}
 
                 {result.review && (
                   <div className="border border-foreground/20 px-4 py-3 bg-foreground/[0.02]">
-                    <span className="font-mono text-[10px] font-bold text-foreground/50 uppercase tracking-widest block mb-2">Review Score</span>
+                    <span className="font-mono text-[10px] font-bold text-foreground/50 uppercase tracking-widest block mb-2">
+                      Review Score
+                    </span>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-1.5 bg-foreground/10">
                         <div
@@ -294,10 +336,14 @@ export function AgentsShowcase() {
                           style={{ width: `${Math.round(result.review.score * 100)}%` }}
                         />
                       </div>
-                      <span className="font-mono text-xs font-bold text-foreground/70">{Math.round(result.review.score * 100)}%</span>
+                      <span className="font-mono text-xs font-bold text-foreground/70">
+                        {Math.round(result.review.score * 100)}%
+                      </span>
                     </div>
                     {result.review.feedback && (
-                      <p className="text-xs text-foreground/60 font-mono mt-2 leading-relaxed">{result.review.feedback}</p>
+                      <p className="text-xs text-foreground/60 font-mono mt-2 leading-relaxed">
+                        {result.review.feedback}
+                      </p>
                     )}
                   </div>
                 )}
