@@ -158,6 +158,33 @@ def test_legal_followups_are_asked_in_reply_not_suggestions():
     assert response.sources_used == ["GOV.UK - Employment status"]
 
 
+def test_legal_json_reply_is_unpacked_into_document_card():
+    """Repair provider responses that accidentally put the structured object in reply."""
+    response = _normalize_legal_chat_response(
+        LegalChatResponse(
+            reply=(
+                '{"mode":"document_drafting","reply":"","document":'
+                '{"important_notice":"","document_title":"Apterro Unpaid Work Experience Agreement",'
+                '"document_body":"# Apterro Agreement\\n\\nEffective date: 1 June 2026",'
+                '"key_provisions":"Parties and duties","customization_notes":"Confirm address",'
+                '"jurisdiction_notes":"England and Wales","next_steps":"Collect signatures",'
+                '"follow_up_needed":""},'
+                '"follow_up_questions":[],"sources_used":["GOV.UK - Employment status"]}'
+            ),
+            document=None,
+            follow_up_questions=[],
+            mode=LegalChatMode.DOCUMENT_DRAFTING,
+            sources_used=[],
+        )
+    )
+
+    assert response.reply == "I drafted the document below."
+    assert response.document is not None
+    assert response.document.document_title == "Apterro Unpaid Work Experience Agreement"
+    assert response.document.document_body.startswith("# Apterro Agreement")
+    assert response.sources_used == ["GOV.UK - Employment status"]
+
+
 def test_legal_chat_does_not_fall_back_to_mock():
     """Legal chat should surface provider failures instead of returning mock legal advice."""
 

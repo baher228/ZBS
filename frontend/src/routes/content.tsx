@@ -293,7 +293,8 @@ function ContentPage() {
                 <span>
                   {providerInfo.provider === "mock"
                     ? "Mock provider"
-                    : `${providerInfo.provider} · ${providerInfo.model}`}
+                    : `${providerInfo.provider} - ${providerInfo.model}`}
+                  {providerInfo.last_error ? ` - last fallback: ${providerInfo.last_error}` : ""}
                 </span>
               </div>
             )}

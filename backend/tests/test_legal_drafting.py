@@ -14,7 +14,8 @@ def test_legal_agent_drafts_document_with_document_type() -> None:
     assert response.agent == AgentCapability.LEGAL
     assert "Draft" in response.title
     assert "Terms of Service" in response.title
-    assert response.output["important_notice"]
+    assert "important_notice" not in response.output
+    assert response.output["document_title"]
     assert response.output["document_body"]
     assert response.output["key_provisions"]
     assert response.output["next_steps"]

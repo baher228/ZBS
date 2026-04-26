@@ -34,7 +34,7 @@ def test_resilient_provider_falls_back_to_mock_campaign_output() -> None:
     strategy = provider.generate_product_strategy(request)
 
     assert strategy.product_profile.name == "DemoRoom AI"
-    assert provider.last_error == "RuntimeError"
+    assert provider.last_error == "generate_product_strategy: RuntimeError"
 
 
 def test_settings_infer_gateway_provider_and_eu_base_url() -> None:

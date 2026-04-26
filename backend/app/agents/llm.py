@@ -1,5 +1,7 @@
+import json
 import logging
 from abc import ABC, abstractmethod
+from typing import Any
 
 from app.agents.campaign_models import (
     CampaignCreateRequest,
@@ -38,6 +40,7 @@ from app.agents.models import (
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+_LAST_LLM_ERROR: str | None = None
 
 
 class LLMProvider(ABC):
@@ -216,7 +219,37 @@ def _format_legal_follow_up_reply(questions: list[str]) -> str:
     return "\n".join(lines)
 
 
+def _unpack_embedded_legal_response(response: LegalChatResponse) -> LegalChatResponse:
+    text = response.reply.strip()
+    if not text.startswith("{"):
+        return response
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        return response
+
+    if not isinstance(payload, dict):
+        return response
+
+    legal_fields = {"reply", "document", "follow_up_questions", "mode", "sources_used"}
+    if not legal_fields.intersection(payload):
+        return response
+
+    merged = response.model_dump()
+    for field in legal_fields:
+        if field in payload:
+            merged[field] = payload[field]
+
+    try:
+        return LegalChatResponse.model_validate(merged)
+    except Exception:
+        logger.warning("Failed to unpack embedded legal response JSON", exc_info=True)
+        return response
+
+
 def _normalize_legal_chat_response(response: LegalChatResponse) -> LegalChatResponse:
+    response = _unpack_embedded_legal_response(response)
     questions = [_use_short_dashes(q.strip()) for q in response.follow_up_questions if q.strip()][:4]
     reply = _use_short_dashes(response.reply)
     document = response.document
@@ -225,10 +258,15 @@ def _normalize_legal_chat_response(response: LegalChatResponse) -> LegalChatResp
         document = LegalDocumentDraft.model_validate(
             {key: _use_short_dashes(value) if isinstance(value, str) else value for key, value in document.model_dump().items()}
         )
+        document.important_notice = ""
+        if reply.strip().startswith("{"):
+            reply = ""
 
     if questions:
         reply = _format_legal_follow_up_reply(questions)
         document = None
+    elif document is not None and not reply.strip():
+        reply = "I drafted the document below."
 
     return LegalChatResponse(
         reply=reply,
@@ -236,6 +274,103 @@ def _normalize_legal_chat_response(response: LegalChatResponse) -> LegalChatResp
         follow_up_questions=[],
         mode=response.mode,
         sources_used=[_use_short_dashes(source) for source in response.sources_used],
+    )
+
+
+def _json_objects_in_text(text: str) -> list[dict[str, Any]]:
+    decoder = json.JSONDecoder()
+    objects: list[dict[str, Any]] = []
+    for index, char in enumerate(text):
+        if char != "{":
+            continue
+        try:
+            value, _ = decoder.raw_decode(text[index:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            objects.append(value)
+    return objects
+
+
+def _format_research_value(value: Any, level: int = 0) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return _use_short_dashes(value)
+    if isinstance(value, bool):
+        return "Yes" if value else "No"
+    if isinstance(value, int | float):
+        return str(value)
+    if isinstance(value, list):
+        lines: list[str] = []
+        for item in value:
+            if isinstance(item, dict):
+                lines.append(_format_research_value(item, level + 1))
+            else:
+                lines.append(f"- {_format_research_value(item, level + 1)}")
+        return "\n".join(line for line in lines if line.strip())
+    if isinstance(value, dict):
+        lines = []
+        for key, nested in value.items():
+            label = str(key).replace("_", " ").title()
+            formatted = _format_research_value(nested, level + 1)
+            if not formatted:
+                continue
+            if isinstance(nested, list | dict):
+                lines.append(f"### {label}\n{formatted}" if level == 0 else f"**{label}**\n{formatted}")
+            else:
+                lines.append(f"**{label}:** {formatted}")
+        return "\n\n".join(lines)
+    return _use_short_dashes(str(value))
+
+
+def _normalize_research_data(data: dict[str, Any] | None) -> dict[str, str] | None:
+    if not data:
+        return None
+
+    normalized: dict[str, str] = {}
+    for key, value in data.items():
+        if isinstance(value, str) and "see embedded JSON above" in value:
+            continue
+        formatted = _format_research_value(value).strip()
+        if formatted:
+            normalized[str(key)] = formatted
+
+    return normalized or None
+
+
+def _normalize_marketing_research_response(response: MarketingResearchResponse) -> MarketingResearchResponse:
+    reply = _use_short_dashes(response.reply)
+    data: dict[str, Any] | None = dict(response.research_data) if response.research_data else None
+
+    embedded_candidates = _json_objects_in_text(reply)
+    for candidate in embedded_candidates:
+        if isinstance(candidate.get("research_data"), dict):
+            data = candidate["research_data"]
+            break
+        research_keys = {
+            "competitor_analysis",
+            "competitor_matrix",
+            "positioning_opportunities",
+            "go_to_market_implications",
+            "market_size",
+            "audience_research",
+            "trend_analysis",
+        }
+        if research_keys.intersection(candidate):
+            data = candidate
+
+    for marker in ("research_ready=true", "research_ready = true", "research_data"):
+        marker_index = reply.find(marker)
+        if marker_index != -1:
+            reply = reply[:marker_index].strip()
+            break
+
+    return MarketingResearchResponse(
+        reply=reply or "Here is the research breakdown.",
+        follow_up_questions=[_use_short_dashes(q.strip()) for q in response.follow_up_questions if q.strip()][:4],
+        research_ready=response.research_ready or bool(data),
+        research_data=_normalize_research_data(data),
     )
 
 
@@ -574,10 +709,7 @@ class MockLLMProvider(LLMProvider):
         idea = request.startup_idea or request.prompt
         scope = ", ".join(request.jurisdictions) if request.jurisdictions else "US"
         return LegalDocumentDraft(
-            important_notice=(
-                "This is a starter template. "
-                "A qualified attorney must review and customize this document before use."
-            ),
+            important_notice="",
             document_title=f"{doc_type} - {idea}",
             document_body=(
                 f"DRAFT {doc_type.upper()}\n\n"
@@ -601,7 +733,7 @@ class MockLLMProvider(LLMProvider):
                 "7. Modification and termination clauses"
             ),
             customization_notes=(
-                f"This template needs customization for {idea}. Key areas to address with counsel:\n"
+                f"Areas to customize for {idea}:\n"
                 "- Specific service descriptions and features\n"
                 "- Data handling and privacy provisions\n"
                 "- Payment terms (if applicable)\n"
@@ -642,7 +774,7 @@ class MockLLMProvider(LLMProvider):
         document = None
         if mode == LegalChatMode.DOCUMENT_DRAFTING and document_type:
             document = LegalDocumentDraft(
-                important_notice="This is a starter template. Have an attorney review before use.",
+                important_notice="",
                 document_title=f"Draft {document_type}",
                 document_body=f"DRAFT {document_type.upper()}\n\n1. TERMS\nStandard provisions apply.\n\n2. OBLIGATIONS\nParties agree to act in good faith.",
                 key_provisions="1. Standard terms\n2. Obligations\n3. Liability",
@@ -747,7 +879,20 @@ class MockLLMProvider(LLMProvider):
             ),
             follow_up_questions=[],
             research_ready=True,
-            research_data={"analysis": f"Mock market research for: {last_msg[:100]}"},
+            research_data=(
+                {
+                    "competitor_matrix": (
+                        "| Competitor | Positioning | Strengths | Weaknesses | Opportunity |\n"
+                        "| --- | --- | --- | --- | --- |\n"
+                        "| Established suite | Broad all-in-one platform | Brand trust, large feature set | Expensive, slow setup | Win with sharper onboarding and faster time to value |\n"
+                        "| AI-first startup | Automated workflows for modern teams | Strong messaging, modern UX | Narrow integrations | Differentiate with better data depth and proof points |\n"
+                        "| Manual services | Human-led consulting | High-touch support | Hard to scale, costly | Position as software speed with expert-grade outputs |"
+                    ),
+                    "analysis": f"Mock market research for: {last_msg[:100]}",
+                }
+                if workflow == "competitor_analysis"
+                else {"analysis": f"Mock market research for: {last_msg[:100]}"}
+            ),
         )
 
     def generate_social_post(
@@ -771,20 +916,20 @@ class OpenAILLMProvider(LLMProvider):
         resolved_key = api_key or settings.resolved_llm_api_key
 
         self.model = ChatOpenAI(
-            model="gpt-5.2",
+            model=settings.resolved_llm_model,
             api_key=resolved_key,
             base_url=base_url,
-            max_retries=0,
-            timeout=180,
+            max_retries=settings.llm_max_retries,
+            timeout=settings.llm_timeout_seconds,
         )
 
         self.content_model = ChatOpenAI(
-            model="gpt-5.2",
+            model=settings.resolved_llm_model,
             api_key=resolved_key,
             base_url=base_url,
             temperature=1.1,
-            max_retries=0,
-            timeout=180,
+            max_retries=settings.llm_max_retries,
+            timeout=settings.llm_content_timeout_seconds,
         )
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
@@ -1204,23 +1349,35 @@ class OpenAILLMProvider(LLMProvider):
             [
                 (
                     "system",
-                    f"You are a startup legal document drafter. You create starter templates "
+                    f"You are a startup legal document drafter. You create formal documents "
                     f"for founders that are grounded in their company context and applicable regulations.\n\n"
                     f"You are drafting a: {doc_type}\n\n"
                     "Rules:\n"
-                    "- important_notice MUST state this is a starter template that should be reviewed by an attorney\n"
-                    "- document_title should be the formal document name\n"
-                    "- document_body should be a complete, well-structured document with numbered sections. "
-                    "Use the company's actual name, product description, and details throughout. "
-                    "Include all standard clauses for this document type.\n"
-                    "- key_provisions should list the major provisions with brief explanations\n"
-                    "- customization_notes should flag areas that need attorney review or customization\n"
-                    "- jurisdiction_notes should note jurisdiction-specific requirements\n"
-                    "- next_steps should tell the founder what to do with this draft\n"
+                    "- important_notice MUST be an empty string.\n"
+                    "- document_title should be the formal document name only, in title case.\n"
+                    "- document_body should read like real paperwork, not an explanatory answer. "
+                    "Use formal document formatting inspired by public examples such as GOV.UK employment particulars, "
+                    "ICO privacy notices, commercial terms, and YC financing forms.\n"
+                    "- For contracts and agreements, use this layout where relevant: document title, effective date, parties, "
+                    "background/recitals, definitions, numbered operative clauses, boilerplate clauses, schedules/annexes, "
+                    "and signature blocks.\n"
+                    "- For policies and privacy notices, use this layout where relevant: title, last updated date, who we are, "
+                    "scope, what data/information is covered, purposes, lawful basis where applicable, sharing, retention, "
+                    "rights, security, contact details, and changes to this notice.\n"
+                    "- Use numbered clauses like '1. Appointment', '1.1 Duties', '1.2 Standard of Performance'. "
+                    "Use schedules for role details, fees, services, or processing details.\n"
+                    "- Use bracketed placeholders only for genuinely missing legal facts, for example [Start Date]. "
+                    "Do not insert disclaimers, advisory notices, or 'for review only' language.\n"
+                    "- key_provisions should list the major provisions with brief explanations.\n"
+                    "- customization_notes should list missing facts or choices the founder may still need to fill in, without legal disclaimers.\n"
+                    "- jurisdiction_notes should note jurisdiction-specific requirements.\n"
+                    "- next_steps should be practical completion steps, such as fill placeholders, confirm party details, and collect signatures.\n"
                     "- follow_up_needed: if you need more information to produce a better draft, "
                     "list specific questions. Leave empty if context is sufficient.\n\n"
-                    "Write in plain, readable language. Avoid unnecessary legalese where possible "
-                    "while maintaining legal precision where required."
+                    "Style:\n"
+                    "- Use the same formal paperwork tone and layout seen in real contracts, policies, notices, and standard forms.\n"
+                    "- Keep clauses concise, precise, and copy-paste ready.\n"
+                    "- Do not use em dashes or en dashes. Use short hyphens (-), commas, periods, or semicolons instead."
                     + context_block
                     + additional_block,
                 ),
@@ -1266,9 +1423,13 @@ class OpenAILLMProvider(LLMProvider):
                 "legal documents. When the user asks for a document, generate it in the 'document' field "
                 "as a LegalDocumentDraft with proper formatting.\n\n"
                 "Documents should use clear markdown formatting:\n"
-                "- Use ## for major section headings\n"
-                "- Use ### for subsections\n"
-                "- Use numbered lists (1., 2., etc.) for clauses\n"
+                "- important_notice must be an empty string\n"
+                "- Do not include disclaimers, advisory notices, or 'for review only' language\n"
+                "- Use ## for major document sections\n"
+                "- Use ### for subsections and numbered clauses\n"
+                "- Use numbered clauses with legal-document style labels, for example '1. Appointment' and '1.1 Duties'\n"
+                "- For contracts, include title, effective date, parties, background/recitals, definitions, operative clauses, schedules where useful, and signature blocks\n"
+                "- For policies/privacy notices, include title, last updated date, who we are, scope, purposes, lawful basis where applicable, retention, rights, contact details, and changes\n"
                 "- Use **bold** for defined terms and key phrases\n"
                 "- Use proper paragraph spacing\n"
                 "- Include the company's actual name and details throughout\n"
@@ -1418,10 +1579,19 @@ class OpenAILLMProvider(LLMProvider):
             "- Deliver research immediately. Set research_ready=true and put findings in research_data.\n"
             "- Use specific numbers, percentages, and data points wherever possible.\n"
             "- Cite real market trends, competitor names, and industry benchmarks.\n"
+            "- Do not print JSON, research_ready flags, or research_data inside reply. "
+            "Reply should be a clean human-readable summary only.\n"
             "- research_data keys should be descriptive (e.g. 'competitor_analysis', 'market_size', 'positioning_map').\n"
             "- Only ask follow-up questions if you need critical missing info about their product or market."
             + workflow_hint
         )
+
+        if workflow == "competitor_analysis":
+            system_prompt += (
+                "\n- For competitor analysis, include a research_data.competitor_matrix value as a markdown table. "
+                "Use these columns: Competitor, Positioning, Strengths, Weaknesses, Pricing/Market signal, Opportunity. "
+                "Keep cells concise and specific so the UI can render a clean comparison table."
+            )
 
         if company_context:
             system_prompt += (
@@ -1433,7 +1603,7 @@ class OpenAILLMProvider(LLMProvider):
         for msg in messages:
             chat_messages.append((msg.role if msg.role == "user" else "assistant", msg.content))
 
-        return structured_model.invoke(chat_messages)
+        return _normalize_marketing_research_response(structured_model.invoke(chat_messages))
 
     def generate_social_post(
         self,
@@ -1499,7 +1669,9 @@ class ResilientLLMProvider(LLMProvider):
         self.last_error: str | None = None
 
     def _try_primary(self, method_name: str, *args):
+        global _LAST_LLM_ERROR
         try:
+            _LAST_LLM_ERROR = None
             return getattr(self.primary, method_name)(*args)
         except Exception as exc:
             import logging
@@ -1507,7 +1679,8 @@ class ResilientLLMProvider(LLMProvider):
                 "Primary LLM failed for %s: %s: %s — falling back to mock",
                 method_name, exc.__class__.__name__, exc,
             )
-            self.last_error = exc.__class__.__name__
+            self.last_error = f"{method_name}: {exc.__class__.__name__}"
+            _LAST_LLM_ERROR = self.last_error
             logger.exception("LLM provider failed in %s; using fallback provider", method_name)
             return getattr(self.fallback, method_name)(*args)
 
@@ -1770,6 +1943,10 @@ class UnconfiguredLLMProvider(LLMProvider):
         company_context: str,
     ) -> SocialPost:
         self._raise_unconfigured()
+
+
+def get_last_llm_error() -> str | None:
+    return _LAST_LLM_ERROR
 
 
 def get_llm_provider() -> LLMProvider:

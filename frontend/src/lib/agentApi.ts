@@ -96,6 +96,10 @@ export async function runAgentTaskWithUpload(
 export type ProviderInfo = {
   provider: string;
   model: string;
+  timeout_seconds?: number;
+  content_timeout_seconds?: number;
+  max_retries?: number;
+  last_error?: string | null;
 };
 
 export async function fetchProviderInfo(apiBaseUrl: string): Promise<ProviderInfo | null> {
@@ -316,7 +320,7 @@ export type MarketingResearchResponse = {
   reply: string;
   follow_up_questions: string[];
   research_ready: boolean;
-  research_data: Record<string, string> | null;
+  research_data: Record<string, unknown> | null;
 };
 
 export async function sendMarketingResearchChat(

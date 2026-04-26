@@ -1,6 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   BarChart3,
   Building2,
   ClipboardCopy,
@@ -74,7 +82,7 @@ type ResearchChatEntry = {
   role: "user" | "assistant";
   content: string;
   followUpQuestions?: string[];
-  researchData?: Record<string, string> | null;
+  researchData?: Record<string, unknown> | null;
   timestamp: number;
 };
 
@@ -293,7 +301,8 @@ function MarketingResearchPage() {
                 <span>
                   {providerInfo.provider === "mock"
                     ? "Mock provider"
-                    : `${providerInfo.provider} · ${providerInfo.model}`}
+                    : `${providerInfo.provider} - ${providerInfo.model}`}
+                  {providerInfo.last_error ? ` - last fallback: ${providerInfo.last_error}` : ""}
                 </span>
               </div>
             )}
@@ -338,9 +347,11 @@ function ResearchChatBubble({
         {/* Research data blocks */}
         {entry.researchData && Object.keys(entry.researchData).length > 0 && (
           <div className="space-y-2">
-            {Object.entries(entry.researchData).map(([key, value]) => (
-              <ResearchDataBlock key={key} title={key} content={value} />
-            ))}
+            {Object.entries(entry.researchData)
+              .filter(([, value]) => formatResearchValue(value).trim())
+              .map(([key, value]) => (
+                <ResearchDataBlock key={key} title={key} content={value} />
+              ))}
           </div>
         )}
 
@@ -368,12 +379,14 @@ function ResearchChatBubble({
   );
 }
 
-function ResearchDataBlock({ title, content }: { title: string; content: string }) {
+function ResearchDataBlock({ title, content }: { title: string; content: unknown }) {
   const [copied, setCopied] = useState(false);
   const label = title.replaceAll("_", " ");
+  const displayContent = formatResearchValue(content);
+  const parsedTable = parseMarkdownTable(displayContent);
 
   const copy = () => {
-    navigator.clipboard.writeText(content).then(() => {
+    navigator.clipboard.writeText(displayContent).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -392,10 +405,98 @@ function ResearchDataBlock({ title, content }: { title: string; content: string 
         </button>
       </div>
       <div className="px-4 py-3">
-        <div className="prose-chat text-xs leading-relaxed">
-          <ReactMarkdown>{content}</ReactMarkdown>
-        </div>
+        {parsedTable ? (
+          <div className="overflow-hidden border border-foreground/10 bg-background/40">
+            <Table>
+              <TableHeader className="bg-foreground/[0.04]">
+                <TableRow className="hover:bg-transparent">
+                  {parsedTable.headers.map((header) => (
+                    <TableHead
+                      key={header}
+                      className="h-auto min-w-32 px-3 py-2 text-[10px] uppercase tracking-wider text-foreground/60"
+                    >
+                      {header}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {parsedTable.rows.map((row, rowIndex) => (
+                  <TableRow key={rowIndex} className="hover:bg-primary/[0.03]">
+                    {parsedTable.headers.map((header, cellIndex) => (
+                      <TableCell
+                        key={`${header}-${cellIndex}`}
+                        className="min-w-32 px-3 py-3 text-xs leading-relaxed align-top text-foreground/80"
+                      >
+                        {row[cellIndex] || "-"}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="prose-chat text-xs leading-relaxed">
+            <ReactMarkdown>{displayContent}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function formatResearchValue(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string") {
+    return value.includes("see embedded JSON above") ? "" : value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => (typeof item === "object" ? formatResearchValue(item) : `- ${formatResearchValue(item)}`))
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, nested]) => {
+        const formatted = formatResearchValue(nested);
+        if (!formatted) return "";
+        const label = key.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
+        return typeof nested === "object" ? `### ${label}\n${formatted}` : `**${label}:** ${formatted}`;
+      })
+      .filter(Boolean)
+      .join("\n\n");
+  }
+  return String(value);
+}
+
+function parseMarkdownTable(content: string): { headers: string[]; rows: string[][] } | null {
+  const lines = content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const tableStart = lines.findIndex((line, index) => {
+    const nextLine = lines[index + 1];
+    return line.startsWith("|") && line.endsWith("|") && Boolean(nextLine?.match(/^\|[\s:-|]+\|$/));
+  });
+
+  if (tableStart === -1) return null;
+
+  const tableLines = lines
+    .slice(tableStart)
+    .filter((line) => line.startsWith("|") && line.endsWith("|"));
+  if (tableLines.length < 3) return null;
+
+  const parseRow = (line: string) =>
+    line
+      .slice(1, -1)
+      .split("|")
+      .map((cell) => cell.trim());
+
+  const headers = parseRow(tableLines[0]);
+  const rows = tableLines.slice(2).map(parseRow).filter((row) => row.some(Boolean));
+
+  return headers.length && rows.length ? { headers, rows } : null;
 }

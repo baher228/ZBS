@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     )
     llm_provider: str = "mock"
     llm_model: str = "mock-gtm-v1"
+    llm_timeout_seconds: int = 240
+    llm_content_timeout_seconds: int = 420
+    llm_max_retries: int = 2
     llm_api_key: str | None = None
     openai_api_key: str | None = None
     pydantic_ai_gateway_api_key: str | None = None

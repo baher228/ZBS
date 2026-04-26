@@ -150,11 +150,8 @@ class LegalAgent:
         idea = request.startup_idea or request.prompt
         scope = ", ".join(request.jurisdictions) if request.jurisdictions else "US"
         return LegalDocumentDraft(
-            important_notice=(
-                "This is a starter template. "
-                "A qualified attorney must review and customize this document before use."
-            ),
-            document_title=f"{doc_type} — {idea}",
+            important_notice="",
+            document_title=f"{doc_type} - {idea}",
             document_body=(
                 f"DRAFT {doc_type.upper()}\n\n"
                 f"This {doc_type} governs the use of {idea}.\n\n"
@@ -176,7 +173,7 @@ class LegalAgent:
                 "7. Modification and termination clauses"
             ),
             customization_notes=(
-                f"This template needs customization for {idea}. Key areas to address with counsel:\n"
+                f"Areas to customize for {idea}:\n"
                 "- Specific service descriptions and features\n"
                 "- Data handling and privacy provisions\n"
                 "- Payment terms (if applicable)\n"

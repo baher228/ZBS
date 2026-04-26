@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from app.agents.llm import _normalize_marketing_research_response
+from app.agents.models import MarketingResearchResponse
 from app.main import app
 
 client = TestClient(app)
@@ -95,3 +97,36 @@ def test_marketing_research_with_unknown_workflow():
     )
     assert response.status_code == 200
     assert "reply" in response.json()
+
+
+def test_competitor_analysis_embedded_json_is_cleaned():
+    response = _normalize_marketing_research_response(
+        MarketingResearchResponse(
+            reply=(
+                "Below is a UK-focused competitor view.\n\n"
+                "research_ready=true\n"
+                '{"research_ready": true}\n'
+                "research_data\n"
+                '{"competitor_analysis":{"summary":"Apterro competes with prep providers.",'
+                '"key_trends":["Role-specific prep","Recent-hire intel"]},'
+                '"competitor_matrix":"| Competitor | Positioning | Opportunity |\\n'
+                '|---|---|---|\\n| Leland | Coaching marketplace | UK finance focus |",'
+                '"positioning_opportunities":{"recommended_positioning_statement":"Own recent-hire UK finance mentorship."}}\n'
+                "competitor analysis\n"
+                "/** see embedded JSON above for full competitor_analysis object **/"
+            ),
+            follow_up_questions=["What roles are in scope?"],
+            research_ready=True,
+            research_data={
+                "competitor_analysis": "/** see embedded JSON above for full competitor_analysis object **/",
+                "competitor_matrix": "/** see embedded JSON above for full markdown table **/",
+            },
+        )
+    )
+
+    assert response.reply == "Below is a UK-focused competitor view."
+    assert response.research_data is not None
+    assert "see embedded JSON" not in response.research_data["competitor_analysis"]
+    assert "### Key Trends" in response.research_data["competitor_analysis"]
+    assert response.research_data["competitor_matrix"].startswith("| Competitor |")
+    assert "Own recent-hire" in response.research_data["positioning_opportunities"]
