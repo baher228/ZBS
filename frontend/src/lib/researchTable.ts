@@ -77,7 +77,9 @@ export function normalizeTableText(content: string): string {
     .replace(/^\s*[-*]\s+(?=\|)/gm, "");
 }
 
-function parseTableRow(line: string): string[] | null {
+function parseTableRow(line: string | undefined): string[] | null {
+  if (typeof line !== "string") return null;
+
   const trimmed = line.trim();
   if (!trimmed.includes("|")) return null;
 
