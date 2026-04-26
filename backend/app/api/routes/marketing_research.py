@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.agents.llm import get_llm_provider
 from app.agents.models import MarketingResearchRequest, MarketingResearchResponse
+from app.company.chat_extractor import extract_insights_from_messages
 from app.company.storage import get_company_context
 
 router = APIRouter(prefix="/marketing-research", tags=["marketing-research"])
@@ -13,6 +14,11 @@ router = APIRouter(prefix="/marketing-research", tags=["marketing-research"])
 def marketing_research_chat(request: MarketingResearchRequest) -> MarketingResearchResponse:
     llm = get_llm_provider()
     company_context = get_company_context() or ""
+
+    # Extract useful context from user messages
+    msg_dicts = [{"role": m.role, "content": m.content} for m in request.messages]
+    extract_insights_from_messages(msg_dicts, source_agent="marketing_research")
+
     return llm.chat_marketing_research(
         messages=request.messages,
         company_context=company_context,

@@ -355,3 +355,96 @@ export async function deleteCompanyProfile(apiBaseUrl: string): Promise<boolean>
     return false;
   }
 }
+
+/* ── Company Context Enrichment ────────────────────────── */
+
+export type WebsitePageData = {
+  url: string;
+  title: string;
+  page_type: string;
+  content_summary: string;
+  extracted_at: string;
+};
+
+export type WebsiteContext = {
+  source_url: string;
+  pages: WebsitePageData[];
+  company_summary: string;
+  products_and_services: string;
+  pricing_info: string;
+  team_info: string;
+  legal_info: string;
+  extracted_at: string;
+};
+
+export type ChatInsight = {
+  source_agent: string;
+  fact: string;
+  raw_question: string;
+  raw_answer: string;
+  created_at: string;
+};
+
+export type ChatContext = {
+  insights: ChatInsight[];
+};
+
+export type EnrichedContextResponse = {
+  website_context: WebsiteContext | null;
+  chat_context: ChatContext;
+  combined_text: string;
+};
+
+export type ParseWebsiteResponse = {
+  status: string;
+  pages_parsed: number;
+  source_url: string;
+  company_summary: string;
+};
+
+export async function parseCompanyWebsite(
+  apiBaseUrl: string,
+  url?: string,
+): Promise<ParseWebsiteResponse> {
+  const response = await fetch(
+    `${apiBaseUrl.replace(/\/$/, "")}/api/v1/company/context/parse-website`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: url || null }),
+    },
+  );
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchEnrichedContext(
+  apiBaseUrl: string,
+): Promise<EnrichedContextResponse | null> {
+  try {
+    const response = await fetch(
+      `${apiBaseUrl.replace(/\/$/, "")}/api/v1/company/context`,
+    );
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function clearEnrichedContext(apiBaseUrl: string): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `${apiBaseUrl.replace(/\/$/, "")}/api/v1/company/context`,
+      { method: "DELETE" },
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
