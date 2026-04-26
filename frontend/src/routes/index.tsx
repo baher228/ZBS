@@ -107,7 +107,7 @@ function Landing() {
         <div className="border-y border-foreground/15 bg-card/40">
           <div className="mx-auto max-w-7xl px-6 grid grid-cols-2 md:grid-cols-4">
             {[
-              { k: "3", l: "Specialised agents" },
+              { k: "4", l: "Specialised agents" },
               { k: "gpt-5.2", l: "Frontier model" },
               { k: "4", l: "Content workflows" },
               { k: "∞", l: "Context memory" },
@@ -130,7 +130,7 @@ function Landing() {
             <div>
               <div className="label-mono mb-2">§ I — The System</div>
               <h2 className="font-display text-3xl md:text-4xl font-medium">
-                One platform. Three specialised agents.
+                One platform. Four specialised agents.
               </h2>
             </div>
             <div className="hidden md:block label-mono text-right">
