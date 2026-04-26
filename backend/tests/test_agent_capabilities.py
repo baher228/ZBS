@@ -2,6 +2,7 @@ from app.agents.campaign_models import CampaignCreateRequest, ChatMessage, DemoR
 from app.agents.capabilities import (
     DemoAgent,
     DemoBriefAgent,
+    DemoPlanAgent,
     OutreachAgent,
     ReadinessAgent,
     ResearchAgent,
@@ -36,6 +37,12 @@ def test_reusable_campaign_capabilities_can_run_without_graph() -> None:
         strategy.icp,
         prospect,
     )
+    demo_plan = DemoPlanAgent(provider).create_plan(
+        request,
+        strategy.product_profile,
+        prospect,
+        brief,
+    )
     outreach = OutreachAgent(provider).write_outreach(
         request,
         strategy.product_profile,
@@ -48,6 +55,8 @@ def test_reusable_campaign_capabilities_can_run_without_graph() -> None:
     assert strategy.product_profile.name == "TracePilot"
     assert prospect.company_name == "Render"
     assert brief.qualifying_questions
+    assert len(demo_plan.steps) == 3
+    assert demo_plan.steps[1].asset_type == "screenshot"
     assert "TracePilot" in outreach.subject
     assert readiness.score >= 80
 
@@ -60,10 +69,21 @@ def test_demo_and_sales_ops_capabilities_can_run_without_graph() -> None:
         prospect_company="Render",
         headline="TracePilot for Render",
         relevance_summary="Debug agent failures with state-level observability.",
+        demo_plan=provider.generate_demo_plan(
+            make_request(),
+            provider.generate_product_strategy(make_request()).product_profile,
+            provider.generate_prospect_profile(make_request()),
+            provider.generate_demo_brief(
+                make_request(),
+                provider.generate_product_strategy(make_request()).product_profile,
+                provider.generate_product_strategy(make_request()).icp,
+                provider.generate_prospect_profile(make_request()),
+            ),
+        ),
         suggested_questions=["How would this fit our workflow?"],
     )
 
-    reply = DemoAgent(provider).reply(demo_room, "How does this work?")
+    reply = DemoAgent(provider).reply(demo_room, "Can you walk me through the demo?")
     qualified_room = demo_room.model_copy(
         update={
             "transcript": [
@@ -74,6 +94,6 @@ def test_demo_and_sales_ops_capabilities_can_run_without_graph() -> None:
     )
     report = SalesOpsAgent(provider).qualify(qualified_room)
 
-    assert "demo room" in reply.lower() or "context" in reply.lower()
+    assert "why this matters" in reply.lower() or "key question" in reply.lower()
     assert report.demo_room_id == "room_test"
     assert report.lead_score >= 80

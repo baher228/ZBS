@@ -56,6 +56,25 @@ class DemoBrief(BaseModel):
     objection_handlers: list[str] = Field(default_factory=list)
 
 
+class DemoStep(BaseModel):
+    id: str
+    title: str
+    objective: str
+    asset_type: Literal["screenshot", "docs", "video", "sandbox", "api", "none"] = "none"
+    asset_needed: str
+    talk_track: str
+    qualification_question: str
+    success_signal: str
+
+
+class DemoPlan(BaseModel):
+    title: str
+    overview: str
+    steps: list[DemoStep] = Field(default_factory=list)
+    step_selection_rules: list[str] = Field(default_factory=list)
+    fallback_response: str
+
+
 class OutreachMessage(BaseModel):
     subject: str
     body: str
@@ -87,6 +106,7 @@ class DemoRoom(BaseModel):
     prospect_company: str
     headline: str
     relevance_summary: str
+    demo_plan: DemoPlan | None = None
     suggested_questions: list[str] = Field(default_factory=list)
     cta_label: str = "Send me the summary"
     transcript: list[ChatMessage] = Field(default_factory=list)
@@ -98,6 +118,7 @@ class CampaignResponse(BaseModel):
     icp: ICPProfile
     prospect_profile: ProspectProfile
     demo_brief: DemoBrief
+    demo_plan: DemoPlan
     outreach_message: OutreachMessage
     demo_room: DemoRoom
     readiness_score: ReadinessScore
@@ -145,6 +166,7 @@ class CampaignGraphState(TypedDict, total=False):
     icp: ICPProfile
     prospect_profile: ProspectProfile
     demo_brief: DemoBrief
+    demo_plan: DemoPlan
     outreach_message: OutreachMessage
     readiness_score: ReadinessScore
     demo_room: DemoRoom

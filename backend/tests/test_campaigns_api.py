@@ -43,9 +43,11 @@ def test_create_campaign_returns_demo_room_package() -> None:
     assert body["campaign_id"].startswith("camp_")
     assert body["product_profile"]["name"] == "DemoRoom AI"
     assert body["prospect_profile"]["company_name"] == "Pydantic"
+    assert len(body["demo_plan"]["steps"]) == 3
+    assert body["demo_room"]["demo_plan"]["steps"][0]["id"] == "relevance"
     assert body["demo_room"]["id"].startswith("room_")
     assert body["readiness_score"]["verdict"] == "ready"
-    assert len(body["workflow_steps"]) == 7
+    assert len(body["workflow_steps"]) == 8
 
 
 def test_get_demo_room_by_id() -> None:
@@ -73,6 +75,19 @@ def test_demo_room_chat_appends_transcript() -> None:
     assert body["demo_room_id"] == demo_room_id
     assert "demo room" in body["reply"].lower() or "context" in body["reply"].lower()
     assert [message["role"] for message in body["transcript"]] == ["user", "assistant"]
+
+
+def test_demo_room_chat_can_walk_through_guided_demo_plan() -> None:
+    campaign = create_campaign()
+    demo_room_id = campaign["demo_room"]["id"]
+
+    response = client.post(
+        f"/api/v1/demo-rooms/{demo_room_id}/chat",
+        json={"message": "Can you walk me through the demo?"},
+    )
+
+    assert response.status_code == 200
+    assert "key question" in response.json()["reply"].lower()
 
 
 def test_qualification_rejects_empty_transcript() -> None:

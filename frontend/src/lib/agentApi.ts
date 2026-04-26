@@ -137,9 +137,7 @@ export async function saveCompanyProfile(
   return response.json();
 }
 
-export async function fetchCompanyProfile(
-  apiBaseUrl: string,
-): Promise<CompanyProfile | null> {
+export async function fetchCompanyProfile(apiBaseUrl: string): Promise<CompanyProfile | null> {
   try {
     const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company`);
     if (response.status === 404) return null;
@@ -159,4 +157,103 @@ export async function deleteCompanyProfile(apiBaseUrl: string): Promise<boolean>
   } catch {
     return false;
   }
+}
+
+/* Live Demo Room */
+
+export type DemoEvent = {
+  id: string;
+  type:
+    | "say"
+    | "navigate"
+    | "cursor.move"
+    | "cursor.click"
+    | "highlight.show"
+    | "highlight.hide"
+    | "wait"
+    | "lead.profile.updated";
+  text?: string | null;
+  page_id?: string | null;
+  route?: string | null;
+  element_id?: string | null;
+  label?: string | null;
+  duration_ms?: number | null;
+  patch?: Record<string, unknown> | null;
+};
+
+export type LiveDemoSession = {
+  id: string;
+  startup_id: string;
+  current_page_id: string;
+  state: string;
+  transcript: Array<{ role: "user" | "assistant"; content: string; created_at: string }>;
+  lead_profile: {
+    use_case?: string | null;
+    urgency?: string | null;
+    current_solution?: string | null;
+    interested_features: string[];
+    objections: string[];
+    score: number;
+  };
+  action_log: DemoEvent[];
+};
+
+export type PageAction = {
+  id: string;
+  type: "highlight" | "cursor.move" | "click" | "navigate";
+  label: string;
+  element_id?: string | null;
+  target_page_id?: string | null;
+  intent: string;
+  requires_approval: boolean;
+};
+
+export type LiveDemoMessageResponse = {
+  session: LiveDemoSession;
+  reply: string;
+  events: DemoEvent[];
+  available_actions: PageAction[];
+};
+
+export async function createLiveDemoSession(apiBaseUrl: string): Promise<LiveDemoSession> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/live-demo/sessions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ startup_id: "demeo", current_page_id: "setup" }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function sendLiveDemoMessage(
+  apiBaseUrl: string,
+  sessionId: string,
+  message: string,
+  currentPageId: string,
+  visibleElementIds: string[],
+): Promise<LiveDemoMessageResponse> {
+  const response = await fetch(
+    `${apiBaseUrl.replace(/\/$/, "")}/api/v1/live-demo/sessions/${sessionId}/message`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        current_page_id: currentPageId,
+        visible_element_ids: visibleElementIds,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
 }

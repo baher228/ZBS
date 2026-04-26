@@ -18,6 +18,99 @@ The main pitch is not "we built many agents." The pitch is:
 
 > We turn cold outreach into instant personalized AI demo rooms, so technical founders can qualify prospects without a sales team.
 
+## Current Product Understanding: AI-Led Product Demo Rooms
+
+The product is not a generic browser automation agent and not primarily a
+debugging demo for a fictional app. The product is an AI demo-room builder for
+founders.
+
+The founder should be able to provide product context, approved knowledge, and
+a small set of demo pages or workflows. A prospect then enters a live AI demo
+room where the agent:
+
+1. Converses naturally with the prospect.
+2. Shows the actual demo pages.
+3. Moves a visible agent cursor over the page.
+4. Highlights relevant UI.
+5. Clicks or navigates only through page-local allowed actions.
+6. Uses an overall product knowledge bank for answers and flow selection.
+7. Records transcript, actions, objections, buying signals, and qualification.
+
+The near-term prototype should therefore prioritize the visible demo experience:
+
+```text
+prospect message
+  -> demo agent decides intent
+  -> current page context exposes only local actions
+  -> global demo knowledge can reveal/navigate to another flow
+  -> frontend plays cursor/highlight/click/navigate events
+  -> assistant narrates what changed and why it matters
+```
+
+Each page should carry page-local knowledge:
+
+- what this page is showing
+- what the agent is allowed to do on this page
+- what selectors correspond to those actions
+- what narration or objections are relevant here
+- where each action can lead next
+
+The agent should also have global knowledge:
+
+- product description and positioning
+- ICP and prospect context
+- demo flows and route graph
+- security/pricing/integration notes
+- approved objection handling
+- CTA and qualification rubric
+
+This is simpler than a heavy upfront extractor architecture. Extractors can
+come later to compile a founder's docs/pages into the same page/action
+knowledge format, but the product experience should first be proven with a
+direct visible browser demo.
+
+## Browser Automation Direction
+
+The first implementation added a bounded TracePilot -> Render demo controller.
+That proved session state, action logs, route allowlisting, verification, and
+qualification continuity, but it overfit to a fictional debugging scenario.
+
+The corrected architecture should pivot to:
+
+```text
+DemoManifest
+  globalKnowledge
+  flows
+  pages[]
+    route
+    pageKnowledge
+    allowedActions[]
+      selector
+      event animation
+      result route/page
+```
+
+The frontend should render the demo page and an agent cursor overlay. The
+backend should return a sequence of visual events:
+
+```json
+[
+  { "type": "say", "text": "Let me show how setup works." },
+  { "type": "navigate", "route": "/sandbox/demeo/setup" },
+  { "type": "cursor_move", "selector": "[data-demo-id='connect-docs']" },
+  { "type": "highlight", "selector": "[data-demo-id='connect-docs']" },
+  { "type": "click", "selector": "[data-demo-id='connect-docs']" }
+]
+```
+
+Stagehand may help later as an optional discovery layer for real arbitrary
+websites. It should not be the core product dependency for the first prototype.
+The product needs deterministic, founder-approved demo behavior more than
+open-ended AI clicking. Stagehand-style observe/act maps well to the page-local
+action model, but raw Stagehand execution could make the product feel less
+controlled unless its outputs are cached, reviewed, and converted into the
+same bounded action format.
+
 ## Current Repo State
 
 The backend has a focused GTM agent architecture:
@@ -75,6 +168,7 @@ app/agents/capabilities/
   strategist.py
   research.py
   demo_brief.py
+  demo_plan.py
   outreach.py
   readiness.py
   demo.py
@@ -97,6 +191,7 @@ START
   -> strategist
   -> research
   -> demo_brief
+  -> demo_plan
   -> outreach
   -> readiness
   -> persist_demo_room

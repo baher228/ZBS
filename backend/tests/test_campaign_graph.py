@@ -28,6 +28,8 @@ def test_campaign_graph_creates_structured_demo_room() -> None:
     assert response.product_profile.name == "DemoRoom AI"
     assert response.icp.primary_buyer == "technical B2B founders"
     assert response.prospect_profile.company_name == "Pydantic"
+    assert response.demo_plan.steps
+    assert response.demo_room.demo_plan == response.demo_plan
     assert response.outreach_message.demo_room_url.endswith(f"/demo-rooms/{response.demo_room.id}")
     assert response.readiness_score.score >= 80
     assert store.get_demo_room(response.demo_room.id) == response.demo_room
@@ -44,6 +46,7 @@ def test_campaign_graph_records_expected_node_order() -> None:
         "build_product_strategy",
         "research_prospect",
         "create_demo_brief",
+        "create_demo_plan",
         "write_outreach",
         "score_readiness",
         "persist_demo_room",
@@ -70,4 +73,5 @@ def test_campaign_graph_uses_new_product_inputs() -> None:
     assert response.product_profile.name == "TracePilot"
     assert response.icp.primary_buyer == "AI platform engineering teams"
     assert response.prospect_profile.company_name == "Render"
+    assert response.demo_plan.steps[1].asset_needed
     assert "TracePilot" in response.outreach_message.subject
