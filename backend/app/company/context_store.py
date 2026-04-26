@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -15,6 +16,8 @@ logger = logging.getLogger(__name__)
 DATA_DIR = BACKEND_ROOT / "data"
 WEBSITE_CONTEXT_JSON = DATA_DIR / "website_context.json"
 CHAT_CONTEXT_JSON = DATA_DIR / "chat_context.json"
+
+_chat_lock = threading.Lock()
 
 
 # ── Models ──────────────────────────────────────────────────
@@ -104,12 +107,13 @@ def save_chat_context(ctx: ChatContext) -> Path:
 
 
 def add_chat_insight(insight: ChatInsight) -> ChatContext:
-    ctx = load_chat_context()
-    ctx.insights.append(insight)
-    # Keep last 200 insights to avoid unbounded growth
-    if len(ctx.insights) > 200:
-        ctx.insights = ctx.insights[-200:]
-    save_chat_context(ctx)
+    with _chat_lock:
+        ctx = load_chat_context()
+        ctx.insights.append(insight)
+        # Keep last 200 insights to avoid unbounded growth
+        if len(ctx.insights) > 200:
+            ctx.insights = ctx.insights[-200:]
+        save_chat_context(ctx)
     logger.info("Chat insight added from %s", insight.source_agent)
     return ctx
 

@@ -203,7 +203,7 @@ class TestChatExtractor:
         assert not _looks_like_company_info("Can you help me?")
         assert not _looks_like_company_info("What is the weather today?")
 
-    def test_extract_insights_stores_user_facts(self):
+    def test_extract_insights_stores_last_user_message_only(self):
         messages = [
             {"role": "assistant", "content": "What does your company do?"},
             {"role": "user", "content": "We provide AI-powered analytics for e-commerce stores. Our team has 25 people."},
@@ -211,9 +211,20 @@ class TestChatExtractor:
             {"role": "user", "content": "We target mid-market e-commerce brands in the US and UK."},
         ]
         stored = extract_insights_from_messages(messages, source_agent="marketing_research")
-        assert len(stored) >= 1
+        assert len(stored) == 1
+        assert "mid-market" in stored[0].fact
         ctx = load_chat_context()
-        assert len(ctx.insights) >= 1
+        assert len(ctx.insights) == 1
+
+    def test_extract_no_duplicates_on_resend(self):
+        messages = [
+            {"role": "user", "content": "We have 50 employees and we operate in the US."},
+        ]
+        extract_insights_from_messages(messages, source_agent="legal")
+        extract_insights_from_messages(messages, source_agent="legal")
+        ctx = load_chat_context()
+        # Each call only extracts the last message, so 2 total (not quadratic)
+        assert len(ctx.insights) == 2
 
     def test_extract_skips_non_company_messages(self):
         messages = [

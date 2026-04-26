@@ -30,34 +30,37 @@ def extract_insights_from_messages(
     messages: list[dict[str, str]],
     source_agent: str,
 ) -> list[ChatInsight]:
-    """Scan a conversation for messages that contain reusable company facts.
+    """Extract reusable company facts from the last user message only.
 
-    Returns a list of ChatInsight objects that were stored.
+    Only processes the most recent user message to avoid duplicates, since
+    the frontend sends the full conversation history on each request.
     """
-    stored: list[ChatInsight] = []
+    # Find the last user message
+    last_user_idx = -1
+    for i in range(len(messages) - 1, -1, -1):
+        if messages[i].get("role") == "user":
+            last_user_idx = i
+            break
 
-    for i, msg in enumerate(messages):
-        if msg.get("role") != "user":
-            continue
-        content = msg.get("content", "")
-        if not _looks_like_company_info(content):
-            continue
+    if last_user_idx < 0:
+        return []
 
-        # Get the preceding assistant question if available
-        raw_question = ""
-        if i > 0 and messages[i - 1].get("role") == "assistant":
-            raw_question = messages[i - 1].get("content", "")[:300]
+    content = messages[last_user_idx].get("content", "")
+    if not _looks_like_company_info(content):
+        return []
 
-        # Build a concise fact from the user message
-        fact = content[:500]
+    # Get the preceding assistant question if available
+    raw_question = ""
+    if last_user_idx > 0 and messages[last_user_idx - 1].get("role") == "assistant":
+        raw_question = messages[last_user_idx - 1].get("content", "")[:300]
 
-        insight = ChatInsight(
-            source_agent=source_agent,
-            fact=fact,
-            raw_question=raw_question,
-            raw_answer=content[:500],
-        )
-        add_chat_insight(insight)
-        stored.append(insight)
+    fact = content[:500]
 
-    return stored
+    insight = ChatInsight(
+        source_agent=source_agent,
+        fact=fact,
+        raw_question=raw_question,
+        raw_answer=content[:500],
+    )
+    add_chat_insight(insight)
+    return [insight]
