@@ -1,0 +1,4180 @@
+{
+  "base_url": "http://127.0.0.1:5175",
+  "start_path": "/",
+  "extraction_model": "gpt-5.4-mini",
+  "planner_models": [
+    "gpt-5.4-mini"
+  ],
+  "founder_input": {
+    "product_name": "Demeo",
+    "product_description": "Demeo creates personalized AI demo rooms for technical B2B founders. A founder provides product context and a prospect receives a link to a guided AI demo that can show pages, move a cursor, answer questions, qualify the lead, and produce follow-up.",
+    "target_customer": "technical B2B startup founders selling software",
+    "prospect_description": "a founder evaluating whether Demeo can demo their own startup",
+    "demo_goals": [
+      "show what a founder provides during setup",
+      "show how content or agent output is generated",
+      "show the prospect demo room",
+      "show the founder what they receive after a prospect finishes the demo"
+    ],
+    "founder_walkthrough": "Start by showing how the founder enters company and product context. Then show the agent/content console where AI output can be generated from that context. Then show the prospect demo room where a buyer can ask questions. Finally show the CRM summary and follow-up output that qualifies the lead. Emphasize that the final product sends a prospect a personalized link and the AI demo agent guides them.",
+    "approved_qa": [
+      {
+        "question": "What does the founder need to provide?",
+        "answer": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
+      },
+      {
+        "question": "Should the runtime click the real app directly?",
+        "answer": "The MVP should use an approved manifest and visual event playback. Playwright is better for setup-time extraction and validation. Live app control can come later for approved low-risk paths."
+      },
+      {
+        "question": "Can this support voice?",
+        "answer": "Yes. Gemini Live or a LiveKit voice agent can call the same safe demo tools used by text: show page, move cursor, highlight, propose click, answer from knowledge, and update lead memory."
+      }
+    ],
+    "cta": "book a founder onboarding call",
+    "qualification_questions": [
+      "What product do you want Demeo to demo?",
+      "Do you have a safe sandbox or staging account?",
+      "Who is the target buyer?"
+    ]
+  },
+  "crawl_pages": [
+    {
+      "page_id": "home",
+      "route": "/",
+      "depth": 0,
+      "title": "Demeo \u2014 Cold outreach becomes AI demo rooms",
+      "visible_text": "Demeo\n\u2116 001 \u00b7 OPERATOR\nHOME\nSETUP\nAGENTS\nDASHBOARD\nDEMO ROOM\nCRM\nABOUT\nLAUNCH APP\n\u2192\nVOL. I \u2014 ISSUE 01\nESTABLISHED 2026 \u00b7 THE AI GO-TO-MARKET OPERATOR\nEST. ZBS\nMANIFESTO \u2116 01\nWe turn cold outreach into\npersonalized\nAI demo rooms\n.\n\nOne AI operator finds your buyers, writes the message, runs the demo, and books the meeting. Your sales team \u2014 replaced by intelligence.\n\nTRY THE DEMO ROOM\n\u2192\nOPEN DASHBOARD\n\u2192\n412\nQUALIFIED LEADS / MO\n41%\nREPLY RATE\n$0.38\nPER AI DEMO\n10\nSPECIALISED AGENTS\n\u00a7 I \u2014 THE SYSTEM\nA single operator. Ten disciplines.\nUPDATED CONTINUOUSLY\n\u2014 IN REAL TIME\nSYS\n//\nPID-7829A3\n\u00b7\nv2.4.1\nSTANDBY\nFig. 02\n/\nAI SYSTEM CONTROL PANEL\n\u25b6 EXECUTE PIPELINE\nMODULES\n9 registered\n01\nMaster Orchestrator\nWAIT\n02\nCode Agent\nWAIT\n03\nMarketing Agent\nWAIT\n04\nContent Generator\nWAIT\n05\nEmail/CRM Agent\nWAIT\n06\nDemo Agent\nWAIT\n07\nReview Agent\nWAIT\n08\nLegal Agent\nWAIT\n09\nBudget Agent\nWAIT\nMODULE\nORCHESTRATOR\n\u00b7\nTYPE\nCOORDINATOR\n\u00b7\n\u25cb STANDBY\nMaster Orchestrator\nMaster Orchestrator\n\nCoordinates all agents, dispatches tasks, monitors pipeline health\n\nINPUT\ninput.payload\n\u203a\nProduct URL + description submitted\nOUTPUT\noutput.result\n\u2713\nPipeline initialized. 8 agents dispatched. Estimated completion: 9s.\nEVENT LOG\n0 events\nAWAITING SIGNAL\n\u203a\nexecute pipeline to stream events\nWhat it does, plainly.\n\u00a7 II \u2014 CAPABILITIES\n01\n+\nKnows your product\nReads your site, docs, and pitch. Builds an ICP that converts \u2014 not a guess.\n02\n+\nWrites like a human\nPersonalised outreach, per prospect. No templates, no spam, no recycled lines.\n03\n+\nRuns the demo\nEach prospect enters a private AI demo room \u2014 branded, tailored, on-brand.\n\u00a7 III \u2014 BEGIN\nThis is what sales\nlooks like in two years.\nGENERATE MY GTM FLOW\n\u2192\n\u00a9 ZBS \u2014 DEMEO\nBUILT FOR THE FUTURE OF GO-TO-MARKET\nEND \u2014 ISSUE 01",
+      "links_found": [
+        {
+          "href": "/",
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "source_route": "/"
+        },
+        {
+          "href": "/",
+          "text": "HOME",
+          "source_route": "/"
+        },
+        {
+          "href": "/onboarding",
+          "text": "SETUP",
+          "source_route": "/"
+        },
+        {
+          "href": "/agents",
+          "text": "AGENTS",
+          "source_route": "/"
+        },
+        {
+          "href": "/dashboard",
+          "text": "DASHBOARD",
+          "source_route": "/"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM",
+          "source_route": "/"
+        },
+        {
+          "href": "/crm",
+          "text": "CRM",
+          "source_route": "/"
+        },
+        {
+          "href": "/about",
+          "text": "ABOUT",
+          "source_route": "/"
+        },
+        {
+          "href": "/dashboard",
+          "text": "LAUNCH APP \u2192",
+          "source_route": "/"
+        },
+        {
+          "href": "/demo",
+          "text": "TRY THE DEMO ROOM \u2192",
+          "source_route": "/"
+        },
+        {
+          "href": "/dashboard",
+          "text": "OPEN DASHBOARD \u2192",
+          "source_route": "/"
+        },
+        {
+          "href": "/dashboard",
+          "text": "GENERATE MY GTM FLOW \u2192",
+          "source_route": "/"
+        }
+      ],
+      "controls": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "HOME",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 2,
+          "tag": "a",
+          "role": null,
+          "text": "SETUP",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 3,
+          "tag": "a",
+          "role": null,
+          "text": "AGENTS",
+          "href": "/agents",
+          "selectorHint": "a[href=\"/agents\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 4,
+          "tag": "a",
+          "role": null,
+          "text": "DASHBOARD",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 5,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 6,
+          "tag": "a",
+          "role": null,
+          "text": "CRM",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 7,
+          "tag": "a",
+          "role": null,
+          "text": "ABOUT",
+          "href": "/about",
+          "selectorHint": "a[href=\"/about\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 8,
+          "tag": "a",
+          "role": null,
+          "text": "LAUNCH APP \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 9,
+          "tag": "a",
+          "role": null,
+          "text": "TRY THE DEMO ROOM \u2192",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 10,
+          "tag": "a",
+          "role": null,
+          "text": "OPEN DASHBOARD \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": null,
+          "text": "\u25b6 EXECUTE PIPELINE",
+          "href": null,
+          "selectorHint": "button:has-text(\"\u25b6 EXECUTE PIPELINE\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 12,
+          "tag": "button",
+          "role": null,
+          "text": "01 Master Orchestrator WAIT",
+          "href": null,
+          "selectorHint": "button:has-text(\"01 Master Orchestrator WAIT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 13,
+          "tag": "button",
+          "role": null,
+          "text": "02 Code Agent WAIT",
+          "href": null,
+          "selectorHint": "button:has-text(\"02 Code Agent WAIT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 14,
+          "tag": "button",
+          "role": null,
+          "text": "03 Marketing Agent WAIT",
+          "href": null,
+          "selectorHint": "button:has-text(\"03 Marketing Agent WAIT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 15,
+          "tag": "button",
+          "role": null,
+          "text": "04 Content Generator WAIT",
+          "href": null,
+          "selectorHint": "button:has-text(\"04 Content Generator WAIT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 16,
+          "tag": "button",
+          "role": null,
+          "text": "05 Email/CRM Agent WAIT",
+          "href": null,
+          "selectorHint": "button:has-text(\"05 Email/CRM Agent WAIT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "06 Demo Agent WAIT",
+          "href": null,
+          "selectorHint": "button:has-text(\"06 Demo Agent WAIT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 18,
+          "tag": "button",
+          "role": null,
+          "text": "07 Review Agent WAIT",
+          "href": null,
+          "selectorHint": "button:has-text(\"07 Review Agent WAIT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 19,
+          "tag": "button",
+          "role": null,
+          "text": "08 Legal Agent WAIT",
+          "href": null,
+          "selectorHint": "button:has-text(\"08 Legal Agent WAIT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 20,
+          "tag": "button",
+          "role": null,
+          "text": "09 Budget Agent WAIT",
+          "href": null,
+          "selectorHint": "button:has-text(\"09 Budget Agent WAIT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 21,
+          "tag": "a",
+          "role": null,
+          "text": "GENERATE MY GTM FLOW \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "page_id": "onboarding",
+      "route": "/onboarding",
+      "depth": 1,
+      "title": "Company Setup - Demeo",
+      "visible_text": "Demeo\n\u2116 001 \u00b7 OPERATOR\nHOME\nSETUP\nAGENTS\nDASHBOARD\nDEMO ROOM\nCRM\nABOUT\nLAUNCH APP\n\u2192\nCOMPANY SETUP\nTell us about your company\n\nFill in your company details once. All agents \u2014 Content Generator, Legal, and Review \u2014 will use this context to produce tailored, specific output.\n\nCOMPANY NAME *\nONE-LINER DESCRIPTION *\nINDUSTRY\nSaaS\nFinTech\nHealthTech\nEdTech\nE-commerce\nDevTools\nMarTech\nMarketplace\nAI / ML\nCybersecurity\nTARGET AUDIENCE\nPRODUCT / SERVICE DESCRIPTION\nWEBSITE\nSTAGE\nPre-launch\nLaunched\nGrowth\nKEY FEATURES\nAdd\nDIFFERENTIATORS\nOPERATING JURISDICTIONS\nUnited States\nEuropean Union\nUnited Kingdom\nSave Profile\nSave & Start Creating Content \u2192",
+      "links_found": [
+        {
+          "href": "/",
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "source_route": "/onboarding"
+        },
+        {
+          "href": "/",
+          "text": "HOME",
+          "source_route": "/onboarding"
+        },
+        {
+          "href": "/onboarding",
+          "text": "SETUP",
+          "source_route": "/onboarding"
+        },
+        {
+          "href": "/agents",
+          "text": "AGENTS",
+          "source_route": "/onboarding"
+        },
+        {
+          "href": "/dashboard",
+          "text": "DASHBOARD",
+          "source_route": "/onboarding"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM",
+          "source_route": "/onboarding"
+        },
+        {
+          "href": "/crm",
+          "text": "CRM",
+          "source_route": "/onboarding"
+        },
+        {
+          "href": "/about",
+          "text": "ABOUT",
+          "source_route": "/onboarding"
+        },
+        {
+          "href": "/dashboard",
+          "text": "LAUNCH APP \u2192",
+          "source_route": "/onboarding"
+        }
+      ],
+      "controls": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "HOME",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 2,
+          "tag": "a",
+          "role": null,
+          "text": "SETUP",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 3,
+          "tag": "a",
+          "role": null,
+          "text": "AGENTS",
+          "href": "/agents",
+          "selectorHint": "a[href=\"/agents\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 4,
+          "tag": "a",
+          "role": null,
+          "text": "DASHBOARD",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 5,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 6,
+          "tag": "a",
+          "role": null,
+          "text": "CRM",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 7,
+          "tag": "a",
+          "role": null,
+          "text": "ABOUT",
+          "href": "/about",
+          "selectorHint": "a[href=\"/about\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 8,
+          "tag": "a",
+          "role": null,
+          "text": "LAUNCH APP \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 9,
+          "tag": "input",
+          "role": null,
+          "text": "Acme Inc.",
+          "href": null,
+          "selectorHint": "input[placeholder=\"Acme Inc.\"]",
+          "dataDemoId": null,
+          "placeholder": "Acme Inc.",
+          "disabled": false
+        },
+        {
+          "index": 10,
+          "tag": "textarea",
+          "role": null,
+          "text": "We help B2B SaaS teams turn cold outreach into qualified pipeline with AI demo rooms.",
+          "href": null,
+          "selectorHint": "textarea[placeholder=\"We help B2B SaaS teams turn cold outreach into qualified pipeline with AI demo rooms.\"]",
+          "dataDemoId": null,
+          "placeholder": "We help B2B SaaS teams turn cold outreach into qualified pipeline with AI demo rooms.",
+          "disabled": false
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": null,
+          "text": "SaaS",
+          "href": null,
+          "selectorHint": "button:has-text(\"SaaS\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 12,
+          "tag": "button",
+          "role": null,
+          "text": "FinTech",
+          "href": null,
+          "selectorHint": "button:has-text(\"FinTech\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 13,
+          "tag": "button",
+          "role": null,
+          "text": "HealthTech",
+          "href": null,
+          "selectorHint": "button:has-text(\"HealthTech\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 14,
+          "tag": "button",
+          "role": null,
+          "text": "EdTech",
+          "href": null,
+          "selectorHint": "button:has-text(\"EdTech\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 15,
+          "tag": "button",
+          "role": null,
+          "text": "E-commerce",
+          "href": null,
+          "selectorHint": "button:has-text(\"E-commerce\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 16,
+          "tag": "button",
+          "role": null,
+          "text": "DevTools",
+          "href": null,
+          "selectorHint": "button:has-text(\"DevTools\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "MarTech",
+          "href": null,
+          "selectorHint": "button:has-text(\"MarTech\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 18,
+          "tag": "button",
+          "role": null,
+          "text": "Marketplace",
+          "href": null,
+          "selectorHint": "button:has-text(\"Marketplace\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 19,
+          "tag": "button",
+          "role": null,
+          "text": "AI / ML",
+          "href": null,
+          "selectorHint": "button:has-text(\"AI / ML\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 20,
+          "tag": "button",
+          "role": null,
+          "text": "Cybersecurity",
+          "href": null,
+          "selectorHint": "button:has-text(\"Cybersecurity\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 21,
+          "tag": "input",
+          "role": null,
+          "text": "Or type a custom industry...",
+          "href": null,
+          "selectorHint": "input[placeholder=\"Or type a custom industry...\"]",
+          "dataDemoId": null,
+          "placeholder": "Or type a custom industry...",
+          "disabled": false
+        },
+        {
+          "index": 22,
+          "tag": "input",
+          "role": null,
+          "text": "Solo founders, lean B2B sales teams, Series A startups",
+          "href": null,
+          "selectorHint": "input[placeholder=\"Solo founders, lean B2B sales teams, Series A startups\"]",
+          "dataDemoId": null,
+          "placeholder": "Solo founders, lean B2B sales teams, Series A startups",
+          "disabled": false
+        },
+        {
+          "index": 23,
+          "tag": "textarea",
+          "role": null,
+          "text": "Describe what your product does, its core value proposition, and how it works...",
+          "href": null,
+          "selectorHint": "textarea[placeholder=\"Describe what your product does, its core value proposition, and how it works...\"]",
+          "dataDemoId": null,
+          "placeholder": "Describe what your product does, its core value proposition, and how it works...",
+          "disabled": false
+        },
+        {
+          "index": 24,
+          "tag": "input",
+          "role": null,
+          "text": "https://your-startup.com",
+          "href": null,
+          "selectorHint": "input[placeholder=\"https://your-startup.com\"]",
+          "dataDemoId": null,
+          "placeholder": "https://your-startup.com",
+          "disabled": false
+        },
+        {
+          "index": 25,
+          "tag": "button",
+          "role": null,
+          "text": "Pre-launch",
+          "href": null,
+          "selectorHint": "button:has-text(\"Pre-launch\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 26,
+          "tag": "button",
+          "role": null,
+          "text": "Launched",
+          "href": null,
+          "selectorHint": "button:has-text(\"Launched\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 27,
+          "tag": "button",
+          "role": null,
+          "text": "Growth",
+          "href": null,
+          "selectorHint": "button:has-text(\"Growth\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 28,
+          "tag": "input",
+          "role": null,
+          "text": "Type a feature and press Enter",
+          "href": null,
+          "selectorHint": "input[placeholder=\"Type a feature and press Enter\"]",
+          "dataDemoId": null,
+          "placeholder": "Type a feature and press Enter",
+          "disabled": false
+        },
+        {
+          "index": 29,
+          "tag": "button",
+          "role": null,
+          "text": "Add",
+          "href": null,
+          "selectorHint": "button:has-text(\"Add\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 30,
+          "tag": "textarea",
+          "role": null,
+          "text": "What makes your product different from competitors? Why should customers choose you?",
+          "href": null,
+          "selectorHint": "textarea[placeholder=\"What makes your product different from competitors? Why should customers choose you?\"]",
+          "dataDemoId": null,
+          "placeholder": "What makes your product different from competitors? Why should customers choose you?",
+          "disabled": false
+        },
+        {
+          "index": 31,
+          "tag": "button",
+          "role": null,
+          "text": "United States",
+          "href": null,
+          "selectorHint": "button:has-text(\"United States\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 32,
+          "tag": "button",
+          "role": null,
+          "text": "European Union",
+          "href": null,
+          "selectorHint": "button:has-text(\"European Union\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 33,
+          "tag": "button",
+          "role": null,
+          "text": "United Kingdom",
+          "href": null,
+          "selectorHint": "button:has-text(\"United Kingdom\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 34,
+          "tag": "button",
+          "role": null,
+          "text": "Save Profile",
+          "href": null,
+          "selectorHint": "button:has-text(\"Save Profile\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 35,
+          "tag": "button",
+          "role": null,
+          "text": "Save & Start Creating Content \u2192",
+          "href": null,
+          "selectorHint": "button:has-text(\"Save & Start Creating Content \u2192\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": true
+        }
+      ]
+    },
+    {
+      "page_id": "agents",
+      "route": "/agents",
+      "depth": 1,
+      "title": "Agent Lab - Demeo",
+      "visible_text": "Demeo\n\u2116 001 \u00b7 OPERATOR\nHOME\nSETUP\nAGENTS\nDASHBOARD\nDEMO ROOM\nCRM\nABOUT\nLAUNCH APP\n\u2192\nAGENT LAB\nTest every specialist without leaving the operator room.\n\nEach page sends a structured task to the backend orchestrator and shows the selected agent, reviewed output, and final decision.\n\nLIVE\nContent Agent\n\nGenerate positioning, landing copy, launch email, ICP notes, and social copy.\n\nOPEN PAGE\nLIVE\nLegal Agent\n\nRun source-grounded founder legal issue scans with citations and counsel questions.\n\nOPEN PAGE\nDEMO ROOM\nDemo Agent\n\nOpen the existing prospect-facing demo room interface.\n\nOPEN PAGE",
+      "links_found": [
+        {
+          "href": "/",
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/",
+          "text": "HOME",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/onboarding",
+          "text": "SETUP",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/agents",
+          "text": "AGENTS",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/dashboard",
+          "text": "DASHBOARD",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/crm",
+          "text": "CRM",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/about",
+          "text": "ABOUT",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/dashboard",
+          "text": "LAUNCH APP \u2192",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/content",
+          "text": "LIVE Content Agent Generate positioning, landing copy, launch email, ICP notes, and social copy. OPEN PAGE",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/legal",
+          "text": "LIVE Legal Agent Run source-grounded founder legal issue scans with citations and counsel questions. OPEN PAGE",
+          "source_route": "/agents"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM Demo Agent Open the existing prospect-facing demo room interface. OPEN PAGE",
+          "source_route": "/agents"
+        }
+      ],
+      "controls": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "HOME",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 2,
+          "tag": "a",
+          "role": null,
+          "text": "SETUP",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 3,
+          "tag": "a",
+          "role": null,
+          "text": "AGENTS",
+          "href": "/agents",
+          "selectorHint": "a[href=\"/agents\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 4,
+          "tag": "a",
+          "role": null,
+          "text": "DASHBOARD",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 5,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 6,
+          "tag": "a",
+          "role": null,
+          "text": "CRM",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 7,
+          "tag": "a",
+          "role": null,
+          "text": "ABOUT",
+          "href": "/about",
+          "selectorHint": "a[href=\"/about\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 8,
+          "tag": "a",
+          "role": null,
+          "text": "LAUNCH APP \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 9,
+          "tag": "a",
+          "role": null,
+          "text": "LIVE Content Agent Generate positioning, landing copy, launch email, ICP notes, and social copy. OPEN PAGE",
+          "href": "/content",
+          "selectorHint": "a[href=\"/content\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 10,
+          "tag": "a",
+          "role": null,
+          "text": "LIVE Legal Agent Run source-grounded founder legal issue scans with citations and counsel questions. OPEN PAGE",
+          "href": "/legal",
+          "selectorHint": "a[href=\"/legal\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 11,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM Demo Agent Open the existing prospect-facing demo room interface. OPEN PAGE",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "page_id": "dashboard",
+      "route": "/dashboard",
+      "depth": 1,
+      "title": "Dashboard \u2014 Demeo",
+      "visible_text": "Demeo\n\u2116 001 \u00b7 OPERATOR\nHOME\nSETUP\nAGENTS\nDASHBOARD\nDEMO ROOM\nCRM\nABOUT\nLAUNCH APP\n\u2192\nOPERATOR DASHBOARD\nBuild your GTM in one prompt\nAll 10 agents online\n\u25c6\nTell the operator about your product\nGenerate GTM Flow \u2192\nFIG. 01\n/\nMASTER ORCHESTRATOR \u2014 LIVE PIPELINE\nOPERATING\n01\nProduct\nCODE AGENT\n02\nICP\nMARKETING\n03\nProspects\nRESEARCH\n04\nOutreach\nCONTENT\n05\nDemo Room\nDEMO AGENT\n06\nCRM\nEMAIL/CRM\nQUALITY LAYER\nREVIEW AGENT\nLEGAL AGENT\nBUDGET AGENT",
+      "links_found": [
+        {
+          "href": "/",
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "source_route": "/dashboard"
+        },
+        {
+          "href": "/",
+          "text": "HOME",
+          "source_route": "/dashboard"
+        },
+        {
+          "href": "/onboarding",
+          "text": "SETUP",
+          "source_route": "/dashboard"
+        },
+        {
+          "href": "/agents",
+          "text": "AGENTS",
+          "source_route": "/dashboard"
+        },
+        {
+          "href": "/dashboard",
+          "text": "DASHBOARD",
+          "source_route": "/dashboard"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM",
+          "source_route": "/dashboard"
+        },
+        {
+          "href": "/crm",
+          "text": "CRM",
+          "source_route": "/dashboard"
+        },
+        {
+          "href": "/about",
+          "text": "ABOUT",
+          "source_route": "/dashboard"
+        },
+        {
+          "href": "/dashboard",
+          "text": "LAUNCH APP \u2192",
+          "source_route": "/dashboard"
+        }
+      ],
+      "controls": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "HOME",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 2,
+          "tag": "a",
+          "role": null,
+          "text": "SETUP",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 3,
+          "tag": "a",
+          "role": null,
+          "text": "AGENTS",
+          "href": "/agents",
+          "selectorHint": "a[href=\"/agents\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 4,
+          "tag": "a",
+          "role": null,
+          "text": "DASHBOARD",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 5,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 6,
+          "tag": "a",
+          "role": null,
+          "text": "CRM",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 7,
+          "tag": "a",
+          "role": null,
+          "text": "ABOUT",
+          "href": "/about",
+          "selectorHint": "a[href=\"/about\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 8,
+          "tag": "a",
+          "role": null,
+          "text": "LAUNCH APP \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 9,
+          "tag": "input",
+          "role": null,
+          "text": "https://yourcompany.com",
+          "href": null,
+          "selectorHint": "input[placeholder=\"https://yourcompany.com\"]",
+          "dataDemoId": null,
+          "placeholder": "https://yourcompany.com",
+          "disabled": false
+        },
+        {
+          "index": 10,
+          "tag": "textarea",
+          "role": null,
+          "text": "We're a developer-first analytics platform that helps engineering teams understand product usage in real-time, with zero instrumentation.",
+          "href": null,
+          "selectorHint": "textarea:has-text(\"We're a developer-first analytics platform that helps engine\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": null,
+          "text": "Generate GTM Flow \u2192",
+          "href": null,
+          "selectorHint": "button:has-text(\"Generate GTM Flow \u2192\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 12,
+          "tag": "button",
+          "role": null,
+          "text": "01 Product CODE AGENT",
+          "href": null,
+          "selectorHint": "button:has-text(\"01 Product CODE AGENT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 13,
+          "tag": "button",
+          "role": null,
+          "text": "02 ICP MARKETING",
+          "href": null,
+          "selectorHint": "button:has-text(\"02 ICP MARKETING\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 14,
+          "tag": "button",
+          "role": null,
+          "text": "03 Prospects RESEARCH",
+          "href": null,
+          "selectorHint": "button:has-text(\"03 Prospects RESEARCH\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 15,
+          "tag": "button",
+          "role": null,
+          "text": "04 Outreach CONTENT",
+          "href": null,
+          "selectorHint": "button:has-text(\"04 Outreach CONTENT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 16,
+          "tag": "button",
+          "role": null,
+          "text": "05 Demo Room DEMO AGENT",
+          "href": null,
+          "selectorHint": "button:has-text(\"05 Demo Room DEMO AGENT\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "06 CRM EMAIL/CRM",
+          "href": null,
+          "selectorHint": "button:has-text(\"06 CRM EMAIL/CRM\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "page_id": "demo",
+      "route": "/demo",
+      "depth": 1,
+      "title": "Demo Room \u2014 Demeo",
+      "visible_text": "Demeo\n\u2116 001 \u00b7 OPERATOR\nHOME\nSETUP\nAGENTS\nDASHBOARD\nDEMO ROOM\nCRM\nABOUT\nLAUNCH APP\n\u2192\nL\nPRIVATE DEMO FOR\nLinear \u00b7 Karri Saarinen\nDemo Agent live\nEnd & view CRM \u2192\n\u25ce\nHi Karri \ud83d\udc4b \u2014 I'm the AI demo room built specifically for Linear. I've already studied your changelog, your team structure, and how teams like Vercel and Cursor use us. Ask me anything \u2014 or pick a starting point below.\nShow me how this works for my team\nWhat's the ROI?\nHow is this different from Outreach.io?\nCan it integrate with HubSpot?\nSend",
+      "links_found": [
+        {
+          "href": "/",
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "source_route": "/demo"
+        },
+        {
+          "href": "/",
+          "text": "HOME",
+          "source_route": "/demo"
+        },
+        {
+          "href": "/onboarding",
+          "text": "SETUP",
+          "source_route": "/demo"
+        },
+        {
+          "href": "/agents",
+          "text": "AGENTS",
+          "source_route": "/demo"
+        },
+        {
+          "href": "/dashboard",
+          "text": "DASHBOARD",
+          "source_route": "/demo"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM",
+          "source_route": "/demo"
+        },
+        {
+          "href": "/crm",
+          "text": "CRM",
+          "source_route": "/demo"
+        },
+        {
+          "href": "/about",
+          "text": "ABOUT",
+          "source_route": "/demo"
+        },
+        {
+          "href": "/dashboard",
+          "text": "LAUNCH APP \u2192",
+          "source_route": "/demo"
+        },
+        {
+          "href": "/crm",
+          "text": "End & view CRM \u2192",
+          "source_route": "/demo"
+        }
+      ],
+      "controls": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "HOME",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 2,
+          "tag": "a",
+          "role": null,
+          "text": "SETUP",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 3,
+          "tag": "a",
+          "role": null,
+          "text": "AGENTS",
+          "href": "/agents",
+          "selectorHint": "a[href=\"/agents\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 4,
+          "tag": "a",
+          "role": null,
+          "text": "DASHBOARD",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 5,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 6,
+          "tag": "a",
+          "role": null,
+          "text": "CRM",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 7,
+          "tag": "a",
+          "role": null,
+          "text": "ABOUT",
+          "href": "/about",
+          "selectorHint": "a[href=\"/about\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 8,
+          "tag": "a",
+          "role": null,
+          "text": "LAUNCH APP \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 9,
+          "tag": "a",
+          "role": null,
+          "text": "End & view CRM \u2192",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 10,
+          "tag": "button",
+          "role": null,
+          "text": "Show me how this works for my team",
+          "href": null,
+          "selectorHint": "button:has-text(\"Show me how this works for my team\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": null,
+          "text": "What's the ROI?",
+          "href": null,
+          "selectorHint": "button:has-text(\"What's the ROI?\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 12,
+          "tag": "button",
+          "role": null,
+          "text": "How is this different from Outreach.io?",
+          "href": null,
+          "selectorHint": "button:has-text(\"How is this different from Outreach.io?\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 13,
+          "tag": "button",
+          "role": null,
+          "text": "Can it integrate with HubSpot?",
+          "href": null,
+          "selectorHint": "button:has-text(\"Can it integrate with HubSpot?\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 14,
+          "tag": "input",
+          "role": null,
+          "text": "Ask anything about the product\u2026",
+          "href": null,
+          "selectorHint": "input[placeholder=\"Ask anything about the product\u2026\"]",
+          "dataDemoId": null,
+          "placeholder": "Ask anything about the product\u2026",
+          "disabled": false
+        },
+        {
+          "index": 15,
+          "tag": "button",
+          "role": null,
+          "text": "Send",
+          "href": null,
+          "selectorHint": "button:has-text(\"Send\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": true
+        }
+      ]
+    },
+    {
+      "page_id": "crm",
+      "route": "/crm",
+      "depth": 1,
+      "title": "CRM Summary \u2014 Demeo",
+      "visible_text": "Demeo\n\u2116 001 \u00b7 OPERATOR\nHOME\nSETUP\nAGENTS\nDASHBOARD\nDEMO ROOM\nCRM\nABOUT\nLAUNCH APP\n\u2192\nAUTO-GENERATED \u00b7 EMAIL/CRM AGENT\nLinear \u00b7 Karri Saarinen\nDemo completed 2 minutes ago \u00b7 7 messages \u00b7 4m 12s\n\u2190 Back to demo\nSend follow-up\nLEAD SCORE\n87\n/ 100\nHot lead \u00b7 Book now\nINTEREST SIGNALS\nEngagement depth\n92%\nBuying intent\n84%\nBudget fit\n88%\nDecision authority\n78%\nOBJECTIONS HANDLED\n\u2713\nAlready using Outreach.io\nDifferentiated on AI demo room layer\n\u2713\nHubSpot integration concern\nConfirmed native two-way sync\n\u2713\nSecurity review\nRouted to Legal Agent \u00b7 SOC2 packet sent\nRECOMMENDED NEXT STEPS\n1\nBook 30-min technical deep-dive\nToday\n2\nLoop in VP Engineering (Tuomas)\nThis week\n3\nShare SOC2 + DPA package\nAuto-sent\n4\nPricing proposal: Growth tier\nAfter call\nGENERATED FOLLOW-UP EMAIL\nReviewed by Review Agent\nTo: karri@linear.app\nSubject: Quick recap + the technical deep-dive you asked about\n\nHi Karri,\n\nLoved the demo room session \u2014 especially your point on keeping AE bandwidth on strategic accounts only. Based on what we covered:\n\nSending the SOC2 + DPA pack (Legal Agent already prepped it).\nBooking 30 min with Tuomas to cover the HubSpot two-way sync.\nPricing proposal at Growth tier ready when you are.\n\nIf Tuesday 10:00 ET works, I'll drop a calendar invite. Otherwise just reply with a better window.\n\n\u2014 Demeo\non behalf of your team\n\nEdit\nSend now \u2192",
+      "links_found": [
+        {
+          "href": "/",
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "source_route": "/crm"
+        },
+        {
+          "href": "/",
+          "text": "HOME",
+          "source_route": "/crm"
+        },
+        {
+          "href": "/onboarding",
+          "text": "SETUP",
+          "source_route": "/crm"
+        },
+        {
+          "href": "/agents",
+          "text": "AGENTS",
+          "source_route": "/crm"
+        },
+        {
+          "href": "/dashboard",
+          "text": "DASHBOARD",
+          "source_route": "/crm"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM",
+          "source_route": "/crm"
+        },
+        {
+          "href": "/crm",
+          "text": "CRM",
+          "source_route": "/crm"
+        },
+        {
+          "href": "/about",
+          "text": "ABOUT",
+          "source_route": "/crm"
+        },
+        {
+          "href": "/dashboard",
+          "text": "LAUNCH APP \u2192",
+          "source_route": "/crm"
+        },
+        {
+          "href": "/demo",
+          "text": "\u2190 Back to demo",
+          "source_route": "/crm"
+        }
+      ],
+      "controls": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "HOME",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 2,
+          "tag": "a",
+          "role": null,
+          "text": "SETUP",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 3,
+          "tag": "a",
+          "role": null,
+          "text": "AGENTS",
+          "href": "/agents",
+          "selectorHint": "a[href=\"/agents\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 4,
+          "tag": "a",
+          "role": null,
+          "text": "DASHBOARD",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 5,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 6,
+          "tag": "a",
+          "role": null,
+          "text": "CRM",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 7,
+          "tag": "a",
+          "role": null,
+          "text": "ABOUT",
+          "href": "/about",
+          "selectorHint": "a[href=\"/about\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 8,
+          "tag": "a",
+          "role": null,
+          "text": "LAUNCH APP \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 9,
+          "tag": "a",
+          "role": null,
+          "text": "\u2190 Back to demo",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 10,
+          "tag": "button",
+          "role": null,
+          "text": "Send follow-up",
+          "href": null,
+          "selectorHint": "button:has-text(\"Send follow-up\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": null,
+          "text": "Edit",
+          "href": null,
+          "selectorHint": "button:has-text(\"Edit\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 12,
+          "tag": "button",
+          "role": null,
+          "text": "Send now \u2192",
+          "href": null,
+          "selectorHint": "button:has-text(\"Send now \u2192\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "page_id": "about",
+      "route": "/about",
+      "depth": 1,
+      "title": "About \u2014 Demeo",
+      "visible_text": "Demeo\n\u2116 001 \u00b7 OPERATOR\nHOME\nSETUP\nAGENTS\nDASHBOARD\nDEMO ROOM\nCRM\nABOUT\nLAUNCH APP\n\u2192\nVOL. I \u2014 ISSUE 02\nTHE PEOPLE BEHIND THE OPERATOR\nEST. ZBS\nABOUT \u2116 01\nBuilt by people who believed sales could be smarter\n.\n\nDemeo was founded on a simple conviction \u2014 that the best sales motion is one that never sleeps, never misses context, and treats every buyer as an individual.\n\n\u00a7 I \u2014 FOUNDERS\nThree builders. One operator.\nDK\nCO-FOUNDER\nDaria Konstantinova\n\nDaria brings deep product intuition and a relentless focus on user experience. She leads the vision for how AI agents communicate with buyers \u2014 making every demo room feel human, not robotic.\n\nGL\nCO-FOUNDER\nGrigorii Lukianov\n\nGrigorii architects the AI pipeline that powers Demeo end-to-end. From prospect research to demo delivery, he ensures every agent in the chain is fast, accurate, and production-ready.\n\nDI\nCO-FOUNDER\nDin Iskakov\n\nDin drives go-to-market strategy and the commercial engine behind Demeo. He has a background in scaling B2B sales motions and believes the future of revenue is autonomous, not manual.\n\n\u00a7 II \u2014 MISSION\nWe believe the next generation of revenue teams will be mostly AI.\n\nNot because people aren't valuable \u2014 but because repetitive, scalable tasks should never consume the best hours of the sharpest minds. We build the operator so you don't have to.\n\n\u00a9 ZBS \u2014 DEMEO\nBUILT FOR THE FUTURE OF GO-TO-MARKET\nEND \u2014 ISSUE 02",
+      "links_found": [
+        {
+          "href": "/",
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "source_route": "/about"
+        },
+        {
+          "href": "/",
+          "text": "HOME",
+          "source_route": "/about"
+        },
+        {
+          "href": "/onboarding",
+          "text": "SETUP",
+          "source_route": "/about"
+        },
+        {
+          "href": "/agents",
+          "text": "AGENTS",
+          "source_route": "/about"
+        },
+        {
+          "href": "/dashboard",
+          "text": "DASHBOARD",
+          "source_route": "/about"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM",
+          "source_route": "/about"
+        },
+        {
+          "href": "/crm",
+          "text": "CRM",
+          "source_route": "/about"
+        },
+        {
+          "href": "/about",
+          "text": "ABOUT",
+          "source_route": "/about"
+        },
+        {
+          "href": "/dashboard",
+          "text": "LAUNCH APP \u2192",
+          "source_route": "/about"
+        }
+      ],
+      "controls": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "HOME",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 2,
+          "tag": "a",
+          "role": null,
+          "text": "SETUP",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 3,
+          "tag": "a",
+          "role": null,
+          "text": "AGENTS",
+          "href": "/agents",
+          "selectorHint": "a[href=\"/agents\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 4,
+          "tag": "a",
+          "role": null,
+          "text": "DASHBOARD",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 5,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 6,
+          "tag": "a",
+          "role": null,
+          "text": "CRM",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 7,
+          "tag": "a",
+          "role": null,
+          "text": "ABOUT",
+          "href": "/about",
+          "selectorHint": "a[href=\"/about\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 8,
+          "tag": "a",
+          "role": null,
+          "text": "LAUNCH APP \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "page_id": "content",
+      "route": "/content",
+      "depth": 2,
+      "title": "Content Agent - Demeo",
+      "visible_text": "Demeo\n\u2116 001 \u00b7 OPERATOR\nHOME\nSETUP\nAGENTS\nDASHBOARD\nDEMO ROOM\nCRM\nABOUT\nLAUNCH APP\n\u2192\nCONTENT AGENT\nGenerate launch-ready GTM assets.\n\nCreate positioning, landing page copy, ICP notes, launch email, and social posts \u2014 all tailored to your company. Images are generated automatically via Flux Pro.\n\nNo company profile \u2014 set up now for better results\nGenerate Content\ngateway \u00b7 gpt-4o\nREADY\n\nHit Generate Content to create your GTM assets.",
+      "links_found": [
+        {
+          "href": "/",
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "source_route": "/content"
+        },
+        {
+          "href": "/",
+          "text": "HOME",
+          "source_route": "/content"
+        },
+        {
+          "href": "/onboarding",
+          "text": "SETUP",
+          "source_route": "/content"
+        },
+        {
+          "href": "/agents",
+          "text": "AGENTS",
+          "source_route": "/content"
+        },
+        {
+          "href": "/dashboard",
+          "text": "DASHBOARD",
+          "source_route": "/content"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM",
+          "source_route": "/content"
+        },
+        {
+          "href": "/crm",
+          "text": "CRM",
+          "source_route": "/content"
+        },
+        {
+          "href": "/about",
+          "text": "ABOUT",
+          "source_route": "/content"
+        },
+        {
+          "href": "/dashboard",
+          "text": "LAUNCH APP \u2192",
+          "source_route": "/content"
+        },
+        {
+          "href": "/onboarding",
+          "text": "No company profile \u2014 set up now for better results",
+          "source_route": "/content"
+        }
+      ],
+      "controls": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "HOME",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 2,
+          "tag": "a",
+          "role": null,
+          "text": "SETUP",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 3,
+          "tag": "a",
+          "role": null,
+          "text": "AGENTS",
+          "href": "/agents",
+          "selectorHint": "a[href=\"/agents\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 4,
+          "tag": "a",
+          "role": null,
+          "text": "DASHBOARD",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 5,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 6,
+          "tag": "a",
+          "role": null,
+          "text": "CRM",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 7,
+          "tag": "a",
+          "role": null,
+          "text": "ABOUT",
+          "href": "/about",
+          "selectorHint": "a[href=\"/about\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 8,
+          "tag": "a",
+          "role": null,
+          "text": "LAUNCH APP \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 9,
+          "tag": "a",
+          "role": null,
+          "text": "No company profile \u2014 set up now for better results",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 10,
+          "tag": "textarea",
+          "role": null,
+          "text": "Create landing page copy, a launch email, ICP notes, and a social post.",
+          "href": null,
+          "selectorHint": "textarea[placeholder=\"Describe what content you need\u2026\"]",
+          "dataDemoId": null,
+          "placeholder": "Describe what content you need\u2026",
+          "disabled": false
+        },
+        {
+          "index": 11,
+          "tag": "button",
+          "role": null,
+          "text": "Generate Content",
+          "href": null,
+          "selectorHint": "button:has-text(\"Generate Content\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "page_id": "legal",
+      "route": "/legal",
+      "depth": 2,
+      "title": "Legal Agent - Demeo",
+      "visible_text": "Demeo\n\u2116 001 \u00b7 OPERATOR\nHOME\nSETUP\nAGENTS\nDASHBOARD\nDEMO ROOM\nCRM\nABOUT\nLAUNCH APP\n\u2192\nLEGAL AGENT\nSpot founder legal risks before launch.\n\nThe Legal Agent uses a small RAG seed set from official public guidance and returns educational issue-spotting, citations, and questions for counsel.\n\nNo company profile \u2014 set up now for better results\nAPI BASE URL\nPROMPT\nSTARTUP IDEA\nAUDIENCE\nGOAL\nCHANNEL\nSTARTUP URL (OPTIONAL)\nJURISDICTIONS\nUnited States\nEuropean Union\nUnited Kingdom\nINDUSTRIES (OPTIONAL)\nFinTech\nHealthTech\nEdTech\nDOCUMENT REVIEW MODE\nUpload document (ToS, privacy policy, etc.)\nRun Agent\ngateway \u00b7 gpt-4o\nAGENT OUTPUT\nWaiting for run\nREADY\n\nRun the task to inspect selected agent, reviewed output, citations, and orchestrator decision.",
+      "links_found": [
+        {
+          "href": "/",
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "source_route": "/legal"
+        },
+        {
+          "href": "/",
+          "text": "HOME",
+          "source_route": "/legal"
+        },
+        {
+          "href": "/onboarding",
+          "text": "SETUP",
+          "source_route": "/legal"
+        },
+        {
+          "href": "/agents",
+          "text": "AGENTS",
+          "source_route": "/legal"
+        },
+        {
+          "href": "/dashboard",
+          "text": "DASHBOARD",
+          "source_route": "/legal"
+        },
+        {
+          "href": "/demo",
+          "text": "DEMO ROOM",
+          "source_route": "/legal"
+        },
+        {
+          "href": "/crm",
+          "text": "CRM",
+          "source_route": "/legal"
+        },
+        {
+          "href": "/about",
+          "text": "ABOUT",
+          "source_route": "/legal"
+        },
+        {
+          "href": "/dashboard",
+          "text": "LAUNCH APP \u2192",
+          "source_route": "/legal"
+        },
+        {
+          "href": "/onboarding",
+          "text": "No company profile \u2014 set up now for better results",
+          "source_route": "/legal"
+        }
+      ],
+      "controls": [
+        {
+          "index": 0,
+          "tag": "a",
+          "role": null,
+          "text": "Demeo \u2116 001 \u00b7 OPERATOR",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 1,
+          "tag": "a",
+          "role": null,
+          "text": "HOME",
+          "href": "/",
+          "selectorHint": "a[href=\"/\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 2,
+          "tag": "a",
+          "role": null,
+          "text": "SETUP",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 3,
+          "tag": "a",
+          "role": null,
+          "text": "AGENTS",
+          "href": "/agents",
+          "selectorHint": "a[href=\"/agents\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 4,
+          "tag": "a",
+          "role": null,
+          "text": "DASHBOARD",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 5,
+          "tag": "a",
+          "role": null,
+          "text": "DEMO ROOM",
+          "href": "/demo",
+          "selectorHint": "a[href=\"/demo\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 6,
+          "tag": "a",
+          "role": null,
+          "text": "CRM",
+          "href": "/crm",
+          "selectorHint": "a[href=\"/crm\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 7,
+          "tag": "a",
+          "role": null,
+          "text": "ABOUT",
+          "href": "/about",
+          "selectorHint": "a[href=\"/about\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 8,
+          "tag": "a",
+          "role": null,
+          "text": "LAUNCH APP \u2192",
+          "href": "/dashboard",
+          "selectorHint": "a[href=\"/dashboard\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 9,
+          "tag": "a",
+          "role": null,
+          "text": "No company profile \u2014 set up now for better results",
+          "href": "/onboarding",
+          "selectorHint": "a[href=\"/onboarding\"]",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 10,
+          "tag": "input",
+          "role": null,
+          "text": "http://127.0.0.1:8000",
+          "href": null,
+          "selectorHint": "input:has-text(\"http://127.0.0.1:8000\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 11,
+          "tag": "textarea",
+          "role": null,
+          "text": "Check legal risks for landing page claims, privacy, testimonials, accessibility, and LLC formation before launch.",
+          "href": null,
+          "selectorHint": "textarea:has-text(\"Check legal risks for landing page claims, privacy, testimon\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 12,
+          "tag": "input",
+          "role": null,
+          "text": "GTM AI office for founders",
+          "href": null,
+          "selectorHint": "input:has-text(\"GTM AI office for founders\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 13,
+          "tag": "input",
+          "role": null,
+          "text": "US startup founders",
+          "href": null,
+          "selectorHint": "input:has-text(\"US startup founders\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 14,
+          "tag": "input",
+          "role": null,
+          "text": "launch a compliant MVP without overclaiming",
+          "href": null,
+          "selectorHint": "input:has-text(\"launch a compliant MVP without overclaiming\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 15,
+          "tag": "input",
+          "role": null,
+          "text": "website, outreach, and app onboarding",
+          "href": null,
+          "selectorHint": "input:has-text(\"website, outreach, and app onboarding\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 16,
+          "tag": "input",
+          "role": null,
+          "text": "https://your-startup.com",
+          "href": null,
+          "selectorHint": "input[placeholder=\"https://your-startup.com\"]",
+          "dataDemoId": null,
+          "placeholder": "https://your-startup.com",
+          "disabled": false
+        },
+        {
+          "index": 17,
+          "tag": "button",
+          "role": null,
+          "text": "United States",
+          "href": null,
+          "selectorHint": "button:has-text(\"United States\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 18,
+          "tag": "button",
+          "role": null,
+          "text": "European Union",
+          "href": null,
+          "selectorHint": "button:has-text(\"European Union\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 19,
+          "tag": "button",
+          "role": null,
+          "text": "United Kingdom",
+          "href": null,
+          "selectorHint": "button:has-text(\"United Kingdom\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 20,
+          "tag": "button",
+          "role": null,
+          "text": "FinTech",
+          "href": null,
+          "selectorHint": "button:has-text(\"FinTech\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 21,
+          "tag": "button",
+          "role": null,
+          "text": "HealthTech",
+          "href": null,
+          "selectorHint": "button:has-text(\"HealthTech\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 22,
+          "tag": "button",
+          "role": null,
+          "text": "EdTech",
+          "href": null,
+          "selectorHint": "button:has-text(\"EdTech\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 23,
+          "tag": "input",
+          "role": null,
+          "text": "on",
+          "href": null,
+          "selectorHint": "input:has-text(\"on\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 24,
+          "tag": "input",
+          "role": null,
+          "text": "",
+          "href": null,
+          "selectorHint": "input",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        },
+        {
+          "index": 25,
+          "tag": "button",
+          "role": null,
+          "text": "Run Agent",
+          "href": null,
+          "selectorHint": "button:has-text(\"Run Agent\")",
+          "dataDemoId": null,
+          "placeholder": null,
+          "disabled": false
+        }
+      ]
+    }
+  ],
+  "conditions": {
+    "url_walkthrough": {
+      "manifest": {
+        "pages": [
+          {
+            "page_id": "home",
+            "route": "/",
+            "purpose": "Landing page introducing Demeo and entry points into the operator flow.",
+            "important_elements": [
+              {
+                "element_id": "home_hero",
+                "label": "Manifesto / value proposition",
+                "selector_hint": "text=We turn cold outreach into personalized AI demo rooms",
+                "why": "Explains the product in one sentence."
+              },
+              {
+                "element_id": "home_demo_cta",
+                "label": "Try the demo room",
+                "selector_hint": "a[href=\"/demo\"]",
+                "why": "Direct path to the prospect-facing demo room."
+              },
+              {
+                "element_id": "home_dashboard_cta",
+                "label": "Open dashboard",
+                "selector_hint": "a[href=\"/dashboard\"]",
+                "why": "Direct path to the founder/operator flow."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "nav_home_demo",
+                "type": "navigate",
+                "label": "Open Demo Room",
+                "source_page_id": "home",
+                "target_page_id": "demo",
+                "element_id": "home_demo_cta",
+                "intent": "Show the prospect-facing demo experience.",
+                "safe": true
+              },
+              {
+                "action_id": "nav_home_dashboard",
+                "type": "navigate",
+                "label": "Open Dashboard",
+                "source_page_id": "home",
+                "target_page_id": "dashboard",
+                "element_id": "home_dashboard_cta",
+                "intent": "Show the founder/operator control flow.",
+                "safe": true
+              },
+              {
+                "action_id": "highlight_home_value",
+                "type": "highlight",
+                "label": "Highlight value proposition",
+                "source_page_id": "home",
+                "target_page_id": "home",
+                "element_id": "home_hero",
+                "intent": "Emphasize what Demeo does.",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "onboarding",
+            "route": "/onboarding",
+            "purpose": "Founder setup page for company and product context.",
+            "important_elements": [
+              {
+                "element_id": "setup_company_name",
+                "label": "Company name",
+                "selector_hint": "input[placeholder=\"Acme Inc.\"]",
+                "why": "Core company identity input."
+              },
+              {
+                "element_id": "setup_one_liner",
+                "label": "One-liner description",
+                "selector_hint": "textarea[placeholder=\"We help B2B SaaS teams turn cold outreach into qualified pipeline with AI demo rooms.\"]",
+                "why": "Primary product summary used by agents."
+              },
+              {
+                "element_id": "setup_industry",
+                "label": "Industry selection",
+                "selector_hint": "button:has-text(\"SaaS\")",
+                "why": "Used to tailor outputs."
+              },
+              {
+                "element_id": "setup_save",
+                "label": "Save profile",
+                "selector_hint": "button:has-text(\"Save Profile\")",
+                "why": "Persists founder context."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "highlight_setup_inputs",
+                "type": "highlight",
+                "label": "Highlight setup fields",
+                "source_page_id": "onboarding",
+                "target_page_id": "onboarding",
+                "element_id": "setup_company_name",
+                "intent": "Show what the founder provides during setup.",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "agents",
+            "route": "/agents",
+            "purpose": "Agent lab for viewing specialist modules.",
+            "important_elements": [
+              {
+                "element_id": "agents_content",
+                "label": "Content Agent",
+                "selector_hint": "a[href=\"/content\"]",
+                "why": "Shows generation of GTM assets."
+              },
+              {
+                "element_id": "agents_legal",
+                "label": "Legal Agent",
+                "selector_hint": "a[href=\"/legal\"]",
+                "why": "Shows legal issue-spotting module."
+              },
+              {
+                "element_id": "agents_demo",
+                "label": "Demo Agent",
+                "selector_hint": "a[href=\"/demo\"]",
+                "why": "Links to the prospect-facing demo room."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "nav_agents_content",
+                "type": "navigate",
+                "label": "Open Content Agent",
+                "source_page_id": "agents",
+                "target_page_id": "content",
+                "element_id": "agents_content",
+                "intent": "Show content generation capability.",
+                "safe": true
+              },
+              {
+                "action_id": "nav_agents_demo",
+                "type": "navigate",
+                "label": "Open Demo Room",
+                "source_page_id": "agents",
+                "target_page_id": "demo",
+                "element_id": "agents_demo",
+                "intent": "Show the prospect-facing room.",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "dashboard",
+            "route": "/dashboard",
+            "purpose": "Founder dashboard showing the GTM flow and pipeline stages.",
+            "important_elements": [
+              {
+                "element_id": "dashboard_prompt",
+                "label": "Product context prompt",
+                "selector_hint": "textarea:has-text(\"We're a developer-first analytics platform\")",
+                "why": "Example of the context fed into the operator."
+              },
+              {
+                "element_id": "dashboard_generate",
+                "label": "Generate GTM Flow",
+                "selector_hint": "button:has-text(\"Generate GTM Flow \u2192\")",
+                "why": "Primary safe generation action."
+              },
+              {
+                "element_id": "dashboard_demo_stage",
+                "label": "Demo Room stage",
+                "selector_hint": "button:has-text(\"05 Demo Room DEMO AGENT\")",
+                "why": "Shows the demo step in the pipeline."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "highlight_dashboard_pipeline",
+                "type": "highlight",
+                "label": "Highlight pipeline stages",
+                "source_page_id": "dashboard",
+                "target_page_id": "dashboard",
+                "element_id": "dashboard_demo_stage",
+                "intent": "Show how the product moves from product context to demo and CRM.",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "demo",
+            "route": "/demo",
+            "purpose": "Prospect-facing private demo room with guided questions and chat input.",
+            "important_elements": [
+              {
+                "element_id": "demo_intro",
+                "label": "Personalized demo intro",
+                "selector_hint": "text=Hi Karri",
+                "why": "Illustrates a personalized room."
+              },
+              {
+                "element_id": "demo_prompt_btn",
+                "label": "Show me how this works for my team",
+                "selector_hint": "button:has-text(\"Show me how this works for my team\")",
+                "why": "Safe preset question to start the demo."
+              },
+              {
+                "element_id": "demo_input",
+                "label": "Ask anything input",
+                "selector_hint": "input[placeholder=\"Ask anything about the product\u2026\"]",
+                "why": "Lets the prospect ask questions."
+              },
+              {
+                "element_id": "demo_end_crm",
+                "label": "End & view CRM",
+                "selector_hint": "a[href=\"/crm\"]",
+                "why": "Shows the handoff to lead summary."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "nav_demo_crm",
+                "type": "navigate",
+                "label": "View CRM summary",
+                "source_page_id": "demo",
+                "target_page_id": "crm",
+                "element_id": "demo_end_crm",
+                "intent": "Show the output after a prospect finishes the demo.",
+                "safe": true
+              },
+              {
+                "action_id": "highlight_demo_room",
+                "type": "highlight",
+                "label": "Highlight demo room controls",
+                "source_page_id": "demo",
+                "target_page_id": "demo",
+                "element_id": "demo_prompt_btn",
+                "intent": "Show the buyer-facing interaction points.",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "crm",
+            "route": "/crm",
+            "purpose": "CRM summary showing lead score, objections, and follow-up draft.",
+            "important_elements": [
+              {
+                "element_id": "crm_score",
+                "label": "Lead score",
+                "selector_hint": "text=LEAD SCORE",
+                "why": "Shows qualification outcome."
+              },
+              {
+                "element_id": "crm_followup",
+                "label": "Generated follow-up email",
+                "selector_hint": "text=GENERATED FOLLOW-UP EMAIL",
+                "why": "Shows the post-demo output."
+              },
+              {
+                "element_id": "crm_send_now",
+                "label": "Send now",
+                "selector_hint": "button:has-text(\"Send now \u2192\")",
+                "why": "Visible action, but sending is a real outbound operation."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "highlight_crm_output",
+                "type": "highlight",
+                "label": "Highlight CRM summary",
+                "source_page_id": "crm",
+                "target_page_id": "crm",
+                "element_id": "crm_followup",
+                "intent": "Show what the founder receives after the prospect finishes.",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "about",
+            "route": "/about",
+            "purpose": "Company background and founder bios.",
+            "important_elements": [
+              {
+                "element_id": "about_mission",
+                "label": "Mission statement",
+                "selector_hint": "text=We believe the next generation of revenue teams will be mostly AI.",
+                "why": "Explains the company belief."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "highlight_about_mission",
+                "type": "highlight",
+                "label": "Highlight mission",
+                "source_page_id": "about",
+                "target_page_id": "about",
+                "element_id": "about_mission",
+                "intent": "Optional background context.",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "content",
+            "route": "/content",
+            "purpose": "Content Agent page for generating GTM assets.",
+            "important_elements": [
+              {
+                "element_id": "content_prompt",
+                "label": "Content request textarea",
+                "selector_hint": "textarea[placeholder=\"Describe what content you need\u2026\"]",
+                "why": "Input for generation."
+              },
+              {
+                "element_id": "content_generate",
+                "label": "Generate Content",
+                "selector_hint": "button:has-text(\"Generate Content\")",
+                "why": "Safe generation action."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "highlight_content_generate",
+                "type": "highlight",
+                "label": "Highlight content generation",
+                "source_page_id": "content",
+                "target_page_id": "content",
+                "element_id": "content_generate",
+                "intent": "Show how output is generated from founder context.",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "legal",
+            "route": "/legal",
+            "purpose": "Legal Agent page for issue spotting and educational review.",
+            "important_elements": [
+              {
+                "element_id": "legal_run",
+                "label": "Run Agent",
+                "selector_hint": "button:has-text(\"Run Agent\")",
+                "why": "Safe analysis action."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "highlight_legal_run",
+                "type": "highlight",
+                "label": "Highlight legal review",
+                "source_page_id": "legal",
+                "target_page_id": "legal",
+                "element_id": "legal_run",
+                "intent": "Show the review step in the agent flow.",
+                "safe": true
+              }
+            ]
+          }
+        ],
+        "flows": [
+          {
+            "flow_id": "founder_walkthrough",
+            "goal": "Show the full story from founder setup to prospect demo to CRM follow-up.",
+            "steps": [
+              {
+                "page_id": "onboarding",
+                "action_id": "highlight_setup_inputs",
+                "say": "First, the founder adds company and product context."
+              },
+              {
+                "page_id": "dashboard",
+                "action_id": "highlight_dashboard_pipeline",
+                "say": "Next, that context feeds the GTM pipeline and agent stages."
+              },
+              {
+                "page_id": "content",
+                "action_id": "highlight_content_generate",
+                "say": "The system can generate GTM content from the profile."
+              },
+              {
+                "page_id": "demo",
+                "action_id": "highlight_demo_room",
+                "say": "Then the prospect gets a personalized demo room."
+              },
+              {
+                "page_id": "crm",
+                "action_id": "highlight_crm_output",
+                "say": "Finally, the founder sees the qualified lead and follow-up."
+              }
+            ]
+          }
+        ],
+        "approved_answers": [
+          {
+            "topic": "What does the founder need to provide?",
+            "answer": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions.",
+            "source": "Founder-provided approved_qa"
+          },
+          {
+            "topic": "Should the runtime click the real app directly?",
+            "answer": "The MVP should use an approved manifest and visual event playback. Playwright is better for setup-time extraction and validation. Live app control can come later for approved low-risk paths.",
+            "source": "Founder-provided approved_qa"
+          },
+          {
+            "topic": "Can this support voice?",
+            "answer": "Yes. Gemini Live or a LiveKit voice agent can call the same safe demo tools used by text: show page, move cursor, highlight, propose click, answer from knowledge, and update lead memory.",
+            "source": "Founder-provided approved_qa"
+          }
+        ],
+        "notes": [
+          "No destructive actions included.",
+          "Clicks were avoided except where they are ordinary navigation links; no non-navigational clicks were added.",
+          "Selector hints use only crawled page data.",
+          "CRM send actions are visible but not approved as actions because they initiate outbound messaging."
+        ]
+      },
+      "extraction_score": {
+        "crawled_page_count": 9,
+        "manifest_page_count": 9,
+        "action_count": 13,
+        "safe_action_count": 13,
+        "known_action_count": 13,
+        "expected_page_hits": {
+          "setup": true,
+          "content": true,
+          "demo": true,
+          "crm": true
+        },
+        "expected_page_hit_count": 4,
+        "invented_page_count": 0,
+        "invented_pages": [],
+        "invented_action_ref_count": 0,
+        "invalid_action_page_count": 0,
+        "linked_live_route_reached": false
+      },
+      "planner_runs": {
+        "gpt-5.4-mini": {
+          "planner": {
+            "decisions": [
+              {
+                "question": "What does the founder need to provide?",
+                "reply": "The founder provides the product context that powers the demo room.",
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "onboarding",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Start with founder setup."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "onboarding",
+                    "action_id": "highlight_setup_inputs",
+                    "element_id": "setup_company_name",
+                    "say": "They enter company name, product one-liner, industry, and related setup details."
+                  },
+                  {
+                    "type": "answer",
+                    "page_id": null,
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
+                  }
+                ],
+                "reason": "Best answered by showing the onboarding setup and then using the approved answer."
+              },
+              {
+                "question": "Show me the agent/content console.",
+                "reply": "Here\u2019s the content generation side of the operator flow.",
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "dashboard",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "This is the founder dashboard where the demo is orchestrated."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "dashboard",
+                    "action_id": "highlight_dashboard_pipeline",
+                    "element_id": "dashboard_demo_stage",
+                    "say": "The product context flows through the pipeline into the demo stage."
+                  },
+                  {
+                    "type": "show_page",
+                    "page_id": "content",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Now open the content agent console."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "content",
+                    "action_id": "highlight_content_generate",
+                    "element_id": "content_generate",
+                    "say": "This is where Demeo can generate GTM content from founder context."
+                  }
+                ],
+                "reason": "The manifest includes a safe content generation page, which directly demonstrates AI output generation."
+              },
+              {
+                "question": "Show the prospect demo room.",
+                "reply": "Here\u2019s the buyer-facing demo room.",
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "demo",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "This is the personalized prospect demo room."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "demo",
+                    "action_id": "highlight_demo_room",
+                    "element_id": "demo_prompt_btn",
+                    "say": "The prospect can start with a guided question or ask anything."
+                  }
+                ],
+                "reason": "This is the exact prospect-facing experience the founder asked to show."
+              },
+              {
+                "question": "Show me what the founder receives after the demo.",
+                "reply": "After the prospect finishes, the founder gets a CRM summary and follow-up draft.",
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "crm",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Now open the CRM summary."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "crm",
+                    "action_id": "highlight_crm_output",
+                    "element_id": "crm_followup",
+                    "say": "This shows the lead score, objections, and generated follow-up email."
+                  }
+                ],
+                "reason": "The CRM page is the approved safe endpoint for post-demo output and qualification."
+              }
+            ]
+          },
+          "planner_score": {
+            "question_pass_count": 4,
+            "question_total": 4,
+            "question_results": [
+              {
+                "question": "What does the founder need to provide?",
+                "passed": true,
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "onboarding",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Start with founder setup."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "onboarding",
+                    "action_id": "highlight_setup_inputs",
+                    "element_id": "setup_company_name",
+                    "say": "They enter company name, product one-liner, industry, and related setup details."
+                  },
+                  {
+                    "type": "answer",
+                    "page_id": null,
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
+                  }
+                ],
+                "reason": "Best answered by showing the onboarding setup and then using the approved answer."
+              },
+              {
+                "question": "Show me the agent/content console.",
+                "passed": true,
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "dashboard",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "This is the founder dashboard where the demo is orchestrated."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "dashboard",
+                    "action_id": "highlight_dashboard_pipeline",
+                    "element_id": "dashboard_demo_stage",
+                    "say": "The product context flows through the pipeline into the demo stage."
+                  },
+                  {
+                    "type": "show_page",
+                    "page_id": "content",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Now open the content agent console."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "content",
+                    "action_id": "highlight_content_generate",
+                    "element_id": "content_generate",
+                    "say": "This is where Demeo can generate GTM content from founder context."
+                  }
+                ],
+                "reason": "The manifest includes a safe content generation page, which directly demonstrates AI output generation."
+              },
+              {
+                "question": "Show the prospect demo room.",
+                "passed": true,
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "demo",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "This is the personalized prospect demo room."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "demo",
+                    "action_id": "highlight_demo_room",
+                    "element_id": "demo_prompt_btn",
+                    "say": "The prospect can start with a guided question or ask anything."
+                  }
+                ],
+                "reason": "This is the exact prospect-facing experience the founder asked to show."
+              },
+              {
+                "question": "Show me what the founder receives after the demo.",
+                "passed": true,
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "crm",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Now open the CRM summary."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "crm",
+                    "action_id": "highlight_crm_output",
+                    "element_id": "crm_followup",
+                    "say": "This shows the lead score, objections, and generated follow-up email."
+                  }
+                ],
+                "reason": "The CRM page is the approved safe endpoint for post-demo output and qualification."
+              }
+            ]
+          },
+          "success": {
+            "extraction_ready": true,
+            "planner_ready": true,
+            "usable_for_mvp_review": true,
+            "success_rule": "MVP-usable means at least 3/4 expected app areas discovered, at least 6 safe/reviewable actions, no invented manifest pages/action refs, and at least 3/4 prospect questions planned to the right page/action."
+          }
+        }
+      },
+      "planner": {
+        "decisions": [
+          {
+            "question": "What does the founder need to provide?",
+            "reply": "The founder provides the product context that powers the demo room.",
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "onboarding",
+                "action_id": null,
+                "element_id": null,
+                "say": "Start with founder setup."
+              },
+              {
+                "type": "highlight",
+                "page_id": "onboarding",
+                "action_id": "highlight_setup_inputs",
+                "element_id": "setup_company_name",
+                "say": "They enter company name, product one-liner, industry, and related setup details."
+              },
+              {
+                "type": "answer",
+                "page_id": null,
+                "action_id": null,
+                "element_id": null,
+                "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
+              }
+            ],
+            "reason": "Best answered by showing the onboarding setup and then using the approved answer."
+          },
+          {
+            "question": "Show me the agent/content console.",
+            "reply": "Here\u2019s the content generation side of the operator flow.",
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "dashboard",
+                "action_id": null,
+                "element_id": null,
+                "say": "This is the founder dashboard where the demo is orchestrated."
+              },
+              {
+                "type": "highlight",
+                "page_id": "dashboard",
+                "action_id": "highlight_dashboard_pipeline",
+                "element_id": "dashboard_demo_stage",
+                "say": "The product context flows through the pipeline into the demo stage."
+              },
+              {
+                "type": "show_page",
+                "page_id": "content",
+                "action_id": null,
+                "element_id": null,
+                "say": "Now open the content agent console."
+              },
+              {
+                "type": "highlight",
+                "page_id": "content",
+                "action_id": "highlight_content_generate",
+                "element_id": "content_generate",
+                "say": "This is where Demeo can generate GTM content from founder context."
+              }
+            ],
+            "reason": "The manifest includes a safe content generation page, which directly demonstrates AI output generation."
+          },
+          {
+            "question": "Show the prospect demo room.",
+            "reply": "Here\u2019s the buyer-facing demo room.",
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "demo",
+                "action_id": null,
+                "element_id": null,
+                "say": "This is the personalized prospect demo room."
+              },
+              {
+                "type": "highlight",
+                "page_id": "demo",
+                "action_id": "highlight_demo_room",
+                "element_id": "demo_prompt_btn",
+                "say": "The prospect can start with a guided question or ask anything."
+              }
+            ],
+            "reason": "This is the exact prospect-facing experience the founder asked to show."
+          },
+          {
+            "question": "Show me what the founder receives after the demo.",
+            "reply": "After the prospect finishes, the founder gets a CRM summary and follow-up draft.",
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "crm",
+                "action_id": null,
+                "element_id": null,
+                "say": "Now open the CRM summary."
+              },
+              {
+                "type": "highlight",
+                "page_id": "crm",
+                "action_id": "highlight_crm_output",
+                "element_id": "crm_followup",
+                "say": "This shows the lead score, objections, and generated follow-up email."
+              }
+            ],
+            "reason": "The CRM page is the approved safe endpoint for post-demo output and qualification."
+          }
+        ]
+      },
+      "planner_score": {
+        "question_pass_count": 4,
+        "question_total": 4,
+        "question_results": [
+          {
+            "question": "What does the founder need to provide?",
+            "passed": true,
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "onboarding",
+                "action_id": null,
+                "element_id": null,
+                "say": "Start with founder setup."
+              },
+              {
+                "type": "highlight",
+                "page_id": "onboarding",
+                "action_id": "highlight_setup_inputs",
+                "element_id": "setup_company_name",
+                "say": "They enter company name, product one-liner, industry, and related setup details."
+              },
+              {
+                "type": "answer",
+                "page_id": null,
+                "action_id": null,
+                "element_id": null,
+                "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
+              }
+            ],
+            "reason": "Best answered by showing the onboarding setup and then using the approved answer."
+          },
+          {
+            "question": "Show me the agent/content console.",
+            "passed": true,
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "dashboard",
+                "action_id": null,
+                "element_id": null,
+                "say": "This is the founder dashboard where the demo is orchestrated."
+              },
+              {
+                "type": "highlight",
+                "page_id": "dashboard",
+                "action_id": "highlight_dashboard_pipeline",
+                "element_id": "dashboard_demo_stage",
+                "say": "The product context flows through the pipeline into the demo stage."
+              },
+              {
+                "type": "show_page",
+                "page_id": "content",
+                "action_id": null,
+                "element_id": null,
+                "say": "Now open the content agent console."
+              },
+              {
+                "type": "highlight",
+                "page_id": "content",
+                "action_id": "highlight_content_generate",
+                "element_id": "content_generate",
+                "say": "This is where Demeo can generate GTM content from founder context."
+              }
+            ],
+            "reason": "The manifest includes a safe content generation page, which directly demonstrates AI output generation."
+          },
+          {
+            "question": "Show the prospect demo room.",
+            "passed": true,
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "demo",
+                "action_id": null,
+                "element_id": null,
+                "say": "This is the personalized prospect demo room."
+              },
+              {
+                "type": "highlight",
+                "page_id": "demo",
+                "action_id": "highlight_demo_room",
+                "element_id": "demo_prompt_btn",
+                "say": "The prospect can start with a guided question or ask anything."
+              }
+            ],
+            "reason": "This is the exact prospect-facing experience the founder asked to show."
+          },
+          {
+            "question": "Show me what the founder receives after the demo.",
+            "passed": true,
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "crm",
+                "action_id": null,
+                "element_id": null,
+                "say": "Now open the CRM summary."
+              },
+              {
+                "type": "highlight",
+                "page_id": "crm",
+                "action_id": "highlight_crm_output",
+                "element_id": "crm_followup",
+                "say": "This shows the lead score, objections, and generated follow-up email."
+              }
+            ],
+            "reason": "The CRM page is the approved safe endpoint for post-demo output and qualification."
+          }
+        ]
+      },
+      "success": {
+        "extraction_ready": true,
+        "planner_ready": true,
+        "usable_for_mvp_review": true,
+        "success_rule": "MVP-usable means at least 3/4 expected app areas discovered, at least 6 safe/reviewable actions, no invented manifest pages/action refs, and at least 3/4 prospect questions planned to the right page/action."
+      }
+    },
+    "screenshot_assisted": {
+      "manifest": {
+        "pages": [
+          {
+            "page_id": "home",
+            "route": "/",
+            "purpose": "Homepage explaining Demeo and entry points to the demo room and dashboard.",
+            "important_elements": [
+              {
+                "element_id": "home_hero",
+                "label": "Hero message",
+                "selector_hint": "main",
+                "why": "States the product value proposition."
+              },
+              {
+                "element_id": "home_demo_cta",
+                "label": "Try the Demo Room",
+                "selector_hint": "a[href=\"/demo\"]",
+                "why": "Primary entry into the prospect-facing demo room."
+              },
+              {
+                "element_id": "home_dashboard_cta",
+                "label": "Open Dashboard",
+                "selector_hint": "a[href=\"/dashboard\"]",
+                "why": "Shows the founder/operator workflow."
+              },
+              {
+                "element_id": "home_pipeline",
+                "label": "AI system control panel",
+                "selector_hint": "button:has-text(\"\u25b6 EXECUTE PIPELINE\")",
+                "why": "Illustrates the multi-agent system."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "home_nav_demo",
+                "type": "navigate",
+                "label": "Open Demo Room",
+                "source_page_id": "home",
+                "target_page_id": "demo",
+                "element_id": "home_demo_cta",
+                "intent": "Show the prospect-facing demo experience",
+                "safe": true
+              },
+              {
+                "action_id": "home_nav_dashboard",
+                "type": "navigate",
+                "label": "Open Dashboard",
+                "source_page_id": "home",
+                "target_page_id": "dashboard",
+                "element_id": "home_dashboard_cta",
+                "intent": "Show the founder/operator workflow",
+                "safe": true
+              },
+              {
+                "action_id": "home_highlight_hero",
+                "type": "highlight",
+                "label": "Highlight value proposition",
+                "source_page_id": "home",
+                "target_page_id": "home",
+                "element_id": "home_hero",
+                "intent": "Emphasize what Demeo does",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "onboarding",
+            "route": "/onboarding",
+            "purpose": "Founder setup page for company and product context.",
+            "important_elements": [
+              {
+                "element_id": "setup_name",
+                "label": "Company name field",
+                "selector_hint": "input[placeholder=\"Acme Inc.\"]",
+                "why": "Captures the company identity."
+              },
+              {
+                "element_id": "setup_desc",
+                "label": "One-liner description",
+                "selector_hint": "textarea[placeholder=\"We help B2B SaaS teams turn cold outreach into qualified pipeline with AI demo rooms.\"]",
+                "why": "Captures the product pitch."
+              },
+              {
+                "element_id": "setup_industry",
+                "label": "Industry choices",
+                "selector_hint": "button:has-text(\"SaaS\")",
+                "why": "Used to tailor outputs."
+              },
+              {
+                "element_id": "setup_target",
+                "label": "Target audience field",
+                "selector_hint": "input[placeholder=\"Solo founders, lean B2B sales teams, Series A startups\"]",
+                "why": "Defines ICP context."
+              },
+              {
+                "element_id": "setup_save",
+                "label": "Save Profile",
+                "selector_hint": "button:has-text(\"Save Profile\")",
+                "why": "Persists setup before generating content."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "setup_highlight_form",
+                "type": "highlight",
+                "label": "Highlight setup form",
+                "source_page_id": "onboarding",
+                "target_page_id": "onboarding",
+                "element_id": "setup_name",
+                "intent": "Show what the founder provides during setup",
+                "safe": true
+              },
+              {
+                "action_id": "setup_nav_home",
+                "type": "navigate",
+                "label": "Back to Home",
+                "source_page_id": "onboarding",
+                "target_page_id": "home",
+                "element_id": null,
+                "intent": "Return to overview",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "agents",
+            "route": "/agents",
+            "purpose": "Agent lab page showing available specialist agent pages.",
+            "important_elements": [
+              {
+                "element_id": "agents_content",
+                "label": "Content Agent card",
+                "selector_hint": "a[href=\"/content\"]",
+                "why": "Entry to content generation demo."
+              },
+              {
+                "element_id": "agents_legal",
+                "label": "Legal Agent card",
+                "selector_hint": "a[href=\"/legal\"]",
+                "why": "Entry to legal issue-spotting demo."
+              },
+              {
+                "element_id": "agents_demo",
+                "label": "Demo Agent card",
+                "selector_hint": "a[href=\"/demo\"]",
+                "why": "Entry to prospect-facing demo room."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "agents_nav_content",
+                "type": "navigate",
+                "label": "Open Content Agent",
+                "source_page_id": "agents",
+                "target_page_id": "content",
+                "element_id": "agents_content",
+                "intent": "Show content generation",
+                "safe": true
+              },
+              {
+                "action_id": "agents_nav_legal",
+                "type": "navigate",
+                "label": "Open Legal Agent",
+                "source_page_id": "agents",
+                "target_page_id": "legal",
+                "element_id": "agents_legal",
+                "intent": "Show legal scan workflow",
+                "safe": true
+              },
+              {
+                "action_id": "agents_nav_demo",
+                "type": "navigate",
+                "label": "Open Demo Agent",
+                "source_page_id": "agents",
+                "target_page_id": "demo",
+                "element_id": "agents_demo",
+                "intent": "Show prospect demo room",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "dashboard",
+            "route": "/dashboard",
+            "purpose": "Operator dashboard for turning product context into a GTM flow.",
+            "important_elements": [
+              {
+                "element_id": "dash_prompt",
+                "label": "Product prompt area",
+                "selector_hint": "textarea:has-text(\"We're a developer-first analytics platform that helps engineering teams understand product usage in real-time, with zero instrumentation.\")",
+                "why": "Shows the founder input used by the orchestrator."
+              },
+              {
+                "element_id": "dash_generate",
+                "label": "Generate GTM Flow",
+                "selector_hint": "button:has-text(\"Generate GTM Flow \u2192\")",
+                "why": "Starts the operator flow generation."
+              },
+              {
+                "element_id": "dash_pipeline",
+                "label": "Master orchestrator pipeline",
+                "selector_hint": "section",
+                "why": "Illustrates agent stages across the GTM system."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "dash_highlight_prompt",
+                "type": "highlight",
+                "label": "Highlight founder prompt",
+                "source_page_id": "dashboard",
+                "target_page_id": "dashboard",
+                "element_id": "dash_prompt",
+                "intent": "Show what the founder provides to the operator",
+                "safe": true
+              },
+              {
+                "action_id": "dash_click_generate",
+                "type": "click",
+                "label": "Generate GTM Flow",
+                "source_page_id": "dashboard",
+                "target_page_id": "dashboard",
+                "element_id": "dash_generate",
+                "intent": "Generate the GTM flow from provided context",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "demo",
+            "route": "/demo",
+            "purpose": "Prospect-facing AI demo room for a named buyer persona.",
+            "important_elements": [
+              {
+                "element_id": "demo_context",
+                "label": "Private demo header",
+                "selector_hint": "main",
+                "why": "Shows the personalized demo context."
+              },
+              {
+                "element_id": "demo_quick_q1",
+                "label": "Starter question",
+                "selector_hint": "button:has-text(\"Show me how this works for my team\")",
+                "why": "Safe preset question to guide the demo."
+              },
+              {
+                "element_id": "demo_quick_q2",
+                "label": "ROI question",
+                "selector_hint": "button:has-text(\"What's the ROI?\")",
+                "why": "Safe preset question."
+              },
+              {
+                "element_id": "demo_input",
+                "label": "Ask anything input",
+                "selector_hint": "input[placeholder=\"Ask anything about the product\u2026\"]",
+                "why": "Allows prospect questions."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "demo_highlight_context",
+                "type": "highlight",
+                "label": "Highlight personalized demo context",
+                "source_page_id": "demo",
+                "target_page_id": "demo",
+                "element_id": "demo_context",
+                "intent": "Show the prospect gets a tailored room",
+                "safe": true
+              },
+              {
+                "action_id": "demo_highlight_qa",
+                "type": "highlight",
+                "label": "Highlight preset questions",
+                "source_page_id": "demo",
+                "target_page_id": "demo",
+                "element_id": "demo_quick_q1",
+                "intent": "Show guided question starters",
+                "safe": true
+              },
+              {
+                "action_id": "demo_nav_crm",
+                "type": "navigate",
+                "label": "End and view CRM",
+                "source_page_id": "demo",
+                "target_page_id": "crm",
+                "element_id": null,
+                "intent": "Show what happens after the demo completes",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "crm",
+            "route": "/crm",
+            "purpose": "CRM summary showing lead score, objections, and generated follow-up.",
+            "important_elements": [
+              {
+                "element_id": "crm_score",
+                "label": "Lead score",
+                "selector_hint": "section",
+                "why": "Summarizes qualification."
+              },
+              {
+                "element_id": "crm_objections",
+                "label": "Objections handled",
+                "selector_hint": "section",
+                "why": "Shows what the demo resolved."
+              },
+              {
+                "element_id": "crm_followup",
+                "label": "Generated follow-up email",
+                "selector_hint": "section",
+                "why": "Shows the post-demo output."
+              },
+              {
+                "element_id": "crm_back",
+                "label": "Back to demo",
+                "selector_hint": "a[href=\"/demo\"]",
+                "why": "Returns to the demo room."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "crm_highlight_followup",
+                "type": "highlight",
+                "label": "Highlight generated follow-up",
+                "source_page_id": "crm",
+                "target_page_id": "crm",
+                "element_id": "crm_followup",
+                "intent": "Show the founder what they receive after the demo",
+                "safe": true
+              },
+              {
+                "action_id": "crm_nav_demo",
+                "type": "navigate",
+                "label": "Back to demo",
+                "source_page_id": "crm",
+                "target_page_id": "demo",
+                "element_id": "crm_back",
+                "intent": "Return to the prospect experience",
+                "safe": true
+              }
+            ]
+          },
+          {
+            "page_id": "about",
+            "route": "/about",
+            "purpose": "About page with founder names and company mission.",
+            "important_elements": [
+              {
+                "element_id": "about_founders",
+                "label": "Founders section",
+                "selector_hint": "main",
+                "why": "Provides founder context."
+              },
+              {
+                "element_id": "about_mission",
+                "label": "Mission statement",
+                "selector_hint": "main",
+                "why": "Explains the company motivation."
+              }
+            ],
+            "allowed_actions": [
+              {
+                "action_id": "about_highlight_founders",
+                "type": "highlight",
+                "label": "Highlight founders",
+                "source_page_id": "about",
+                "target_page_id": "about",
+                "element_id": "about_founders",
+                "intent": "Show the team behind Demeo",
+                "safe": true
+              }
+            ]
+          }
+        ],
+        "flows": [
+          {
+            "flow_id": "flow_setup_to_crm",
+            "goal": "Show the end-to-end founder journey from setup to post-demo follow-up.",
+            "steps": [
+              {
+                "page_id": "onboarding",
+                "action_id": "setup_highlight_form",
+                "say": "First, the founder provides company and product context here."
+              },
+              {
+                "page_id": "dashboard",
+                "action_id": "dash_click_generate",
+                "say": "Then the operator turns that context into a GTM flow."
+              },
+              {
+                "page_id": "demo",
+                "action_id": "demo_nav_crm",
+                "say": "The prospect gets a personalized demo room."
+              },
+              {
+                "page_id": "crm",
+                "action_id": "crm_highlight_followup",
+                "say": "After the demo, the founder sees lead scoring and the generated follow-up."
+              }
+            ]
+          },
+          {
+            "flow_id": "flow_agent_lab",
+            "goal": "Show the available specialist agents.",
+            "steps": [
+              {
+                "page_id": "agents",
+                "action_id": "agents_nav_content",
+                "say": "Content generation lives in its own agent page."
+              },
+              {
+                "page_id": "agents",
+                "action_id": "agents_nav_legal",
+                "say": "Legal review is separate and source-grounded."
+              },
+              {
+                "page_id": "agents",
+                "action_id": "agents_nav_demo",
+                "say": "The Demo Agent opens the prospect-facing room."
+              }
+            ]
+          },
+          {
+            "flow_id": "flow_prospect_demo",
+            "goal": "Show the buyer-facing demo room and CRM handoff.",
+            "steps": [
+              {
+                "page_id": "demo",
+                "action_id": "demo_highlight_context",
+                "say": "This room is personalized for the buyer."
+              },
+              {
+                "page_id": "demo",
+                "action_id": "demo_nav_crm",
+                "say": "When the demo ends, the CRM summary appears."
+              }
+            ]
+          }
+        ],
+        "approved_answers": [
+          {
+            "topic": "What does the founder need to provide?",
+            "answer": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions.",
+            "source": "Founder-provided approved_qa"
+          },
+          {
+            "topic": "Should the runtime click the real app directly?",
+            "answer": "The MVP should use an approved manifest and visual event playback. Playwright is better for setup-time extraction and validation. Live app control can come later for approved low-risk paths.",
+            "source": "Founder-provided approved_qa"
+          },
+          {
+            "topic": "Can this support voice?",
+            "answer": "Yes. Gemini Live or a LiveKit voice agent can call the same safe demo tools used by text: show page, move cursor, highlight, propose click, answer from knowledge, and update lead memory.",
+            "source": "Founder-provided approved_qa"
+          }
+        ],
+        "notes": [
+          "No destructive actions included.",
+          "Avoided inventing selectors not present in crawled data.",
+          "Omitted unsafe submit/send actions; only navigation, highlighting, and clearly safe generation clicks are included."
+        ]
+      },
+      "extraction_score": {
+        "crawled_page_count": 9,
+        "manifest_page_count": 7,
+        "action_count": 16,
+        "safe_action_count": 16,
+        "known_action_count": 16,
+        "expected_page_hits": {
+          "setup": true,
+          "content": true,
+          "demo": true,
+          "crm": true
+        },
+        "expected_page_hit_count": 4,
+        "invented_page_count": 0,
+        "invented_pages": [],
+        "invented_action_ref_count": 0,
+        "invalid_action_page_count": 0,
+        "linked_live_route_reached": false
+      },
+      "planner_runs": {
+        "gpt-5.4-mini": {
+          "planner": {
+            "decisions": [
+              {
+                "question": "What does the founder need to provide?",
+                "reply": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions.",
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "onboarding",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Here\u2019s the founder setup page."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "onboarding",
+                    "action_id": "setup_highlight_form",
+                    "element_id": "setup_name",
+                    "say": "This form captures the company and product context."
+                  },
+                  {
+                    "type": "answer",
+                    "page_id": null,
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
+                  }
+                ],
+                "reason": "Direct approved answer plus the setup page that shows what the founder provides."
+              },
+              {
+                "question": "Show me the agent/content console.",
+                "reply": "The agent lab is the approved entry point here; the content console itself is not separately exposed in the manifest.",
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "agents",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "This is the agent lab."
+                  },
+                  {
+                    "type": "answer",
+                    "page_id": null,
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "The agent lab is the approved entry point here; the content console itself is not separately exposed in the manifest."
+                  }
+                ],
+                "reason": "No safe manifest path exists to a standalone content page, so I can only show the agent lab and explain the limitation."
+              },
+              {
+                "question": "Show the prospect demo room.",
+                "reply": "This is the buyer-facing demo room, personalized for the prospect.",
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "demo",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Here\u2019s the prospect demo room."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "demo",
+                    "action_id": "demo_highlight_context",
+                    "element_id": "demo_context",
+                    "say": "This room is personalized for the buyer."
+                  }
+                ],
+                "reason": "Approved flow includes showing the demo room and highlighting its personalized context."
+              },
+              {
+                "question": "Show me what the founder receives after the demo.",
+                "reply": "After the demo, the founder gets lead scoring, objections handled, and a generated follow-up email.",
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "crm",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Here\u2019s the CRM summary after the demo."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "crm",
+                    "action_id": "crm_highlight_followup",
+                    "element_id": "crm_followup",
+                    "say": "This is the generated follow-up the founder receives."
+                  }
+                ],
+                "reason": "Approved CRM page shows the post-demo output and follow-up."
+              }
+            ]
+          },
+          "planner_score": {
+            "question_pass_count": 4,
+            "question_total": 4,
+            "question_results": [
+              {
+                "question": "What does the founder need to provide?",
+                "passed": true,
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "onboarding",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Here\u2019s the founder setup page."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "onboarding",
+                    "action_id": "setup_highlight_form",
+                    "element_id": "setup_name",
+                    "say": "This form captures the company and product context."
+                  },
+                  {
+                    "type": "answer",
+                    "page_id": null,
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
+                  }
+                ],
+                "reason": "Direct approved answer plus the setup page that shows what the founder provides."
+              },
+              {
+                "question": "Show me the agent/content console.",
+                "passed": true,
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "agents",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "This is the agent lab."
+                  },
+                  {
+                    "type": "answer",
+                    "page_id": null,
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "The agent lab is the approved entry point here; the content console itself is not separately exposed in the manifest."
+                  }
+                ],
+                "reason": "No safe manifest path exists to a standalone content page, so I can only show the agent lab and explain the limitation."
+              },
+              {
+                "question": "Show the prospect demo room.",
+                "passed": true,
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "demo",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Here\u2019s the prospect demo room."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "demo",
+                    "action_id": "demo_highlight_context",
+                    "element_id": "demo_context",
+                    "say": "This room is personalized for the buyer."
+                  }
+                ],
+                "reason": "Approved flow includes showing the demo room and highlighting its personalized context."
+              },
+              {
+                "question": "Show me what the founder receives after the demo.",
+                "passed": true,
+                "events": [
+                  {
+                    "type": "show_page",
+                    "page_id": "crm",
+                    "action_id": null,
+                    "element_id": null,
+                    "say": "Here\u2019s the CRM summary after the demo."
+                  },
+                  {
+                    "type": "highlight",
+                    "page_id": "crm",
+                    "action_id": "crm_highlight_followup",
+                    "element_id": "crm_followup",
+                    "say": "This is the generated follow-up the founder receives."
+                  }
+                ],
+                "reason": "Approved CRM page shows the post-demo output and follow-up."
+              }
+            ]
+          },
+          "success": {
+            "extraction_ready": true,
+            "planner_ready": true,
+            "usable_for_mvp_review": true,
+            "success_rule": "MVP-usable means at least 3/4 expected app areas discovered, at least 6 safe/reviewable actions, no invented manifest pages/action refs, and at least 3/4 prospect questions planned to the right page/action."
+          }
+        }
+      },
+      "planner": {
+        "decisions": [
+          {
+            "question": "What does the founder need to provide?",
+            "reply": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions.",
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "onboarding",
+                "action_id": null,
+                "element_id": null,
+                "say": "Here\u2019s the founder setup page."
+              },
+              {
+                "type": "highlight",
+                "page_id": "onboarding",
+                "action_id": "setup_highlight_form",
+                "element_id": "setup_name",
+                "say": "This form captures the company and product context."
+              },
+              {
+                "type": "answer",
+                "page_id": null,
+                "action_id": null,
+                "element_id": null,
+                "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
+              }
+            ],
+            "reason": "Direct approved answer plus the setup page that shows what the founder provides."
+          },
+          {
+            "question": "Show me the agent/content console.",
+            "reply": "The agent lab is the approved entry point here; the content console itself is not separately exposed in the manifest.",
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "agents",
+                "action_id": null,
+                "element_id": null,
+                "say": "This is the agent lab."
+              },
+              {
+                "type": "answer",
+                "page_id": null,
+                "action_id": null,
+                "element_id": null,
+                "say": "The agent lab is the approved entry point here; the content console itself is not separately exposed in the manifest."
+              }
+            ],
+            "reason": "No safe manifest path exists to a standalone content page, so I can only show the agent lab and explain the limitation."
+          },
+          {
+            "question": "Show the prospect demo room.",
+            "reply": "This is the buyer-facing demo room, personalized for the prospect.",
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "demo",
+                "action_id": null,
+                "element_id": null,
+                "say": "Here\u2019s the prospect demo room."
+              },
+              {
+                "type": "highlight",
+                "page_id": "demo",
+                "action_id": "demo_highlight_context",
+                "element_id": "demo_context",
+                "say": "This room is personalized for the buyer."
+              }
+            ],
+            "reason": "Approved flow includes showing the demo room and highlighting its personalized context."
+          },
+          {
+            "question": "Show me what the founder receives after the demo.",
+            "reply": "After the demo, the founder gets lead scoring, objections handled, and a generated follow-up email.",
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "crm",
+                "action_id": null,
+                "element_id": null,
+                "say": "Here\u2019s the CRM summary after the demo."
+              },
+              {
+                "type": "highlight",
+                "page_id": "crm",
+                "action_id": "crm_highlight_followup",
+                "element_id": "crm_followup",
+                "say": "This is the generated follow-up the founder receives."
+              }
+            ],
+            "reason": "Approved CRM page shows the post-demo output and follow-up."
+          }
+        ]
+      },
+      "planner_score": {
+        "question_pass_count": 4,
+        "question_total": 4,
+        "question_results": [
+          {
+            "question": "What does the founder need to provide?",
+            "passed": true,
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "onboarding",
+                "action_id": null,
+                "element_id": null,
+                "say": "Here\u2019s the founder setup page."
+              },
+              {
+                "type": "highlight",
+                "page_id": "onboarding",
+                "action_id": "setup_highlight_form",
+                "element_id": "setup_name",
+                "say": "This form captures the company and product context."
+              },
+              {
+                "type": "answer",
+                "page_id": null,
+                "action_id": null,
+                "element_id": null,
+                "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
+              }
+            ],
+            "reason": "Direct approved answer plus the setup page that shows what the founder provides."
+          },
+          {
+            "question": "Show me the agent/content console.",
+            "passed": true,
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "agents",
+                "action_id": null,
+                "element_id": null,
+                "say": "This is the agent lab."
+              },
+              {
+                "type": "answer",
+                "page_id": null,
+                "action_id": null,
+                "element_id": null,
+                "say": "The agent lab is the approved entry point here; the content console itself is not separately exposed in the manifest."
+              }
+            ],
+            "reason": "No safe manifest path exists to a standalone content page, so I can only show the agent lab and explain the limitation."
+          },
+          {
+            "question": "Show the prospect demo room.",
+            "passed": true,
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "demo",
+                "action_id": null,
+                "element_id": null,
+                "say": "Here\u2019s the prospect demo room."
+              },
+              {
+                "type": "highlight",
+                "page_id": "demo",
+                "action_id": "demo_highlight_context",
+                "element_id": "demo_context",
+                "say": "This room is personalized for the buyer."
+              }
+            ],
+            "reason": "Approved flow includes showing the demo room and highlighting its personalized context."
+          },
+          {
+            "question": "Show me what the founder receives after the demo.",
+            "passed": true,
+            "events": [
+              {
+                "type": "show_page",
+                "page_id": "crm",
+                "action_id": null,
+                "element_id": null,
+                "say": "Here\u2019s the CRM summary after the demo."
+              },
+              {
+                "type": "highlight",
+                "page_id": "crm",
+                "action_id": "crm_highlight_followup",
+                "element_id": "crm_followup",
+                "say": "This is the generated follow-up the founder receives."
+              }
+            ],
+            "reason": "Approved CRM page shows the post-demo output and follow-up."
+          }
+        ]
+      },
+      "success": {
+        "extraction_ready": true,
+        "planner_ready": true,
+        "usable_for_mvp_review": true,
+        "success_rule": "MVP-usable means at least 3/4 expected app areas discovered, at least 6 safe/reviewable actions, no invented manifest pages/action refs, and at least 3/4 prospect questions planned to the right page/action."
+      }
+    }
+  }
+}

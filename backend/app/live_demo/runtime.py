@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+import json
+import os
+import re
+
+from openai import OpenAI
+
+from app.core.config import settings
 from app.live_demo.manifest import DEMO_MANIFEST
 from app.live_demo.models import (
     ConversationTurn,
@@ -32,7 +39,9 @@ class LiveDemoRuntime:
         if current_page is None:
             current_page = self.manifest.pages[0]
 
-        decision = self._decide(request.message, current_page)
+        decision = self._decide_with_llm(session, request, current_page) or self._decide(
+            request.message, current_page
+        )
         target_page = self._page_by_id(decision["page_id"]) or current_page
         reply = decision["reply"]
         events = self._build_events(reply, target_page, decision["element_ids"], decision["lead_patch"])
@@ -153,6 +162,147 @@ class LiveDemoRuntime:
                 "Ask me to show inputs, knowledge, safe actions, voice, or qualification and I will move the demo there."
             ),
         }
+
+    def _decide_with_llm(
+        self,
+        session: LiveDemoSession,
+        request: LiveDemoMessageRequest,
+        current_page: DemoPageManifest,
+    ) -> dict | None:
+        if os.getenv("LIVE_DEMO_PLANNER", "").lower() not in {"1", "true", "openai", "llm"}:
+            return None
+        api_key = settings.resolved_llm_api_key
+        if not api_key:
+            return None
+
+        allowed_page_ids = {page.page_id for page in self.manifest.pages}
+        allowed_element_ids = {
+            element.id for page in self.manifest.pages for element in page.elements
+        }
+        client = OpenAI(api_key=api_key, timeout=float(os.getenv("LIVE_DEMO_PLANNER_TIMEOUT", "45")))
+        model = os.getenv("LIVE_DEMO_PLANNER_MODEL", "gpt-5.4-mini")
+        model_kwargs: dict[str, object] = {"model": model}
+        if model.startswith("gpt-5"):
+            model_kwargs["reasoning"] = {"effort": os.getenv("LIVE_DEMO_REASONING_EFFORT", "low")}
+            model_kwargs["text"] = {"verbosity": os.getenv("LIVE_DEMO_TEXT_VERBOSITY", "low")}
+        else:
+            model_kwargs["temperature"] = 0.1
+        response = client.responses.create(
+            **model_kwargs,
+            input=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are the planner for a safe AI product demo room. "
+                        "You can choose narration, an approved page, approved elements to highlight, "
+                        "and a lead-profile patch. You cannot invent pages or elements. "
+                        "Route startup/founder input/setup questions to setup. "
+                        "Route approved answers, security, pricing, and claims questions to knowledge. "
+                        "Route safe actions, cursor, Stagehand, browser control, and flow questions to flow. "
+                        "Route prospect room, demo room, live demo, voice, Gemini, and real-time experience questions to live_room. "
+                        "Route after-demo, qualification, CRM, lead score, and follow-up questions to summary. "
+                        "Return strict JSON only: {\"reply\":\"string\",\"page_id\":\"string\","
+                        "\"element_ids\":[\"string\"],\"state\":\"demoing|answering_question|qualifying\","
+                        "\"lead_patch\":{\"use_case\":\"string|null\",\"urgency\":\"string|null\","
+                        "\"interested_features\":[\"string\"],\"score\":number|null}}."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "message": request.message,
+                            "current_page_id": current_page.page_id,
+                            "visible_element_ids": request.visible_element_ids,
+                            "lead_profile": session.lead_profile.model_dump(),
+                            "recent_transcript": [
+                                turn.model_dump(mode="json") for turn in session.transcript[-6:]
+                            ],
+                            "manifest": self._manifest_context(),
+                        },
+                        indent=2,
+                    ),
+                },
+            ],
+        )
+        try:
+            raw = self._parse_json(response.output_text)
+        except (json.JSONDecodeError, TypeError):
+            return None
+
+        page_id = raw.get("page_id")
+        if page_id not in allowed_page_ids:
+            return None
+        element_ids = [
+            element_id
+            for element_id in raw.get("element_ids", [])
+            if isinstance(element_id, str) and element_id in allowed_element_ids
+        ][:4]
+        state = raw.get("state")
+        if state not in {"demoing", "answering_question", "qualifying"}:
+            state = "answering_question"
+        lead_patch = raw.get("lead_patch") if isinstance(raw.get("lead_patch"), dict) else {}
+        cleaned_patch: dict[str, object] = {}
+        for key in ["use_case", "urgency", "current_solution"]:
+            value = lead_patch.get(key)
+            if isinstance(value, str) and value:
+                cleaned_patch[key] = value
+        features = lead_patch.get("interested_features")
+        if isinstance(features, list):
+            cleaned_patch["interested_features"] = [
+                str(feature) for feature in features if str(feature).strip()
+            ][:5]
+        score = lead_patch.get("score")
+        if isinstance(score, int) and 0 <= score <= 100:
+            cleaned_patch["score"] = score
+
+        return {
+            "page_id": page_id,
+            "element_ids": element_ids,
+            "state": state,
+            "lead_patch": cleaned_patch,
+            "reply": str(raw.get("reply") or "").strip()
+            or f"I will show the {self._page_by_id(page_id).title.lower()} step.",
+        }
+
+    def _manifest_context(self) -> dict[str, object]:
+        return {
+            "product_name": self.manifest.product_name,
+            "target_persona": self.manifest.target_persona,
+            "cta": self.manifest.cta,
+            "pages": [
+                {
+                    "page_id": page.page_id,
+                    "title": page.title,
+                    "summary": page.summary,
+                    "visible_concepts": page.visible_concepts,
+                    "elements": [
+                        {
+                            "id": element.id,
+                            "label": element.label,
+                            "description": element.description,
+                            "safe_to_click": element.safe_to_click,
+                        }
+                        for element in page.elements
+                    ],
+                    "allowed_actions": [action.model_dump() for action in page.allowed_actions],
+                }
+                for page in self.manifest.pages
+            ],
+            "flows": [flow.model_dump() for flow in self.manifest.flows],
+            "knowledge": [record.model_dump() for record in self.manifest.knowledge],
+            "qualification_questions": self.manifest.qualification_questions,
+            "restricted_claims": self.manifest.restricted_claims,
+        }
+
+    def _parse_json(self, text: str) -> dict:
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            match = re.search(r"\{.*\}", text, re.S)
+            if not match:
+                raise
+            return json.loads(match.group(0))
 
     def _build_events(
         self,
