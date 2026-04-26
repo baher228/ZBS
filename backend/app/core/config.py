@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     llm_timeout_seconds: int = 240
     llm_content_timeout_seconds: int = 420
     llm_max_retries: int = 2
+    agent_cache_enabled: bool = True
+    agent_cache_max_entries: int = 500
     llm_api_key: str | None = None
     openai_api_key: str | None = None
     pydantic_ai_gateway_api_key: str | None = None

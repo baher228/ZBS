@@ -11,6 +11,7 @@ from app.agents.llm import get_llm_provider
 from app.agents.models import SocialPostRequest, SocialPostResponse, TaskRequest, TaskResponse
 from app.agents.orchestrator import Orchestrator
 from app.agents.registry import AgentRegistry
+from app.agents.result_cache import cache_key, get_cached_model, set_cached_model
 from app.agents.review import ReviewAgent
 from app.company.storage import get_company_context, load_profile
 
@@ -68,7 +69,13 @@ def _enrich_with_company_context(request: TaskRequest) -> TaskRequest:
 @router.post("", response_model=TaskResponse)
 def create_task(request: TaskRequest) -> TaskResponse:
     enriched = _enrich_with_company_context(request)
-    return get_orchestrator().handle_task(enriched)
+    key = cache_key("tasks.create", {"request": enriched})
+    cached = get_cached_model(key, TaskResponse)
+    if cached is not None:
+        return cached
+    response = get_orchestrator().handle_task(enriched)
+    set_cached_model(key, response)
+    return response
 
 
 @router.post("/upload", response_model=TaskResponse)
@@ -111,13 +118,26 @@ async def create_task_with_upload(
         document_type=document_type or None,
     )
     enriched = _enrich_with_company_context(request)
-    return get_orchestrator().handle_task(enriched)
+    key = cache_key("tasks.upload", {"request": enriched})
+    cached = get_cached_model(key, TaskResponse)
+    if cached is not None:
+        return cached
+    response = get_orchestrator().handle_task(enriched)
+    set_cached_model(key, response)
+    return response
 
 
 @router.post("/social-post", response_model=SocialPostResponse)
 def create_social_post(request: SocialPostRequest) -> SocialPostResponse:
     llm = get_llm_provider()
     company_context = get_company_context() or ""
+    key = cache_key(
+        "tasks.social_post",
+        {"request": request, "company_context": company_context},
+    )
+    cached = get_cached_model(key, SocialPostResponse)
+    if cached is not None:
+        return cached
 
     post = llm.generate_social_post(request, company_context)
 
@@ -136,8 +156,10 @@ def create_social_post(request: SocialPostRequest) -> SocialPostResponse:
             if img:
                 images.append(img.url)
 
-    return SocialPostResponse(
+    response = SocialPostResponse(
         post=post.as_output_dict(),
         images=images,
         platform=request.platform,
     )
+    set_cached_model(key, response)
+    return response

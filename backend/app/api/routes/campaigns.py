@@ -14,6 +14,7 @@ from app.agents.campaign_models import (
 )
 from app.agents.graphs import CampaignGraphRunner, DemoChatGraphRunner, QualificationGraphRunner
 from app.agents.llm import get_llm_provider
+from app.agents.result_cache import cache_key, get_cached_model, set_cached_model
 from app.agents.store import campaign_store
 
 router = APIRouter(tags=["campaigns"])
@@ -36,7 +37,14 @@ def get_qualification_graph_runner() -> QualificationGraphRunner:
 
 @router.post("/campaigns", response_model=CampaignResponse)
 def create_campaign(request: CampaignCreateRequest) -> CampaignResponse:
-    return get_campaign_graph_runner().run(request)
+    key = cache_key("campaigns.create", {"request": request})
+    cached = get_cached_model(key, CampaignResponse)
+    if cached is not None:
+        campaign_store.save_campaign(cached)
+        return cached
+    response = get_campaign_graph_runner().run(request)
+    set_cached_model(key, response)
+    return response
 
 
 @router.get("/campaigns/{campaign_id}", response_model=CampaignResponse)

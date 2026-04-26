@@ -72,6 +72,12 @@ LLM_PROVIDER=mock pytest
 
 To try OpenAI-backed generation, set `LLM_PROVIDER=openai` with `OPENAI_API_KEY` in the root `.env`.
 
+## Agent Result Cache
+
+Main agent endpoints cache repeated requests in `backend/data/agent_result_cache.json`.
+Set `AGENT_CACHE_ENABLED=false` to bypass caching, or tune retention with
+`AGENT_CACHE_MAX_ENTRIES`.
+
 ## MuBit Memory
 
 MuBit is optional. Set `MUBIT_API_KEY` to enable `mubit.learn` instrumentation for real LLM calls:

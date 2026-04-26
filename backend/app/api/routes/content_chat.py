@@ -5,6 +5,7 @@ from fastapi import APIRouter, BackgroundTasks
 from app.agents.llm import get_llm_provider
 from app.agents.models import ContentChatRequest, ContentChatResponse
 from app.agents.image_gen import generate_content_images
+from app.agents.result_cache import cache_key, get_cached_model, set_cached_model
 from app.company.chat_extractor import extract_insights_from_messages
 from app.company.storage import get_company_context
 
@@ -30,7 +31,14 @@ def content_chat(request: ContentChatRequest, background_tasks: BackgroundTasks)
             content_ready=True,
             generated_content=dict(request.existing_generated_content),
         )
-        return _handle_content_visuals(
+        key = cache_key(
+            "content.chat.visuals",
+            {"request": request, "company_context": company_context},
+        )
+        cached = get_cached_model(key, ContentChatResponse)
+        if cached is not None:
+            return cached
+        response = _handle_content_visuals(
             response=response,
             company_context=company_context,
             workflow=request.workflow,
@@ -38,13 +46,22 @@ def content_chat(request: ContentChatRequest, background_tasks: BackgroundTasks)
             reference_image_urls=request.reference_image_urls,
             existing_image_note=request.existing_image_note,
         )
+        set_cached_model(key, response)
+        return response
 
+    key = cache_key(
+        "content.chat",
+        {"request": request, "company_context": company_context},
+    )
+    cached = get_cached_model(key, ContentChatResponse)
+    if cached is not None:
+        return cached
     response = llm.chat_content(
         messages=request.messages,
         company_context=company_context,
         workflow=request.workflow,
     )
-    return _handle_content_visuals(
+    response = _handle_content_visuals(
         response=response,
         company_context=company_context,
         workflow=request.workflow,
@@ -52,6 +69,8 @@ def content_chat(request: ContentChatRequest, background_tasks: BackgroundTasks)
         reference_image_urls=request.reference_image_urls,
         existing_image_note=request.existing_image_note,
     )
+    set_cached_model(key, response)
+    return response
 
 
 def _handle_content_visuals(
