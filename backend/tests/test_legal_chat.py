@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from app.agents.llm import MockLLMProvider, ResilientLLMProvider, _normalize_legal_chat_response
+from app.agents.models import LegalChatMode, LegalChatResponse
 from app.main import app
 
 client = TestClient(app)
@@ -127,6 +129,56 @@ def test_legal_chat_document_without_type():
     assert response.status_code == 200
     data = response.json()
     assert data["mode"] == "document_drafting"
+
+
+def test_legal_followups_are_asked_in_reply_not_suggestions():
+    """Legal follow-ups should be folded into one assistant message and cleared from chips."""
+    response = _normalize_legal_chat_response(
+        LegalChatResponse(
+            reply="Need more info — before drafting.",
+            document=None,
+            follow_up_questions=[
+                "Role title and responsibilities — include department.",
+                "Paid or unpaid internship — include rate and expenses.",
+                "Working hours and location.",
+                "Start date and end date.",
+                "Supervisor name.",
+            ],
+            mode=LegalChatMode.DOCUMENT_DRAFTING,
+            sources_used=["GOV.UK — Employment status"],
+        )
+    )
+
+    assert response.follow_up_questions == []
+    assert response.document is None
+    assert "I need these exact details" in response.reply
+    assert "- Role title and responsibilities" in response.reply
+    assert "5." not in response.reply
+    assert "—" not in response.reply
+    assert response.sources_used == ["GOV.UK - Employment status"]
+
+
+def test_legal_chat_does_not_fall_back_to_mock():
+    """Legal chat should surface provider failures instead of returning mock legal advice."""
+
+    class FailingLegalProvider(MockLLMProvider):
+        def chat_legal(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+            raise TimeoutError("slow legal draft")
+
+    provider = ResilientLLMProvider(FailingLegalProvider(), MockLLMProvider())
+
+    try:
+        provider.chat_legal(
+            messages=[],
+            mode=LegalChatMode.DOCUMENT_DRAFTING,
+            source_context="",
+            company_context="",
+            document_type="Intern Agreement",
+        )
+    except TimeoutError:
+        pass
+    else:
+        raise AssertionError("Expected legal chat provider failure to be raised")
 
 
 def test_legal_overview_basic():

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from app.agents.llm import _normalize_content_chat_response
+from app.agents.models import ContentChatResponse
 from app.main import app
 
 client = TestClient(app)
@@ -102,8 +104,33 @@ def test_content_chat_with_workflow():
     assert response.status_code == 200
     data = response.json()
     assert "reply" in data
-    assert data["content_ready"] is True
-    assert data["generated_content"] is not None
+    assert "content_ready" in data
+    assert "generated_content" in data
+
+
+def test_content_chat_followups_are_single_structured_ask():
+    """Follow-up responses should be capped and rendered in one assistant message."""
+    response = _normalize_content_chat_response(
+        ContentChatResponse(
+            reply="I have several questions.",
+            follow_up_questions=[
+                "Product name and one-line description.",
+                "Target audience and main pain point.",
+                "Primary call to action and link.",
+                "Launch date or timing.",
+                "Brand voice.",
+            ],
+            content_ready=True,
+            generated_content={"draft": "placeholder"},
+        )
+    )
+
+    assert response.content_ready is False
+    assert response.generated_content is None
+    assert len(response.follow_up_questions) == 4
+    assert response.reply.startswith("I need these exact details before I write it:")
+    assert "- Product name and one-line description." in response.reply
+    assert "5." not in response.reply
 
 
 def test_content_chat_with_unknown_workflow():

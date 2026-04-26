@@ -179,7 +179,7 @@ function ContentPage() {
           <div className="mb-4 flex items-center gap-2 border border-success/30 bg-success/5 px-4 py-2.5">
             <Building2 className="h-4 w-4 text-success" />
             <span className="text-xs text-foreground/80">
-              Context: <strong>{companyProfile.name}</strong> — {companyProfile.industry || "General"}{" "}
+              Context: <strong>{companyProfile.name}</strong> - {companyProfile.industry || "General"}{" "}
               · {companyProfile.stage}
             </span>
             <Link
@@ -196,7 +196,7 @@ function ContentPage() {
           >
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
-              No company profile — <span className="text-primary">set up now</span> for better
+              No company profile - <span className="text-primary">set up now</span> for better
               content
             </span>
           </Link>
@@ -248,7 +248,6 @@ function ContentPage() {
               <ContentChatBubble
                 key={i}
                 entry={entry}
-                onFollowUp={handleChatSend}
               />
             ))}
 
@@ -309,10 +308,8 @@ function ContentPage() {
 
 function ContentChatBubble({
   entry,
-  onFollowUp,
 }: {
   entry: ContentChatEntry;
-  onFollowUp: (text: string) => void;
 }) {
   if (entry.role === "user") {
     return (
@@ -342,26 +339,6 @@ function ContentChatBubble({
             {Object.entries(entry.generatedContent).map(([key, value]) => (
               <GeneratedContentBlock key={key} title={key} content={value} />
             ))}
-          </div>
-        )}
-
-        {/* Follow-up questions */}
-        {entry.followUpQuestions && entry.followUpQuestions.length > 0 && (
-          <div className="space-y-1.5">
-            <span className="text-[10px] text-foreground/40 uppercase tracking-wider">
-              To improve this, I might need
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {entry.followUpQuestions.map((q, i) => (
-                <button
-                  key={i}
-                  onClick={() => onFollowUp(q)}
-                  className="text-left text-xs px-3 py-1.5 border border-primary/20 text-primary/80 hover:bg-primary/5 hover:border-primary/40 transition-colors"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
           </div>
         )}
       </div>

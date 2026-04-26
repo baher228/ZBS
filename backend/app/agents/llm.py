@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 
 from app.agents.campaign_models import (
@@ -33,6 +34,8 @@ from app.agents.models import (
     TaskRequest,
 )
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class LLMProvider(ABC):
@@ -158,6 +161,71 @@ class LLMProvider(ABC):
         company_context: str,
     ) -> SocialPost:
         """Generate a social media post tailored to a platform."""
+
+
+def _format_content_follow_up_reply(questions: list[str]) -> str:
+    trimmed = [q.strip() for q in questions if q.strip()][:4]
+    if not trimmed:
+        return ""
+
+    lines = ["I need these exact details before I write it:"]
+    lines.extend(f"- {question}" for question in trimmed)
+    lines.append("Reply with those details in one message and I will draft the content.")
+    return "\n".join(lines)
+
+
+def _normalize_content_chat_response(response: ContentChatResponse) -> ContentChatResponse:
+    questions = [q.strip() for q in response.follow_up_questions if q.strip()][:4]
+    if not questions:
+        return response
+
+    return ContentChatResponse(
+        reply=_format_content_follow_up_reply(questions),
+        follow_up_questions=questions,
+        content_ready=False,
+        generated_content=None,
+    )
+
+
+def _use_short_dashes(text: str) -> str:
+    cleaned = text.replace("—", " - ").replace("–", "-")
+    while "  " in cleaned:
+        cleaned = cleaned.replace("  ", " ")
+    return cleaned
+
+
+def _format_legal_follow_up_reply(questions: list[str]) -> str:
+    trimmed = [_use_short_dashes(q.strip()) for q in questions if q.strip()][:4]
+    if not trimmed:
+        return ""
+
+    lines = ["I need these exact details before I can draft this properly:"]
+    lines.extend(f"- {question}" for question in trimmed)
+    lines.append("Reply with those details in one message and I will produce the draft.")
+    return "\n".join(lines)
+
+
+def _normalize_legal_chat_response(response: LegalChatResponse) -> LegalChatResponse:
+    questions = [_use_short_dashes(q.strip()) for q in response.follow_up_questions if q.strip()][:4]
+    reply = _use_short_dashes(response.reply)
+    document = response.document
+
+    if document is not None:
+        document = LegalDocumentDraft.model_validate(
+            {key: _use_short_dashes(value) if isinstance(value, str) else value for key, value in document.model_dump().items()}
+        )
+
+    if questions:
+        reply = _format_legal_follow_up_reply(questions)
+        document = None
+
+    return LegalChatResponse(
+        reply=reply,
+        document=document,
+        follow_up_questions=[],
+        mode=response.mode,
+        sources_used=[_use_short_dashes(source) for source in response.sources_used],
+    )
 
 
 class MockLLMProvider(LLMProvider):
@@ -499,7 +567,7 @@ class MockLLMProvider(LLMProvider):
                 "This is a starter template. "
                 "A qualified attorney must review and customize this document before use."
             ),
-            document_title=f"{doc_type} — {idea}",
+            document_title=f"{doc_type} - {idea}",
             document_body=(
                 f"DRAFT {doc_type.upper()}\n\n"
                 f"This {doc_type} governs the use of {idea}.\n\n"
@@ -633,6 +701,18 @@ class MockLLMProvider(LLMProvider):
     ) -> ContentChatResponse:
         last_msg = messages[-1].content if messages else "content creation"
         workflow_label = f" [{workflow}]" if workflow else ""
+        if "launch" in last_msg.lower() and not company_context:
+            questions = [
+                "Product name and one-line description.",
+                "Target audience and the main pain point.",
+                "Primary call to action and link.",
+            ]
+            return ContentChatResponse(
+                reply=_format_content_follow_up_reply(questions),
+                follow_up_questions=questions,
+                content_ready=False,
+                generated_content=None,
+            )
         return ContentChatResponse(
             reply=(
                 f"[Mock content response{workflow_label}] Here is the content for: {last_msg[:100]}."
@@ -667,7 +747,7 @@ class OpenAILLMProvider(LLMProvider):
             api_key=resolved_key,
             base_url=base_url,
             max_retries=0,
-            timeout=30,
+            timeout=180,
         )
 
         self.content_model = ChatOpenAI(
@@ -676,7 +756,7 @@ class OpenAILLMProvider(LLMProvider):
             base_url=base_url,
             temperature=1.1,
             max_retries=0,
-            timeout=30,
+            timeout=180,
         )
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
@@ -907,7 +987,7 @@ class OpenAILLMProvider(LLMProvider):
 
         if company_context:
             context_instruction = (
-                f"\n\nCompany context (already provided — do NOT ask for info that is here):\n{company_context}\n\n"
+                f"\n\nCompany context (already provided - do NOT ask for info that is here):\n{company_context}\n\n"
                 "IMPORTANT: The company profile above is already saved. Do NOT repeat or re-ask for information "
                 "that is already provided (name, industry, audience, jurisdictions, product description, features). "
                 "Instead, USE this context directly in your analysis.\n\n"
@@ -1177,7 +1257,12 @@ class OpenAILLMProvider(LLMProvider):
             "- Be specific and actionable in your guidance\n"
             "- Cite specific sources when available\n"
             "- Be concrete and practical, not generic\n"
-            "- Return follow_up_questions as a JSON array of strings for questions you need answered\n"
+            "- Do not use em dashes or en dashes. Use short hyphens (-), commas, periods, or semicolons instead.\n"
+            "- Ask follow-up questions only when missing facts would make the answer or draft inaccurate.\n"
+            "- If follow-up questions are needed, ask them yourself in one structured reply. "
+            "Make them exact, practical, and cap them at 4 total.\n"
+            "- Return follow_up_questions as a JSON array only for the exact questions you already asked in the reply. "
+            "Do not create clickable suggested prompts for the user.\n"
             "- Return sources_used as a JSON array of source names/URLs referenced\n"
             "- For document_drafting mode: set document field with a LegalDocumentDraft when generating a document. "
             "The document_body should be well-formatted with markdown headings, numbered clauses, and bold terms.\n"
@@ -1196,7 +1281,7 @@ class OpenAILLMProvider(LLMProvider):
         for msg in messages:
             chat_messages.append((msg.role if msg.role == "user" else "assistant", msg.content))
 
-        return structured_model.invoke(chat_messages)
+        return _normalize_legal_chat_response(structured_model.invoke(chat_messages))
 
     def generate_legal_overview(
         self,
@@ -1209,6 +1294,7 @@ class OpenAILLMProvider(LLMProvider):
             "You are a startup legal analyst. Given a company's profile, generate a comprehensive "
             "legal overview that identifies potential legal issues, recommends documents to prepare, "
             "and flags compliance areas.\n\n"
+            "Do not use em dashes or en dashes. Use short hyphens (-), commas, periods, or semicolons instead.\n\n"
             "For each potential issue, assess severity (high/medium/low) based on:\n"
             "- high: immediate legal risk or regulatory requirement\n"
             "- medium: important but not immediately critical\n"
@@ -1227,7 +1313,16 @@ class OpenAILLMProvider(LLMProvider):
         if source_context:
             human_msg += f"\n\nRegulatory reference sources:\n{source_context}"
 
-        return structured_model.invoke([("system", system_prompt), ("human", human_msg)])
+        overview = structured_model.invoke([("system", system_prompt), ("human", human_msg)])
+        overview.summary = _use_short_dashes(overview.summary)
+        overview.recommended_documents = [_use_short_dashes(item) for item in overview.recommended_documents]
+        overview.missing_info = [_use_short_dashes(item) for item in overview.missing_info]
+        overview.compliance_areas = [_use_short_dashes(item) for item in overview.compliance_areas]
+        for issue in overview.potential_issues:
+            issue.title = _use_short_dashes(issue.title)
+            issue.description = _use_short_dashes(issue.description)
+            issue.recommendation = _use_short_dashes(issue.recommendation)
+        return overview
 
     def chat_content(
         self,
@@ -1243,14 +1338,23 @@ class OpenAILLMProvider(LLMProvider):
 
         system_prompt = (
             "You are a creative content writer with a distinctive human voice. "
-            "Write like a real person — not a corporate marketing bot.\n\n"
+            "Write like a real person - not a corporate marketing bot.\n\n"
             "Rules:\n"
-            "- Generate content immediately. Set content_ready=true and put output in generated_content.\n"
+            "- Generate content immediately when the request has enough concrete context. "
+            "Set content_ready=true and put output in generated_content.\n"
             "- You decide the tone, style, platform specifics, and structure. "
             "Only follow specific constraints if the user explicitly asks for them.\n"
             "- Write with personality, opinion, and edge. Avoid generic marketing speak.\n"
+            "- Do not use em dashes or en dashes. Use short hyphens (-), commas, periods, or semicolons instead.\n"
             "- Use the company's real website URL if available. Never use placeholder links.\n"
-            "- Only ask follow-up questions if you truly need specific assets (photos, screenshots).\n"
+            "- Ask follow-up questions only when a missing detail would force you to invent core facts "
+            "such as product name, audience, offer, launch timing, CTA, link, or required assets.\n"
+            "- If follow-up questions are needed, set content_ready=false, set generated_content=null, "
+            "and put every question in follow_up_questions. Do not generate a draft in the same response.\n"
+            "- Follow-up questions must be exact, practical, and capped at 4 total. "
+            "Ask for multiple details inside one question when they belong together.\n"
+            "- The reply must be one structured assistant message that asks for what you need. "
+            "Do not make the user click suggested prompts or ask questions on your behalf.\n"
             "- generated_content keys should be descriptive (e.g. 'linkedin_post', 'email_draft')."
             + workflow_hint
         )
@@ -1265,7 +1369,7 @@ class OpenAILLMProvider(LLMProvider):
         for msg in messages:
             chat_messages.append((msg.role if msg.role == "user" else "assistant", msg.content))
 
-        return structured_model.invoke(chat_messages)
+        return _normalize_content_chat_response(structured_model.invoke(chat_messages))
 
     def generate_social_post(
         self,
@@ -1335,6 +1439,7 @@ class ResilientLLMProvider(LLMProvider):
             return getattr(self.primary, method_name)(*args)
         except Exception as exc:
             self.last_error = exc.__class__.__name__
+            logger.exception("LLM provider failed in %s; using fallback provider", method_name)
             return getattr(self.fallback, method_name)(*args)
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
@@ -1432,14 +1537,24 @@ class ResilientLLMProvider(LLMProvider):
         company_context: str,
         document_type: str | None = None,
     ) -> LegalChatResponse:
-        return self._try_primary("chat_legal", messages, mode, source_context, company_context, document_type)
+        try:
+            return self.primary.chat_legal(messages, mode, source_context, company_context, document_type)
+        except Exception as exc:
+            self.last_error = exc.__class__.__name__
+            logger.exception("LLM provider failed in chat_legal")
+            raise
 
     def generate_legal_overview(
         self,
         company_context: str,
         source_context: str,
     ) -> LegalOverviewResponse:
-        return self._try_primary("generate_legal_overview", company_context, source_context)
+        try:
+            return self.primary.generate_legal_overview(company_context, source_context)
+        except Exception as exc:
+            self.last_error = exc.__class__.__name__
+            logger.exception("LLM provider failed in generate_legal_overview")
+            raise
 
     def chat_content(
         self,
