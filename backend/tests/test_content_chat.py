@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.agents.llm import _normalize_content_chat_response
 from app.agents.models import ContentChatResponse
+from app.api.routes.content_chat import _add_content_visuals
 from app.main import app
 
 client = TestClient(app)
@@ -131,6 +132,42 @@ def test_content_chat_followups_are_single_structured_ask():
     assert response.reply.startswith("I need these exact details before I write it:")
     assert "- Product name and one-line description." in response.reply
     assert "5." not in response.reply
+
+
+def test_content_chat_embedded_json_reply_is_unpacked():
+    response = _normalize_content_chat_response(
+        ContentChatResponse(
+            reply=(
+                '{"content_ready":true,"generated_content":{"linkedin_post_launch":"Launch post"},'
+                '"follow_up_questions":[]}'
+            ),
+            follow_up_questions=[],
+            content_ready=False,
+            generated_content=None,
+        )
+    )
+
+    assert response.reply == "I drafted the content below."
+    assert response.content_ready is True
+    assert response.generated_content == {"linkedin_post_launch": "Launch post"}
+
+
+def test_content_chat_adds_image_directions_when_images_unavailable(monkeypatch):
+    monkeypatch.setattr("app.api.routes.content_chat.generate_content_images", lambda *args, **kwargs: {})
+    response = _add_content_visuals(
+        ContentChatResponse(
+            reply="Done",
+            follow_up_questions=[],
+            content_ready=True,
+            generated_content={"linkedin_post_launch": "Apterro launches tomorrow."},
+        ),
+        company_context="",
+        workflow="social_post",
+    )
+
+    assert response.generated_content is not None
+    assert "image_directions" in response.generated_content
+    assert "Linkedin Post Launch" in response.generated_content["image_directions"]
 
 
 def test_content_chat_with_unknown_workflow():

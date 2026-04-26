@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -253,4 +252,4 @@ class MarketingResearchResponse(BaseModel):
     reply: str
     follow_up_questions: list[str] = Field(default_factory=list)
     research_ready: bool = False
-    research_data: dict[str, Any] | None = None
+    research_data: dict[str, str] | None = None

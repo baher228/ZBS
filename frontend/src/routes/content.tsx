@@ -322,6 +322,9 @@ function ContentChatBubble({
     );
   }
 
+  const repairedEntry = repairEmbeddedContent(entry);
+  const displayContent = getContentDisplayText(repairedEntry.content, repairedEntry.generatedContent);
+
   return (
     <div className="flex items-start gap-3">
       <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -330,14 +333,14 @@ function ContentChatBubble({
       <div className="max-w-[85%] space-y-3">
         <div className="bg-foreground/5 border border-foreground/10 px-4 py-3">
           <div className="prose-chat text-sm leading-relaxed">
-            <ReactMarkdown>{entry.content}</ReactMarkdown>
+            <ReactMarkdown>{displayContent}</ReactMarkdown>
           </div>
         </div>
 
         {/* Generated content blocks */}
-        {entry.generatedContent && Object.keys(entry.generatedContent).length > 0 && (
+        {repairedEntry.generatedContent && Object.keys(repairedEntry.generatedContent).length > 0 && (
           <div className="space-y-2">
-            {Object.entries(entry.generatedContent).map(([key, value]) => (
+            {Object.entries(repairedEntry.generatedContent).map(([key, value]) => (
               <GeneratedContentBlock key={key} title={key} content={value} />
             ))}
           </div>
@@ -347,9 +350,35 @@ function ContentChatBubble({
   );
 }
 
+function repairEmbeddedContent(entry: ContentChatEntry): ContentChatEntry {
+  if (entry.generatedContent || !entry.content.trim().startsWith("{")) return entry;
+
+  try {
+    const payload = JSON.parse(entry.content) as Partial<ContentChatResponse>;
+    if (!payload.generated_content) return entry;
+    return {
+      ...entry,
+      content: payload.reply || "I drafted the content below.",
+      followUpQuestions: payload.follow_up_questions ?? entry.followUpQuestions,
+      generatedContent: payload.generated_content,
+    };
+  } catch {
+    return entry;
+  }
+}
+
+function getContentDisplayText(content: string, generatedContent?: Record<string, string> | null) {
+  const trimmed = content.trim();
+  if (generatedContent && (!trimmed || trimmed.startsWith("{"))) {
+    return "I drafted the content below.";
+  }
+  return content;
+}
+
 function GeneratedContentBlock({ title, content }: { title: string; content: string }) {
   const [copied, setCopied] = useState(false);
   const label = title.replaceAll("_", " ");
+  const isImage = title.endsWith("_image") && /^https?:\/\//.test(content);
 
   const copy = () => {
     navigator.clipboard.writeText(content).then(() => {
@@ -371,9 +400,17 @@ function GeneratedContentBlock({ title, content }: { title: string; content: str
         </button>
       </div>
       <div className="px-4 py-3">
-        <div className="prose-chat text-xs leading-relaxed">
-          <ReactMarkdown>{content}</ReactMarkdown>
-        </div>
+        {isImage ? (
+          <img
+            src={content}
+            alt={`Generated visual for ${label.replace(" image", "")}`}
+            className="w-full border border-foreground/10 object-cover"
+          />
+        ) : (
+          <div className="prose-chat text-xs leading-relaxed">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </div>
   );

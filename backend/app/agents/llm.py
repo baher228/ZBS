@@ -188,10 +188,50 @@ def _format_content_follow_up_reply(questions: list[str]) -> str:
     return "\n".join(lines)
 
 
+def _unpack_embedded_content_response(response: ContentChatResponse) -> ContentChatResponse:
+    text = response.reply.strip()
+    if not text.startswith("{"):
+        return response
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        return response
+
+    if not isinstance(payload, dict):
+        return response
+
+    content_fields = {"reply", "generated_content", "follow_up_questions", "content_ready"}
+    if not content_fields.intersection(payload):
+        return response
+
+    merged = response.model_dump()
+    for field in content_fields:
+        if field in payload:
+            merged[field] = payload[field]
+
+    try:
+        return ContentChatResponse.model_validate(merged)
+    except Exception:
+        logger.warning("Failed to unpack embedded content response JSON", exc_info=True)
+        return response
+
+
 def _normalize_content_chat_response(response: ContentChatResponse) -> ContentChatResponse:
+    response = _unpack_embedded_content_response(response)
     questions = [q.strip() for q in response.follow_up_questions if q.strip()][:4]
     if not questions:
-        return response
+        reply = response.reply
+        if response.generated_content and reply.strip().startswith("{"):
+            reply = "I drafted the content below."
+        elif response.generated_content and not reply.strip():
+            reply = "I drafted the content below."
+        return ContentChatResponse(
+            reply=reply,
+            follow_up_questions=[],
+            content_ready=response.content_ready,
+            generated_content=response.generated_content,
+        )
 
     return ContentChatResponse(
         reply=_format_content_follow_up_reply(questions),
@@ -1581,6 +1621,9 @@ class OpenAILLMProvider(LLMProvider):
             "- Cite real market trends, competitor names, and industry benchmarks.\n"
             "- Do not print JSON, research_ready flags, or research_data inside reply. "
             "Reply should be a clean human-readable summary only.\n"
+            "- research_data must be a flat object where every value is a string. "
+            "Do not put nested objects, arrays, booleans, or numbers inside research_data values. "
+            "If a finding has bullets or nested details, write them as markdown inside one string.\n"
             "- research_data keys should be descriptive (e.g. 'competitor_analysis', 'market_size', 'positioning_map').\n"
             "- Only ask follow-up questions if you need critical missing info about their product or market."
             + workflow_hint
@@ -1590,7 +1633,8 @@ class OpenAILLMProvider(LLMProvider):
             system_prompt += (
                 "\n- For competitor analysis, include a research_data.competitor_matrix value as a markdown table. "
                 "Use these columns: Competitor, Positioning, Strengths, Weaknesses, Pricing/Market signal, Opportunity. "
-                "Keep cells concise and specific so the UI can render a clean comparison table."
+                "Keep cells concise and specific so the UI can render a clean comparison table. "
+                "Put positioning opportunities in research_data.positioning_opportunities as a markdown string, not an object."
             )
 
         if company_context:
@@ -1812,7 +1856,15 @@ class ResilientLLMProvider(LLMProvider):
         company_context: str,
         workflow: str | None = None,
     ) -> MarketingResearchResponse:
-        return self._try_primary("chat_marketing_research", messages, company_context, workflow)
+        try:
+            global _LAST_LLM_ERROR
+            _LAST_LLM_ERROR = None
+            return self.primary.chat_marketing_research(messages, company_context, workflow)
+        except Exception as exc:
+            self.last_error = f"chat_marketing_research: {exc.__class__.__name__}"
+            _LAST_LLM_ERROR = self.last_error
+            logger.exception("LLM provider failed in chat_marketing_research")
+            raise
 
     def generate_social_post(
         self,

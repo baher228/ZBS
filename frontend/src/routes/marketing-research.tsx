@@ -1,17 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ResearchDataBlock, ResearchMarkdown, formatResearchValue } from "@/components/ResearchDataBlock";
 import {
   BarChart3,
   Building2,
-  ClipboardCopy,
   Loader2,
   MessageSquare,
   Search,
@@ -21,7 +13,6 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
 import {
   fetchCompanyProfile,
   fetchProviderInfo,
@@ -339,9 +330,7 @@ function ResearchChatBubble({
       </div>
       <div className="max-w-[85%] space-y-3">
         <div className="bg-foreground/5 border border-foreground/10 px-4 py-3">
-          <div className="prose-chat text-sm leading-relaxed">
-            <ReactMarkdown>{entry.content}</ReactMarkdown>
-          </div>
+          <ResearchMarkdown content={entry.content} />
         </div>
 
         {/* Research data blocks */}
@@ -379,124 +368,3 @@ function ResearchChatBubble({
   );
 }
 
-function ResearchDataBlock({ title, content }: { title: string; content: unknown }) {
-  const [copied, setCopied] = useState(false);
-  const label = title.replaceAll("_", " ");
-  const displayContent = formatResearchValue(content);
-  const parsedTable = parseMarkdownTable(displayContent);
-
-  const copy = () => {
-    navigator.clipboard.writeText(displayContent).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  return (
-    <div className="border border-foreground/15 bg-card/40 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-foreground/10 bg-foreground/[0.03]">
-        <span className="label-mono text-[10px] capitalize">{label}</span>
-        <button
-          onClick={copy}
-          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ClipboardCopy className="h-3 w-3" />
-          {copied ? "Copied!" : "Copy"}
-        </button>
-      </div>
-      <div className="px-4 py-3">
-        {parsedTable ? (
-          <div className="overflow-hidden border border-foreground/10 bg-background/40">
-            <Table>
-              <TableHeader className="bg-foreground/[0.04]">
-                <TableRow className="hover:bg-transparent">
-                  {parsedTable.headers.map((header) => (
-                    <TableHead
-                      key={header}
-                      className="h-auto min-w-32 px-3 py-2 text-[10px] uppercase tracking-wider text-foreground/60"
-                    >
-                      {header}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {parsedTable.rows.map((row, rowIndex) => (
-                  <TableRow key={rowIndex} className="hover:bg-primary/[0.03]">
-                    {parsedTable.headers.map((header, cellIndex) => (
-                      <TableCell
-                        key={`${header}-${cellIndex}`}
-                        className="min-w-32 px-3 py-3 text-xs leading-relaxed align-top text-foreground/80"
-                      >
-                        {row[cellIndex] || "-"}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="prose-chat text-xs leading-relaxed">
-            <ReactMarkdown>{displayContent}</ReactMarkdown>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function formatResearchValue(value: unknown): string {
-  if (value == null) return "";
-  if (typeof value === "string") {
-    return value.includes("see embedded JSON above") ? "" : value;
-  }
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => (typeof item === "object" ? formatResearchValue(item) : `- ${formatResearchValue(item)}`))
-      .filter(Boolean)
-      .join("\n");
-  }
-  if (typeof value === "object") {
-    return Object.entries(value as Record<string, unknown>)
-      .map(([key, nested]) => {
-        const formatted = formatResearchValue(nested);
-        if (!formatted) return "";
-        const label = key.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
-        return typeof nested === "object" ? `### ${label}\n${formatted}` : `**${label}:** ${formatted}`;
-      })
-      .filter(Boolean)
-      .join("\n\n");
-  }
-  return String(value);
-}
-
-function parseMarkdownTable(content: string): { headers: string[]; rows: string[][] } | null {
-  const lines = content
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-  const tableStart = lines.findIndex((line, index) => {
-    const nextLine = lines[index + 1];
-    return line.startsWith("|") && line.endsWith("|") && Boolean(nextLine?.match(/^\|[\s:-|]+\|$/));
-  });
-
-  if (tableStart === -1) return null;
-
-  const tableLines = lines
-    .slice(tableStart)
-    .filter((line) => line.startsWith("|") && line.endsWith("|"));
-  if (tableLines.length < 3) return null;
-
-  const parseRow = (line: string) =>
-    line
-      .slice(1, -1)
-      .split("|")
-      .map((cell) => cell.trim());
-
-  const headers = parseRow(tableLines[0]);
-  const rows = tableLines.slice(2).map(parseRow).filter((row) => row.some(Boolean));
-
-  return headers.length && rows.length ? { headers, rows } : null;
-}
