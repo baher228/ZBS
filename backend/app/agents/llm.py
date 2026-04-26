@@ -695,7 +695,7 @@ class OpenAILLMProvider(LLMProvider):
             api_key=resolved_key,
             base_url=base_url,
             max_retries=0,
-            timeout=30,
+            timeout=120,
         )
 
         self.content_model = ChatOpenAI(
@@ -704,7 +704,7 @@ class OpenAILLMProvider(LLMProvider):
             base_url=base_url,
             temperature=1.1,
             max_retries=0,
-            timeout=30,
+            timeout=120,
         )
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
@@ -1398,6 +1398,11 @@ class ResilientLLMProvider(LLMProvider):
         try:
             return getattr(self.primary, method_name)(*args)
         except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Primary LLM failed for %s: %s: %s — falling back to mock",
+                method_name, exc.__class__.__name__, exc,
+            )
             self.last_error = exc.__class__.__name__
             return getattr(self.fallback, method_name)(*args)
 
