@@ -233,3 +233,23 @@ class ContentChatResponse(BaseModel):
     follow_up_questions: list[str] = Field(default_factory=list)
     content_ready: bool = False
     generated_content: dict[str, str] | None = None
+
+
+# ── Marketing Research Chat Models ──────────────────────────────────────
+
+
+class MarketingResearchMessage(BaseModel):
+    role: str = Field(..., pattern=r"^(user|assistant)$")
+    content: str = Field(..., min_length=1)
+
+
+class MarketingResearchRequest(BaseModel):
+    messages: list[MarketingResearchMessage] = Field(..., min_length=1)
+    workflow: str | None = None
+
+
+class MarketingResearchResponse(BaseModel):
+    reply: str
+    follow_up_questions: list[str] = Field(default_factory=list)
+    research_ready: bool = False
+    research_data: dict[str, str] | None = None

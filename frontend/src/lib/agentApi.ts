@@ -305,6 +305,42 @@ export async function sendContentChat(
   return response.json();
 }
 
+// ── Marketing Research Chat ────────────────────────────────
+
+export type MarketingResearchMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type MarketingResearchResponse = {
+  reply: string;
+  follow_up_questions: string[];
+  research_ready: boolean;
+  research_data: Record<string, string> | null;
+};
+
+export async function sendMarketingResearchChat(
+  apiBaseUrl: string,
+  messages: MarketingResearchMessage[],
+  workflow?: string,
+): Promise<MarketingResearchResponse> {
+  const body: Record<string, unknown> = { messages };
+  if (workflow) body.workflow = workflow;
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/marketing-research/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+
+
 export async function deleteCompanyProfile(apiBaseUrl: string): Promise<boolean> {
   try {
     const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/company`, {
