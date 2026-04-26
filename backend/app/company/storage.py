@@ -49,10 +49,10 @@ def delete_profile() -> bool:
 
 def get_company_context() -> str | None:
     profile = load_profile()
-    if profile is None:
-        return None
-    base = profile.to_context_string()
     enriched = get_enriched_context()
+    if profile is None:
+        return enriched or None
+    base = profile.to_context_string()
     if enriched:
         return base + "\n\n" + enriched
     return base

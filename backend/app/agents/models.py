@@ -226,6 +226,10 @@ class ContentChatMessage(BaseModel):
 class ContentChatRequest(BaseModel):
     messages: list[ContentChatMessage] = Field(..., min_length=1)
     workflow: str | None = None
+    image_mode: str = Field(default="ask", pattern=r"^(ask|generate|reference|none)$")
+    reference_image_urls: list[str] = Field(default_factory=list)
+    existing_image_note: str = ""
+    existing_generated_content: dict[str, str] | None = None
 
 
 class ContentChatResponse(BaseModel):

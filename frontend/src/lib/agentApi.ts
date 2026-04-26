@@ -288,13 +288,25 @@ export type ContentChatResponse = {
   generated_content: Record<string, string> | null;
 };
 
+export type ContentImageMode = "ask" | "generate" | "reference" | "none";
+
 export async function sendContentChat(
   apiBaseUrl: string,
   messages: ContentChatMessage[],
   workflow?: string,
+  options?: {
+    imageMode?: ContentImageMode;
+    referenceImageUrls?: string[];
+    existingImageNote?: string;
+    existingGeneratedContent?: Record<string, string>;
+  },
 ): Promise<ContentChatResponse> {
   const body: Record<string, unknown> = { messages };
   if (workflow) body.workflow = workflow;
+  if (options?.imageMode) body.image_mode = options.imageMode;
+  if (options?.referenceImageUrls) body.reference_image_urls = options.referenceImageUrls;
+  if (options?.existingImageNote) body.existing_image_note = options.existingImageNote;
+  if (options?.existingGeneratedContent) body.existing_generated_content = options.existingGeneratedContent;
   const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/v1/content/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

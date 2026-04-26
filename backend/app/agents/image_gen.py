@@ -16,7 +16,11 @@ class GeneratedImage(BaseModel):
     section: str
 
 
-def generate_image(prompt: str, section: str) -> GeneratedImage | None:
+def generate_image(
+    prompt: str,
+    section: str,
+    reference_image_urls: list[str] | None = None,
+) -> GeneratedImage | None:
     api_key = settings.fal_api_key
     if not api_key:
         logger.warning("FAL_API_KEY not configured — skipping image generation")
@@ -28,16 +32,19 @@ def generate_image(prompt: str, section: str) -> GeneratedImage | None:
 
         os.environ["FAL_KEY"] = api_key
 
-        result = fal_client.subscribe(
-            "fal-ai/flux-pro/v1.1",
-            arguments={
-                "prompt": prompt,
-                "image_size": "landscape_16_9",
-                "num_images": 1,
-                "safety_tolerance": "2",
-                "output_format": "jpeg",
-            },
-        )
+        references = [url.strip() for url in reference_image_urls or [] if url.strip()]
+        model_id = settings.fal_image_edit_model if references else settings.fal_image_model
+        arguments: dict[str, object] = {
+            "prompt": prompt,
+            "image_size": "auto" if references else "landscape_16_9",
+            "quality": "high",
+            "num_images": 1,
+            "output_format": "png",
+        }
+        if references:
+            arguments["image_urls"] = references
+
+        result = fal_client.subscribe(model_id, arguments=arguments)
 
         images = result.get("images", [])
         if not images:
@@ -140,6 +147,7 @@ def generate_content_images(
     sections: list[str] | None = None,
     section_texts: dict[str, str] | None = None,
     company_context: str = "",
+    reference_image_urls: list[str] | None = None,
 ) -> dict[str, GeneratedImage]:
     if not settings.fal_api_key:
         return {}
@@ -156,7 +164,7 @@ def generate_content_images(
         else:
             prompt = _fallback_prompt(section, section_text or startup_idea)
 
-        image = generate_image(prompt, section)
+        image = generate_image(prompt, section, reference_image_urls=reference_image_urls)
         if image:
             results[section] = image
 

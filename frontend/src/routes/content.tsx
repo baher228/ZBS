@@ -2,9 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
   Building2,
+  Ban,
+  Camera,
   ClipboardCopy,
   FileText,
   Globe,
+  Image,
   Loader2,
   Mail,
   MessageSquare,
@@ -21,6 +24,7 @@ import {
   type CompanyProfile,
   type ContentChatMessage,
   type ContentChatResponse,
+  type ContentImageMode,
   type ProviderInfo,
 } from "@/lib/agentApi";
 
@@ -89,6 +93,11 @@ function ContentPage() {
   // Chat state
   const [chatMessages, setChatMessages] = useState<ContentChatEntry[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [imageMode, setImageMode] = useState<ContentImageMode>("ask");
+  const [referenceImageInput, setReferenceImageInput] = useState("");
+  const [referenceImageDataUrls, setReferenceImageDataUrls] = useState<string[]>([]);
+  const [referenceImageNames, setReferenceImageNames] = useState<string[]>([]);
+  const [existingImageNote, setExistingImageNote] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
@@ -106,6 +115,11 @@ function ContentPage() {
     setActiveWorkflow(workflow);
     setChatMessages([]);
     setChatInput("");
+    setImageMode("ask");
+    setReferenceImageInput("");
+    setReferenceImageDataUrls([]);
+    setReferenceImageNames([]);
+    setExistingImageNote("");
   };
 
   const handleChatSend = async (text?: string) => {
@@ -122,12 +136,16 @@ function ContentPage() {
     setChatLoading(true);
 
     const history: ContentChatMessage[] = [
-      ...chatMessages.map((m) => ({ role: m.role, content: m.content })),
+      ...chatMessages.map(toContentChatMessage),
       { role: "user" as const, content: msgText },
     ];
 
     try {
-      const response: ContentChatResponse = await sendContentChat(apiBaseUrl, history, activeWorkflow);
+      const response: ContentChatResponse = await sendContentChat(apiBaseUrl, history, activeWorkflow, {
+        imageMode,
+        referenceImageUrls: getReferenceImageReferences(referenceImageInput, referenceImageDataUrls),
+        existingImageNote,
+      });
 
       const assistantEntry: ContentChatEntry = {
         role: "assistant",
@@ -150,11 +168,115 @@ function ContentPage() {
     }
   };
 
+  const handleGenerateImages = async (generatedContent: Record<string, string>) => {
+    if (chatLoading) return;
+
+    const userEntry: ContentChatEntry = {
+      role: "user",
+      content: "Generate AI images for this content.",
+      timestamp: Date.now(),
+    };
+    setChatMessages((prev) => [...prev, userEntry]);
+    setChatLoading(true);
+
+    try {
+      const response = await sendContentChat(
+        apiBaseUrl,
+        [...chatMessages.map(toContentChatMessage), { role: "user", content: userEntry.content }],
+        activeWorkflow,
+        {
+          imageMode: "generate",
+          referenceImageUrls: getReferenceImageReferences(referenceImageInput, referenceImageDataUrls),
+          existingGeneratedContent: generatedContent,
+        },
+      );
+
+      const assistantEntry: ContentChatEntry = {
+        role: "assistant",
+        content: response.reply,
+        followUpQuestions: response.follow_up_questions,
+        generatedContent: response.generated_content,
+        timestamp: Date.now(),
+      };
+      setChatMessages((prev) => [...prev, assistantEntry]);
+    } catch (err) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `Error: ${err instanceof Error ? err.message : "Request failed"}`,
+          timestamp: Date.now(),
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+      chatInputRef.current?.focus();
+    }
+  };
+
+  const handleUseReferences = async (generatedContent: Record<string, string>) => {
+    if (chatLoading) return;
+
+    setImageMode("reference");
+    const userEntry: ContentChatEntry = {
+      role: "user",
+      content: "Use my existing screenshots or platform assets for this content.",
+      timestamp: Date.now(),
+    };
+    setChatMessages((prev) => [...prev, userEntry]);
+    setChatLoading(true);
+
+    try {
+      const response = await sendContentChat(
+        apiBaseUrl,
+        [...chatMessages.map(toContentChatMessage), { role: "user", content: userEntry.content }],
+        activeWorkflow,
+        {
+          imageMode: "reference",
+          referenceImageUrls: getReferenceImageReferences(referenceImageInput, referenceImageDataUrls),
+          existingImageNote,
+          existingGeneratedContent: generatedContent,
+        },
+      );
+
+      const assistantEntry: ContentChatEntry = {
+        role: "assistant",
+        content: response.reply,
+        followUpQuestions: response.follow_up_questions,
+        generatedContent: response.generated_content,
+        timestamp: Date.now(),
+      };
+      setChatMessages((prev) => [...prev, assistantEntry]);
+    } catch (err) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `Error: ${err instanceof Error ? err.message : "Request failed"}`,
+          timestamp: Date.now(),
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+      chatInputRef.current?.focus();
+    }
+  };
+
   const handleChatKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleChatSend();
     }
+  };
+
+  const handleReferenceImageFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/")).slice(0, 3);
+    const dataUrls = await Promise.all(imageFiles.map(readFileAsDataUrl));
+    setReferenceImageDataUrls(dataUrls);
+    setReferenceImageNames(imageFiles.map((file) => file.name));
+    setImageMode("reference");
   };
 
   const currentWorkflow = WORKFLOWS.find((w) => w.value === activeWorkflow)!;
@@ -248,6 +370,8 @@ function ContentPage() {
               <ContentChatBubble
                 key={i}
                 entry={entry}
+                onGenerateImages={handleGenerateImages}
+                onUseReferences={handleUseReferences}
               />
             ))}
 
@@ -270,6 +394,61 @@ function ContentPage() {
 
           {/* Input area */}
           <div className="border-t border-foreground/10 p-3">
+            <div className="mb-3 space-y-2">
+              <div className="flex flex-wrap gap-1.5">
+                <VisualModeButton
+                  active={imageMode === "ask"}
+                  icon={MessageSquare}
+                  label="Ask"
+                  onClick={() => setImageMode("ask")}
+                />
+                <VisualModeButton
+                  active={imageMode === "generate"}
+                  icon={Image}
+                  label="Generate"
+                  onClick={() => setImageMode("generate")}
+                />
+                <VisualModeButton
+                  active={imageMode === "reference"}
+                  icon={Camera}
+                  label="Use screenshots"
+                  onClick={() => setImageMode("reference")}
+                />
+                <VisualModeButton
+                  active={imageMode === "none"}
+                  icon={Ban}
+                  label="Text only"
+                  onClick={() => setImageMode("none")}
+                />
+              </div>
+              {imageMode === "reference" && (
+                <div className="grid gap-2 sm:grid-cols-[1fr_1fr]">
+                  <input
+                    value={referenceImageInput}
+                    onChange={(e) => setReferenceImageInput(e.target.value)}
+                    placeholder="Screenshot or platform image URL"
+                    className="border border-foreground/15 bg-card/50 px-3 py-2 text-xs outline-none focus:border-primary transition-colors"
+                  />
+                  <input
+                    value={existingImageNote}
+                    onChange={(e) => setExistingImageNote(e.target.value)}
+                    placeholder="How should the asset be used?"
+                    className="border border-foreground/15 bg-card/50 px-3 py-2 text-xs outline-none focus:border-primary transition-colors"
+                  />
+                  <label className="flex cursor-pointer items-center gap-2 border border-foreground/15 bg-card/50 px-3 py-2 text-xs text-foreground/60 hover:border-foreground/30 hover:text-foreground transition-colors sm:col-span-2">
+                    <Camera className="h-3.5 w-3.5" />
+                    <span>{referenceImageNames.length ? referenceImageNames.join(", ") : "Upload screenshot/image"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleReferenceImageFiles(e.target.files)}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
             <div className="flex gap-2">
               <textarea
                 ref={chatInputRef}
@@ -309,8 +488,12 @@ function ContentPage() {
 
 function ContentChatBubble({
   entry,
+  onGenerateImages,
+  onUseReferences,
 }: {
   entry: ContentChatEntry;
+  onGenerateImages: (generatedContent: Record<string, string>) => void;
+  onUseReferences: (generatedContent: Record<string, string>) => void;
 }) {
   if (entry.role === "user") {
     return (
@@ -343,10 +526,91 @@ function ContentChatBubble({
             {Object.entries(repairedEntry.generatedContent).map(([key, value]) => (
               <GeneratedContentBlock key={key} title={key} content={value} />
             ))}
+            {!hasGeneratedImages(repairedEntry.generatedContent) && (
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onGenerateImages(repairedEntry.generatedContent!)}
+                  className="flex items-center gap-1.5 border border-primary/20 px-3 py-1.5 text-xs text-primary/80 hover:bg-primary/5 hover:border-primary/40 transition-colors"
+                >
+                  <Image className="h-3 w-3" />
+                  Generate images
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUseReferences(repairedEntry.generatedContent!)}
+                  className="flex items-center gap-1.5 border border-foreground/15 px-3 py-1.5 text-xs text-foreground/70 hover:border-foreground/30 hover:text-foreground transition-colors"
+                >
+                  <Camera className="h-3 w-3" />
+                  Use screenshots
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function hasGeneratedImages(generatedContent: Record<string, string>) {
+  return Object.entries(generatedContent).some(
+    ([key, value]) => key.endsWith("_image") && /^https?:\/\//.test(value),
+  );
+}
+
+function toContentChatMessage(entry: ContentChatEntry): ContentChatMessage {
+  if (!entry.generatedContent) {
+    return { role: entry.role, content: entry.content };
+  }
+
+  const sections = Object.entries(entry.generatedContent)
+    .map(([key, value]) => `[${key}]\n${value}`)
+    .join("\n\n");
+  return { role: entry.role, content: `${entry.content}\n\nGenerated content:\n${sections}` };
+}
+
+function getReferenceImageReferences(input: string, dataUrls: string[]): string[] {
+  const urls = input
+    .split(/[\n, ]+/)
+    .map((url) => url.trim())
+    .filter((url) => /^https?:\/\//i.test(url));
+  return [...urls, ...dataUrls];
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function VisualModeButton({
+  active,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: typeof MessageSquare;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-1.5 border px-2.5 py-1.5 text-[11px] transition-colors ${
+        active
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-foreground/15 text-foreground/60 hover:border-foreground/30 hover:text-foreground"
+      }`}
+    >
+      <Icon className="h-3 w-3" />
+      {label}
+    </button>
   );
 }
 

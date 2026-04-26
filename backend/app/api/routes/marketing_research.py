@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 
 from app.agents.llm import get_llm_provider
 from app.agents.models import MarketingResearchRequest, MarketingResearchResponse
@@ -11,13 +11,19 @@ router = APIRouter(prefix="/marketing-research", tags=["marketing-research"])
 
 
 @router.post("/chat", response_model=MarketingResearchResponse)
-def marketing_research_chat(request: MarketingResearchRequest) -> MarketingResearchResponse:
+def marketing_research_chat(
+    request: MarketingResearchRequest,
+    background_tasks: BackgroundTasks,
+) -> MarketingResearchResponse:
     llm = get_llm_provider()
     company_context = get_company_context() or ""
-
-    # Extract useful context from user messages
     msg_dicts = [{"role": m.role, "content": m.content} for m in request.messages]
-    extract_insights_from_messages(msg_dicts, source_agent="marketing_research")
+    background_tasks.add_task(
+        extract_insights_from_messages,
+        msg_dicts,
+        "marketing_research",
+        company_context,
+    )
 
     return llm.chat_marketing_research(
         messages=request.messages,

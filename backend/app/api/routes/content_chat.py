@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 
 from app.agents.llm import get_llm_provider
 from app.agents.models import ContentChatRequest, ContentChatResponse
@@ -12,26 +12,95 @@ router = APIRouter(prefix="/content", tags=["content"])
 
 
 @router.post("/chat", response_model=ContentChatResponse)
-def content_chat(request: ContentChatRequest) -> ContentChatResponse:
+def content_chat(request: ContentChatRequest, background_tasks: BackgroundTasks) -> ContentChatResponse:
     llm = get_llm_provider()
     company_context = get_company_context() or ""
-
-    # Extract useful context from user messages
     msg_dicts = [{"role": m.role, "content": m.content} for m in request.messages]
-    extract_insights_from_messages(msg_dicts, source_agent="content")
+    background_tasks.add_task(
+        extract_insights_from_messages,
+        msg_dicts,
+        "content",
+        company_context,
+    )
+
+    if request.existing_generated_content:
+        response = ContentChatResponse(
+            reply="I added visuals for the drafted content below.",
+            follow_up_questions=[],
+            content_ready=True,
+            generated_content=dict(request.existing_generated_content),
+        )
+        return _handle_content_visuals(
+            response=response,
+            company_context=company_context,
+            workflow=request.workflow,
+            image_mode=request.image_mode,
+            reference_image_urls=request.reference_image_urls,
+            existing_image_note=request.existing_image_note,
+        )
 
     response = llm.chat_content(
         messages=request.messages,
         company_context=company_context,
         workflow=request.workflow,
     )
-    return _add_content_visuals(response, company_context, request.workflow)
+    return _handle_content_visuals(
+        response=response,
+        company_context=company_context,
+        workflow=request.workflow,
+        image_mode=request.image_mode,
+        reference_image_urls=request.reference_image_urls,
+        existing_image_note=request.existing_image_note,
+    )
+
+
+def _handle_content_visuals(
+    response: ContentChatResponse,
+    company_context: str,
+    workflow: str | None,
+    image_mode: str,
+    reference_image_urls: list[str] | None = None,
+    existing_image_note: str = "",
+) -> ContentChatResponse:
+    if not response.content_ready or not response.generated_content:
+        return response
+
+    if image_mode == "generate":
+        return _add_content_visuals(
+            response,
+            company_context,
+            workflow,
+            reference_image_urls=reference_image_urls,
+        )
+
+    if image_mode == "reference":
+        response.reply = _append_visual_prompt(
+            response.reply,
+            "I drafted the content below. Use your existing screenshots or platform visuals with the image directions included.",
+        )
+        response.generated_content = _add_reference_image_directions(
+            dict(response.generated_content),
+            workflow,
+            existing_image_note,
+            reference_image_urls or [],
+        )
+        return response
+
+    if image_mode == "none":
+        return response
+
+    response.reply = _append_visual_prompt(
+        response.reply,
+        "I drafted the content below. For visuals, do you want me to generate AI images, use screenshots/assets you already have, or keep it text-only?",
+    )
+    return response
 
 
 def _add_content_visuals(
     response: ContentChatResponse,
     company_context: str,
     workflow: str | None,
+    reference_image_urls: list[str] | None = None,
 ) -> ContentChatResponse:
     if not response.content_ready or not response.generated_content:
         return response
@@ -48,6 +117,7 @@ def _add_content_visuals(
         sections=visual_sections,
         section_texts=section_texts,
         company_context=company_context,
+        reference_image_urls=reference_image_urls,
     )
 
     for section, image in images.items():
@@ -63,6 +133,37 @@ def _add_content_visuals(
 
     response.generated_content = output
     return response
+
+
+def _append_visual_prompt(reply: str, prompt: str) -> str:
+    cleaned = reply.strip()
+    if not cleaned:
+        return prompt
+    if prompt in cleaned:
+        return cleaned
+    return f"{cleaned}\n\n{prompt}"
+
+
+def _add_reference_image_directions(
+    output: dict[str, str],
+    workflow: str | None,
+    existing_image_note: str,
+    reference_image_urls: list[str],
+) -> dict[str, str]:
+    visual_sections = _visual_sections_for_content(output, workflow)
+    if not visual_sections:
+        return output
+
+    source_line = ""
+    if reference_image_urls:
+        source_line = "\nReference URLs:\n" + "\n".join(f"- {url}" for url in reference_image_urls)
+    note_line = f"\nAsset notes: {existing_image_note.strip()}" if existing_image_note.strip() else ""
+    briefs = [
+        f"**{_label_for_section(section)}:** {_image_brief_for_section(section, output.get(section, ''))}"
+        for section in visual_sections
+    ]
+    output["image_directions"] = "\n".join(briefs) + source_line + note_line
+    return output
 
 
 def _visual_sections_for_content(output: dict[str, str], workflow: str | None) -> list[str]:

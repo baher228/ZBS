@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     pydantic_ai_gateway_base_url: str | None = None
     pydantic: str | None = None
     fal_api_key: str | None = None
+    fal_image_model: str = "openai/gpt-image-2"
+    fal_image_edit_model: str = "openai/gpt-image-2/edit"
 
     model_config = SettingsConfigDict(
         env_file=(str(REPO_ROOT / ".env"), str(BACKEND_ROOT / ".env")),

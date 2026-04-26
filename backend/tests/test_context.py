@@ -182,6 +182,15 @@ class TestEnrichedContext:
         assert "Website Context" in ctx
         assert "Acme helps B2B" in ctx
 
+    def test_company_context_returns_enriched_without_profile(self):
+        add_chat_insight(ChatInsight(source_agent="legal", fact="We are incorporated in Delaware"))
+
+        ctx = get_company_context()
+
+        assert ctx is not None
+        assert "Previous Conversations" in ctx
+        assert "incorporated in Delaware" in ctx
+
 
 # ── Chat Extractor Tests ────────────────────────────────────
 
@@ -216,6 +225,28 @@ class TestChatExtractor:
         ctx = load_chat_context()
         assert len(ctx.insights) == 1
 
+    def test_extract_understands_short_reply_from_chat_context(self):
+        messages = [
+            {"role": "assistant", "content": "Where does your company operate?"},
+            {"role": "user", "content": "UK and EU"},
+        ]
+
+        stored = extract_insights_from_messages(messages, source_agent="legal")
+
+        assert len(stored) == 1
+        assert "Company operates in UK and EU" in stored[0].fact
+
+    def test_extract_understands_short_pricing_reply_from_chat_context(self):
+        messages = [
+            {"role": "assistant", "content": "What is your pricing?"},
+            {"role": "user", "content": "£19/month for students"},
+        ]
+
+        stored = extract_insights_from_messages(messages, source_agent="content")
+
+        assert len(stored) == 1
+        assert "Company pricing is £19/month for students" in stored[0].fact
+
     def test_extract_no_duplicates_on_resend(self):
         messages = [
             {"role": "user", "content": "We have 50 employees and we operate in the US."},
@@ -225,6 +256,20 @@ class TestChatExtractor:
         ctx = load_chat_context()
         # Each call only extracts the last message, so 2 total (not quadratic)
         assert len(ctx.insights) == 2
+
+    def test_extract_skips_when_fact_already_in_context(self):
+        messages = [
+            {"role": "user", "content": "We have 50 employees and we operate in the US."},
+        ]
+
+        stored = extract_insights_from_messages(
+            messages,
+            source_agent="legal",
+            existing_context="Stored context: We have 50 employees and we operate in the US.",
+        )
+
+        assert stored == []
+        assert len(load_chat_context().insights) == 0
 
     def test_extract_skips_non_company_messages(self):
         messages = [
@@ -391,6 +436,112 @@ class TestChatContextExtraction:
         ctx = load_chat_context()
         assert len(ctx.insights) >= 1
         assert any("50 employees" in i.fact for i in ctx.insights)
+
+    @patch("app.api.routes.legal_chat.get_llm_provider")
+    def test_legal_chat_loads_existing_context_then_extracts_in_background(self, mock_get_provider):
+        class CapturingProvider:
+            company_context = ""
+
+            def chat_legal(self, messages, mode, source_context, company_context, document_type=None):
+                self.company_context = company_context
+                return LegalChatResponse(
+                    reply="Done",
+                    document=None,
+                    follow_up_questions=[],
+                    mode=mode,
+                    sources_used=[],
+                )
+
+        from app.agents.models import LegalChatResponse
+
+        provider = CapturingProvider()
+        mock_get_provider.return_value = provider
+
+        response = client.post(
+            "/api/v1/legal/chat",
+            json={
+                "messages": [
+                    {"role": "user", "content": "We are incorporated in Delaware and we process EU customer data."},
+                ],
+                "mode": "legal_advice",
+            },
+        )
+
+        assert response.status_code == 200
+        assert "incorporated in Delaware" not in provider.company_context
+        ctx = load_chat_context()
+        assert any("incorporated in Delaware" in insight.fact for insight in ctx.insights)
+        assert any("process EU customer data" in insight.fact for insight in ctx.insights)
+
+    @patch("app.api.routes.content_chat.get_llm_provider")
+    def test_content_chat_loads_existing_context_then_extracts_in_background(self, mock_get_provider):
+        from app.agents.models import ContentChatResponse
+
+        class CapturingProvider:
+            company_context = ""
+
+            def chat_content(self, messages, company_context, workflow=None):
+                self.company_context = company_context
+                return ContentChatResponse(
+                    reply="Done",
+                    follow_up_questions=[],
+                    content_ready=True,
+                    generated_content={"draft": "Launch copy"},
+                )
+
+        provider = CapturingProvider()
+        mock_get_provider.return_value = provider
+
+        response = client.post(
+            "/api/v1/content/chat",
+            json={
+                "messages": [
+                    {"role": "user", "content": "Our company sells AI finance training to UK university students."},
+                ],
+                "image_mode": "none",
+            },
+        )
+
+        assert response.status_code == 200
+        assert "AI finance training" not in provider.company_context
+        ctx = load_chat_context()
+        assert any("AI finance training" in insight.fact for insight in ctx.insights)
+        assert any("UK university students" in insight.fact for insight in ctx.insights)
+
+    @patch("app.api.routes.marketing_research.get_llm_provider")
+    def test_marketing_research_loads_existing_context_then_extracts_in_background(self, mock_get_provider):
+        from app.agents.models import MarketingResearchResponse
+
+        class CapturingProvider:
+            company_context = ""
+
+            def chat_marketing_research(self, messages, company_context, workflow=None):
+                self.company_context = company_context
+                return MarketingResearchResponse(
+                    reply="Done",
+                    follow_up_questions=[],
+                    research_ready=True,
+                    research_data={"summary": "Market notes"},
+                )
+
+        provider = CapturingProvider()
+        mock_get_provider.return_value = provider
+
+        response = client.post(
+            "/api/v1/marketing-research/chat",
+            json={
+                "messages": [
+                    {"role": "user", "content": "We target aspiring investment bankers and our pricing is £19 per month."},
+                ],
+                "workflow": "competitor_analysis",
+            },
+        )
+
+        assert response.status_code == 200
+        assert "aspiring investment bankers" not in provider.company_context
+        ctx = load_chat_context()
+        assert any("aspiring investment bankers" in insight.fact for insight in ctx.insights)
+        assert any("pricing is £19 per month" in insight.fact for insight in ctx.insights)
 
     def test_content_chat_extracts_context(self):
         response = client.post(

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from app.agents.legal_knowledge import LegalKnowledgeBase
 from app.agents.llm import get_llm_provider
@@ -23,9 +23,16 @@ def _get_source_context(query: str, jurisdictions: list[str]) -> str:
 
 
 @router.post("/chat", response_model=LegalChatResponse)
-def legal_chat(request: LegalChatRequest) -> LegalChatResponse:
+def legal_chat(request: LegalChatRequest, background_tasks: BackgroundTasks) -> LegalChatResponse:
     llm = get_llm_provider()
     company_context = get_company_context() or ""
+    msg_dicts = [{"role": m.role, "content": m.content} for m in request.messages]
+    background_tasks.add_task(
+        extract_insights_from_messages,
+        msg_dicts,
+        "legal",
+        company_context,
+    )
 
     last_user_msg = ""
     for msg in reversed(request.messages):
@@ -34,10 +41,6 @@ def legal_chat(request: LegalChatRequest) -> LegalChatResponse:
             break
 
     source_context = _get_source_context(last_user_msg, request.jurisdictions)
-
-    # Extract useful context from user messages
-    msg_dicts = [{"role": m.role, "content": m.content} for m in request.messages]
-    extract_insights_from_messages(msg_dicts, source_agent="legal")
 
     try:
         return llm.chat_legal(

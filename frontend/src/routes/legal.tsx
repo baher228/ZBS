@@ -14,6 +14,7 @@ import {
   Scale,
   Send,
   Shield,
+  MessageSquare,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -327,10 +328,16 @@ function LegalAgentPage() {
                       <>
                         <Receipt className="h-10 w-10 text-muted-foreground/40 mb-4" />
                         <p className="text-sm text-muted-foreground mb-1">Tax Guidance Mode</p>
-                        <p className="text-xs text-foreground/40 max-w-sm">
-                          Ask about tax obligations, entity classification, R&D credits, sales tax,
-                          or international tax planning.
+                        <p className="text-xs text-foreground/40 max-w-sm mb-6">
+                          Let's avoid some tax!
                         </p>
+                        <button
+                          onClick={() => handleSend("Let's avoid some tax!")}
+                          className="text-xs px-4 py-2.5 border border-primary/20 text-primary/70 hover:bg-primary/5 hover:border-primary/40 transition-colors"
+                        >
+                          <MessageSquare className="inline h-3 w-3 mr-1.5" />
+                          Let's avoid some tax!
+                        </button>
                       </>
                     )}
                     {activeTab === "document_drafting" && (
