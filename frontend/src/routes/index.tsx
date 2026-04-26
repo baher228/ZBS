@@ -108,9 +108,9 @@ function Landing() {
           <div className="mx-auto max-w-7xl px-6 grid grid-cols-2 md:grid-cols-4">
             {[
               { k: "4", l: "Specialised agents" },
-              { k: "gpt-5.2", l: "Frontier model" },
+              { k: "gpt-5.4", l: "Frontier model" },
               { k: "4", l: "Content workflows" },
-              { k: "∞", l: "Context memory" },
+              { k: "200", l: "Stored insights" },
             ].map((s, i) => (
               <div
                 key={s.k}
