@@ -64,3 +64,15 @@ LLM_PROVIDER=mock pytest
 ```
 
 To try OpenAI-backed generation, set `LLM_PROVIDER=openai` with `OPENAI_API_KEY` in the root `.env`.
+
+## MuBit Memory
+
+MuBit is optional. Set `MUBIT_API_KEY` to enable `mubit.learn` instrumentation for real LLM calls:
+
+```bash
+MUBIT_API_KEY=mbt_<instance>_<key_id>_<secret>
+MUBIT_AGENT_ID=zbs-agent
+MUBIT_TRANSPORT=auto
+```
+
+Leave `MUBIT_API_KEY` empty to run without MuBit. Mock mode is unchanged.

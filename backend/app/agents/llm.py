@@ -953,6 +953,10 @@ class OpenAILLMProvider(LLMProvider):
     def __init__(self, api_key: str | None = None, base_url: str | None = None) -> None:
         from langchain_openai import ChatOpenAI
 
+        from app.agents.mubit_integration import initialize_mubit_learning
+
+        initialize_mubit_learning()
+
         resolved_key = api_key or settings.resolved_llm_api_key
 
         self.model = ChatOpenAI(

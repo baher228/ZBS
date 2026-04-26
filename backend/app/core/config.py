@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     fal_api_key: str | None = None
     fal_image_model: str = "openai/gpt-image-2"
     fal_image_edit_model: str = "openai/gpt-image-2/edit"
+    mubit_enabled: bool = True
+    mubit_api_key: str | None = None
+    mubit_agent_id: str = "zbs-agent"
+    mubit_endpoint: str | None = None
+    mubit_http_endpoint: str | None = None
+    mubit_grpc_endpoint: str | None = None
+    mubit_transport: str = "auto"
 
     model_config = SettingsConfigDict(
         env_file=(str(REPO_ROOT / ".env"), str(BACKEND_ROOT / ".env")),
@@ -79,6 +86,10 @@ class Settings(BaseSettings):
         if self.resolved_llm_provider == "gateway":
             return "gpt-5.2"
         return "gpt-5.2"
+
+    @property
+    def should_initialize_mubit(self) -> bool:
+        return self.mubit_enabled and bool(self.mubit_api_key)
 
     @property
     def resolved_cors_allow_origins(self) -> list[str]:

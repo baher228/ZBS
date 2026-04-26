@@ -48,6 +48,12 @@ def test_settings_infer_gateway_provider_and_eu_base_url() -> None:
     assert settings.resolved_gateway_base_url == "https://gateway-eu.pydantic.dev/proxy/chat/"
 
 
+def test_settings_enable_mubit_only_when_key_present() -> None:
+    assert Settings(mubit_enabled=True, mubit_api_key=None).should_initialize_mubit is False
+    assert Settings(mubit_enabled=False, mubit_api_key="mbt_test").should_initialize_mubit is False
+    assert Settings(mubit_enabled=True, mubit_api_key="mbt_test").should_initialize_mubit is True
+
+
 def test_resilient_provider_does_not_mock_marketing_research_chat() -> None:
     provider = ResilientLLMProvider(UnconfiguredLLMProvider(), MockLLMProvider())
 
