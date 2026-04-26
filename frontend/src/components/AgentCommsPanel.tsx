@@ -38,7 +38,7 @@ const MESSAGES: CommsMessage[] = [
     to: A.marketing,
     summary: "Parsed product features and value proposition",
     detail: {
-      input: "Developer analytics platform — zero instrumentation, real-time usage insights.",
+      input: "Developer analytics platform - zero instrumentation, real-time usage insights.",
       processed: "Extracted core differentiators, mapped to known buyer pain points, identified positioning angle.",
       output: "Product brief: Zero-config analytics for engineering-led SaaS companies.",
     },
@@ -64,7 +64,7 @@ const MESSAGES: CommsMessage[] = [
     detail: {
       input: "ICP: Series B–D SaaS, PLG motion, engineering-driven.",
       processed: "Scanned 80k+ companies. Filtered by tech stack, hiring signals, funding stage, and growth velocity.",
-      output: "Shortlist: Linear (96), Vercel (90), Ramp (92), Notion (88) — 412 qualified total.",
+      output: "Shortlist: Linear (96), Vercel (90), Ramp (92), Notion (88) - 412 qualified total.",
     },
   },
   {
@@ -74,9 +74,9 @@ const MESSAGES: CommsMessage[] = [
     to: A.email,
     summary: "Wrote personalized outreach for each prospect",
     detail: {
-      input: "Prospect: Karri S., Head of Growth, Linear — fit score 96.",
+      input: "Prospect: Karri S., Head of Growth, Linear - fit score 96.",
       processed: "Cross-referenced Linear's recent launches, team structure, known pain points. Non-templated opener.",
-      output: '"Hi Karri — noticed Linear\'s onboarding is best-in-class. We help fast-shipping teams turn launches into self-serve demo rooms…"',
+      output: '"Hi Karri - noticed Linear\'s onboarding is best-in-class. We help fast-shipping teams turn launches into self-serve demo rooms…"',
     },
   },
   {
@@ -84,11 +84,11 @@ const MESSAGES: CommsMessage[] = [
     stageId: "demo",
     from: A.email,
     to: A.demo,
-    summary: "User clicked link — demo session initializing",
+    summary: "User clicked link - demo session initializing",
     detail: {
       input: "Karri opened email. Click-through at 09:42 AM. Reading time: 47 sec.",
       processed: "Loaded Linear-specific demo context: PLG motion, HubSpot integration, AE bandwidth constraints.",
-      output: "Demo room initialized. Karri entered personalized session — Linear narrative loaded.",
+      output: "Demo room initialized. Karri entered personalized session - Linear narrative loaded.",
     },
   },
   {
@@ -96,7 +96,7 @@ const MESSAGES: CommsMessage[] = [
     stageId: "crm",
     from: A.demo,
     to: A.review,
-    summary: "Demo complete — objections captured, lead scored 87/100",
+    summary: "Demo complete - objections captured, lead scored 87/100",
     detail: {
       input: "7 messages exchanged. Session: 4m 12s. Topics: pricing, HubSpot sync, security.",
       processed: "Scored sentiment per exchange. Detected high buying intent. Flagged objections for follow-up.",

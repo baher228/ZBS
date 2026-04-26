@@ -31,7 +31,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Demeo — Cold outreach becomes AI demo rooms" },
+      { title: "Demeo - Cold outreach becomes AI demo rooms" },
       {
         name: "description",
         content:

@@ -22,10 +22,10 @@ import { fetchDashboard, type DashboardData } from "@/lib/agentApi";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Demeo" },
+      { title: "Dashboard - Demeo" },
       {
         name: "description",
-        content: "Your GTM command center — company context, agents, and system status.",
+        content: "Your GTM command center - company context, agents, and system status.",
       },
     ],
   }),
@@ -242,7 +242,7 @@ function Dashboard() {
           <MetricCard
             icon={<Database className="h-4 w-4" />}
             label="Website Pages"
-            value={context?.website_parsed ? String(context.pages_count) : "—"}
+            value={context?.website_parsed ? String(context.pages_count) : "-"}
             sub={
               context?.website_parsed
                 ? context.website_url.replace(/^https?:\/\//, "").replace(/\/$/, "")
@@ -267,7 +267,7 @@ function Dashboard() {
                 ? "Gateway"
                 : provider?.provider === "openai"
                   ? "OpenAI"
-                  : provider?.provider ?? "—"
+                  : provider?.provider ?? "-"
             }
             sub={provider?.model ?? ""}
           />

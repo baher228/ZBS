@@ -1,20 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
-import { SystemControlPanel } from "@/components/SystemControlPanel";
+import { AgentsShowcase } from "@/components/AgentsShowcase";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Demeo — AI-powered GTM operations for founders" },
+      { title: "Demeo - AI-powered GTM operations for founders" },
       {
         name: "description",
         content:
-          "AI agents that handle legal compliance, content creation, and market research — grounded in your company context.",
+          "AI agents that handle legal compliance, content creation, and market research - grounded in your company context.",
       },
       { property: "og:title", content: "Demeo" },
       {
         property: "og:description",
-        content: "AI agents for legal, content, and market research — powered by your company context.",
+        content: "AI agents for legal, content, and market research - powered by your company context.",
       },
     ],
   }),
@@ -29,7 +29,7 @@ function Landing() {
       {/* Masthead band */}
       <div className="border-b border-foreground/15 bg-card/40 animate-slide-down">
         <div className="mx-auto max-w-7xl px-6 py-2 flex items-center justify-between label-mono">
-          <span>Vol. I — Issue 01</span>
+          <span>Vol. I - Issue 01</span>
           <span className="hidden md:inline">Established 2026 · AI-Powered GTM Operations</span>
           <span>EST. ZBS</span>
         </div>
@@ -37,7 +37,7 @@ function Landing() {
 
       {/* Hero */}
       <section className="relative">
-        <div className="mx-auto max-w-7xl px-6 pt-16 md:pt-24 pb-20 grid lg:grid-cols-12 gap-10 items-end">
+        <div className="mx-auto max-w-7xl px-6 pt-16 md:pt-24 pb-20 grid lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-8">
             {/* Eyebrow */}
             <div
@@ -48,26 +48,26 @@ function Landing() {
               <span className="label-mono">Manifesto № 01</span>
             </div>
 
-            {/* H1 — each phrase appears in sequence */}
+            {/* H1 - each phrase appears in sequence */}
             <h1 className="font-display font-medium text-3xl md:text-5xl lg:text-[56px] leading-[1.05] tracking-tight">
               <span
                 className="block animate-fade-up-hero"
                 style={{ animationDelay: "180ms" }}
               >
-                Your GTM team,
+                DEMEO runs the parts of
               </span>
               <span
                 className="block italic text-primary animate-fade-up-hero"
                 style={{ animationDelay: "340ms" }}
               >
-                powered by
+                your startup
               </span>
               <span
                 className="block animate-fade-up-hero"
                 style={{ animationDelay: "480ms" }}
               >
                 <span className="relative inline-block">
-                  specialised AI agents
+                  you keep avoiding
                   <span className="absolute -bottom-2 left-0 right-0 h-px bg-foreground/40" />
                 </span>
                 .
@@ -81,8 +81,9 @@ function Landing() {
             style={{ animationDelay: "640ms" }}
           >
             <p className="text-base md:text-lg text-foreground/75 leading-relaxed">
-              Legal compliance, content creation, and market research — handled by AI agents
-              that learn your company context from your website, documents, and conversations.
+              Content writes. Legal checks. Research finds. Live demo.
+              <br /><br />
+              All in one AI office.
             </p>
             <div className="mt-8 flex flex-col gap-2">
               <Link
@@ -128,7 +129,7 @@ function Landing() {
         <div className="mx-auto max-w-7xl px-6 py-16">
           <div className="flex items-end justify-between mb-6">
             <div>
-              <div className="label-mono mb-2">§ I — The System</div>
+              <div className="label-mono mb-2">§ I - The System</div>
               <h2 className="font-display text-3xl md:text-4xl font-medium">
                 One platform. Four specialised agents.
               </h2>
@@ -136,10 +137,10 @@ function Landing() {
             <div className="hidden md:block label-mono text-right">
               Updated continuously
               <br />
-              <span className="text-foreground">— in real time</span>
+              <span className="text-foreground">- in real time</span>
             </div>
           </div>
-          <SystemControlPanel />
+          <AgentsShowcase />
         </div>
       </section>
 
@@ -150,24 +151,24 @@ function Landing() {
             <h2 className="font-display text-3xl md:text-4xl font-medium">
               What it does, plainly.
             </h2>
-            <span className="label-mono">§ II — Capabilities</span>
+            <span className="label-mono">§ II - Capabilities</span>
           </div>
           <div className="grid md:grid-cols-3 border border-foreground/20">
             {[
               {
                 n: "01",
-                title: "Legal & compliance",
-                desc: "Jurisdiction-aware legal advice, tax guidance, and document drafting — grounded in real regulatory sources.",
+                title: "Legal that actually moves.",
+                desc: "Scan issues, draft docs, skip the lawyer wait.",
               },
               {
                 n: "02",
-                title: "Content creation",
-                desc: "Social posts, emails, landing pages, and blog posts — generated with creative AI using your brand context.",
+                title: "Content that sounds like you.",
+                desc: "Every channel, every format. No brief required.",
               },
               {
                 n: "03",
-                title: "Market research",
-                desc: "Competitor analysis, market sizing, audience insights, and trend intelligence — all from a single chat.",
+                title: "Research without the rabbit hole.",
+                desc: "Competitors, sizing, trends - one prompt away.",
               },
             ].map((f, i) => (
               <div
@@ -194,7 +195,7 @@ function Landing() {
       <section className="border-t border-foreground/15 bg-foreground text-background">
         <div className="mx-auto max-w-7xl px-6 py-20 grid md:grid-cols-12 gap-8 items-end">
           <div className="md:col-span-8">
-            <div className="label-mono text-background/60 mb-4">§ III — Begin</div>
+            <div className="label-mono text-background/60 mb-4">§ III - Begin</div>
             <h2 className="font-display text-4xl md:text-6xl font-medium leading-[1.05]">
               Your AI back office <br />
               <span className="italic text-accent">starts here</span>.
@@ -214,9 +215,9 @@ function Landing() {
 
       <footer className="border-t border-foreground/15">
         <div className="mx-auto max-w-7xl px-6 py-6 flex items-center justify-between label-mono">
-          <span>© ZBS — Demeo</span>
+          <span>© ZBS - Demeo</span>
           <span>AI agents for founders</span>
-          <span>End — Issue 01</span>
+          <span>End - Issue 01</span>
         </div>
       </footer>
     </div>
