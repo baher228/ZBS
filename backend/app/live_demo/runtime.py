@@ -9,6 +9,8 @@ from openai import OpenAI
 from app.core.config import settings
 from app.live_demo.manifest import DEMO_MANIFEST
 from app.live_demo.models import (
+    DemoFlow,
+    DemoFlowStep,
     ConversationTurn,
     DemoEvent,
     DemoManifest,
@@ -39,17 +41,28 @@ class LiveDemoRuntime:
         if current_page is None:
             current_page = self.manifest.pages[0]
 
-        decision = self._decide_guided_walkthrough(request.message) or self._decide_with_llm(
-            session, request, current_page
-        ) or self._decide(request.message, current_page)
+        decision = (
+            self._decide_with_llm(session, request, current_page)
+            or self._decide_guided_walkthrough(request.message)
+            or self._decide(request.message, current_page)
+        )
         target_page = self._page_by_id(decision["page_id"]) or current_page
         reply = decision["reply"]
-        events = decision.get("events") or self._build_events(
-            reply,
-            target_page,
-            decision["element_ids"],
-            decision["lead_patch"],
-        )
+        events = decision.get("events")
+        if not events and decision.get("action_ids"):
+            events = self._build_action_events(
+                reply,
+                target_page,
+                decision["action_ids"],
+                decision["lead_patch"],
+            )
+        if not events:
+            events = self._build_events(
+                reply,
+                target_page,
+                decision["element_ids"],
+                decision["lead_patch"],
+            )
         events = self._validate_events(events)
 
         lead_profile = self._update_lead_profile(session.lead_profile, decision["lead_patch"])
@@ -83,51 +96,46 @@ class LiveDemoRuntime:
         flow = self._primary_flow()
         if flow is None or not flow.steps:
             return None
+        return self._build_guided_walkthrough_decision(flow)
 
+    def _build_guided_walkthrough_decision(self, flow: DemoFlow) -> dict:
         events: list[DemoEvent] = [
             DemoEvent(
                 type="say",
                 text=self._walkthrough_intro(flow),
-                duration_ms=3600,
+                duration_ms=2400,
             )
         ]
         final_page = self._page_by_id(flow.steps[-1].page_id)
+        active_walkthrough_page_id: str | None = None
         for step_index, step in enumerate(flow.steps):
             page = self._page_by_id(step.page_id)
             if page is None:
                 continue
-            element_ids = self._action_element_ids(page, step.recommended_action_ids)
-            if not element_ids:
-                element_ids = self._primary_element_ids(page, limit=2)
-            events.extend(
-                [
-                    DemoEvent(type="navigate", page_id=page.page_id, route=page.route),
-                    DemoEvent(type="wait", duration_ms=650),
-                    DemoEvent(
-                        type="say",
-                        text=self._walkthrough_step_narration(
-                            step,
-                            page,
-                            step_index=step_index,
-                        ),
-                        duration_ms=3200,
-                    ),
-                ]
-            )
-            for element_id in element_ids:
+            if active_walkthrough_page_id != page.page_id:
                 events.extend(
                     [
-                        DemoEvent(type="cursor.move", element_id=element_id, duration_ms=480),
-                        DemoEvent(
-                            type="highlight.show",
-                            element_id=element_id,
-                            label=self._element_label(element_id),
-                        ),
-                        DemoEvent(type="wait", duration_ms=1300),
+                        DemoEvent(type="navigate", page_id=page.page_id, route=page.route),
+                        DemoEvent(type="wait", duration_ms=650),
                     ]
                 )
-            if element_ids:
-                events.append(DemoEvent(type="highlight.hide", element_id=element_ids[-1]))
+                active_walkthrough_page_id = page.page_id
+            events.append(
+                DemoEvent(
+                    type="say",
+                    text=self._walkthrough_step_narration(
+                        step,
+                        page,
+                        step_index=step_index,
+                    ),
+                    duration_ms=2600,
+                )
+            )
+            events.extend(self._timeline_for_step(page, step))
+            for event in reversed(events):
+                if event.type == "navigate" and event.page_id:
+                    active_walkthrough_page_id = event.page_id
+                    break
         events.append(
             DemoEvent(
                 type="lead.profile.updated",
@@ -140,6 +148,7 @@ class LiveDemoRuntime:
         return {
             "page_id": final_page.page_id,
             "element_ids": [],
+            "action_ids": [],
             "state": "demoing",
             "lead_patch": {"interested_features": ["guided product walkthrough"]},
             "reply": self._walkthrough_intro(flow),
@@ -149,6 +158,9 @@ class LiveDemoRuntime:
     def available_actions(self, page_id: str) -> list[PageAction]:
         page = self._page_by_id(page_id)
         return page.allowed_actions if page else []
+
+    def primary_flow(self) -> DemoFlow | None:
+        return self._primary_flow()
 
     def _decide(self, message: str, current_page: DemoPageManifest) -> dict:
         generic = self._decide_from_manifest(message, current_page)
@@ -186,10 +198,12 @@ class LiveDemoRuntime:
         ][:3]
         if not element_ids:
             element_ids = [element.id for element in best_page.elements[:3]]
+        action_ids = [action.id for action in self._best_actions_for_message(message, best_page)[:3]]
 
         return {
             "page_id": best_page.page_id,
             "element_ids": element_ids,
+            "action_ids": action_ids,
             "state": "demoing",
             "lead_patch": {"interested_features": [best_page.title]},
             "reply": (
@@ -241,7 +255,7 @@ class LiveDemoRuntime:
             and self._looks_like_entry_page(page)
             and not self._asks_for_entry_page(message)
         ):
-            score -= 12.0
+            score -= 30.0
         return score
 
     def _contains_token(self, field: str, token: str) -> bool:
@@ -294,15 +308,79 @@ class LiveDemoRuntime:
         ).lower()
         return any(
             term in page_text
-            for term in ["home", "homepage", "landing", "overview", "entry point", "navigation"]
+            for term in [
+                "home",
+                "homepage",
+                "landing",
+                "overview",
+                "entry point",
+                "entry points",
+                "navigation",
+                "quick links",
+                "listing",
+                "directory",
+                "menu",
+                "lab",
+            ]
         )
 
     def _asks_for_entry_page(self, message: str) -> bool:
         text = message.lower()
-        return any(term in text for term in ["home", "homepage", "landing page", "overview"])
+        return any(
+            term in text
+            for term in [
+                "home",
+                "homepage",
+                "landing page",
+                "overview",
+                "directory",
+                "menu",
+                "all pages",
+                "all agents",
+                "agent lab",
+            ]
+        )
 
-    def _primary_flow(self):
-        return self.manifest.flows[0] if self.manifest.flows else None
+    def _primary_flow(self) -> DemoFlow | None:
+        if not self.manifest.flows:
+            return None
+        flow = self.manifest.flows[0]
+        steps = list(flow.steps)
+        seen_step_ids = {step.id for step in steps}
+        last_page_id = steps[-1].page_id if steps else flow.entry_page_id
+
+        # Stitch independently extracted flow fragments when they are connected
+        # by page id, e.g. setup -> demo and demo -> summary.
+        changed = True
+        while changed:
+            changed = False
+            for candidate in self.manifest.flows[1:]:
+                if not candidate.steps:
+                    continue
+                if candidate.steps[0].page_id != last_page_id:
+                    continue
+                appended: list[DemoFlowStep] = []
+                for step in candidate.steps:
+                    if step.id in seen_step_ids:
+                        continue
+                    appended.append(step)
+                    seen_step_ids.add(step.id)
+                if appended:
+                    steps.extend(appended)
+                    last_page_id = steps[-1].page_id
+                    changed = True
+
+        if steps == flow.steps:
+            return flow
+        return flow.model_copy(update={"steps": steps})
+
+    def _flow_by_id(self, flow_id: str) -> DemoFlow | None:
+        flow = next((item for item in self.manifest.flows if item.id == flow_id), None)
+        if flow is None:
+            return None
+        if self.manifest.flows and flow.id == self.manifest.flows[0].id:
+            return self._primary_flow()
+        return flow
 
     def _walkthrough_intro(self, flow) -> str:
         description = self.manifest.product_description.strip().rstrip(".")
@@ -324,32 +402,55 @@ class LiveDemoRuntime:
         step_index: int,
     ) -> str:
         base = self._clean_step_text(step.talk_track or step.objective or page.summary)
-        element_context = self._element_context_sentence(page, step.recommended_action_ids)
+        action_context = self._action_context_sentence(page, step)
         prefix = "We start here because" if step_index == 0 else "This step matters because"
         purpose = (base or page.summary).strip()
         if not purpose:
             purpose = f"it shows {page.title.lower()}"
-        return f"{prefix} {purpose[:1].lower() + purpose[1:]}. {element_context}".strip()
+        return f"{prefix} {purpose[:1].lower() + purpose[1:]}. {action_context}".strip()
 
-    def _element_context_sentence(
+    def _action_context_sentence(
         self,
         page: DemoPageManifest,
-        action_ids: list[str],
+        step: DemoFlowStep,
     ) -> str:
-        element_ids = self._action_element_ids(page, action_ids)
-        if not element_ids:
-            element_ids = self._primary_element_ids(page, limit=2)
-        by_id = {element.id: element for element in page.elements}
-        snippets = []
-        for element_id in element_ids[:2]:
-            element = by_id.get(element_id)
-            if element is None:
-                continue
-            description = self._clean_step_text(element.description)
-            snippets.append(f"{element.label} {description[:1].lower() + description[1:]}")
-        if not snippets:
+        actions = self._step_actions(page, step)
+        recommended_ids = set(step.recommended_action_ids)
+        show_actions = [
+            action
+            for action in actions
+            if action.element_id
+            and (action.type != "navigate" or action.id not in recommended_ids)
+        ]
+        move_action = next(
+            (
+                action
+                for action in reversed(actions)
+                if action.id in recommended_ids
+                and action.type == "navigate"
+                and action.target_page_id != page.page_id
+            ),
+            None,
+        )
+        labels = [self._presentation_label(action.label) for action in show_actions[:4] if action.label]
+        if not labels:
+            if move_action:
+                return f"Then we move through {self._presentation_label(move_action.label)}."
             return ""
-        return " ".join(snippets) + "."
+        if len(labels) == 1:
+            sentence = f"This page covers {labels[0]}."
+        else:
+            sentence = f"This page covers {', '.join(labels[:-1])}, and {labels[-1]}."
+        if move_action:
+            sentence += f" Then we move through {self._presentation_label(move_action.label)}."
+        return sentence
+
+    def _presentation_label(self, value: str) -> str:
+        label = value.strip()
+        for prefix in ("Highlight ", "Open ", "Show "):
+            if label.lower().startswith(prefix.lower()):
+                return label[len(prefix):].strip()
+        return label
 
     def _clean_step_text(self, value: str) -> str:
         cleaned = value.strip().rstrip(".")
@@ -366,6 +467,162 @@ class LiveDemoRuntime:
             if action and action.element_id and action.element_id not in ids:
                 ids.append(action.element_id)
         return ids
+
+    def _actions_by_ids(self, page: DemoPageManifest, action_ids: list[str]) -> list[PageAction]:
+        actions: list[PageAction] = []
+        for action_id in action_ids:
+            action = next((item for item in page.allowed_actions if item.id == action_id), None)
+            if action and not action.requires_approval:
+                actions.append(action)
+        return actions
+
+    def _step_actions(self, page: DemoPageManifest, step: DemoFlowStep) -> list[PageAction]:
+        recommended = self._actions_by_ids(page, step.recommended_action_ids)
+        recommended_ids = {action.id for action in recommended}
+        support: list[PageAction] = []
+        for action in page.allowed_actions:
+            if action.id in recommended_ids or action.requires_approval or not action.element_id:
+                continue
+            if action.type == "highlight":
+                support.append(action)
+            if len(support) >= 4:
+                break
+        if len(support) < 4:
+            for action in page.allowed_actions:
+                if action.id in recommended_ids or action in support:
+                    continue
+                if action.requires_approval or not action.element_id:
+                    continue
+                if action.type in {"cursor.move", "navigate"}:
+                    support.append(action)
+                if len(support) >= 4:
+                    break
+
+        nav_recommended = [action for action in recommended if action.type == "navigate"]
+        non_nav_recommended = [action for action in recommended if action.type != "navigate"]
+        if nav_recommended:
+            return [*support, *non_nav_recommended, nav_recommended[0]]
+        return [*recommended, *support[: max(0, 5 - len(recommended))]]
+
+    def _timeline_for_step(
+        self,
+        page: DemoPageManifest,
+        step: DemoFlowStep,
+    ) -> list[DemoEvent]:
+        actions = self._step_actions(page, step)
+        if not actions:
+            return self._highlight_elements(self._primary_element_ids(page, limit=2))
+
+        events: list[DemoEvent] = []
+        for action in actions:
+            execute_action = action.id in set(step.recommended_action_ids)
+            if action.type == "navigate" and not execute_action:
+                events.extend(self._preview_action(action))
+                continue
+            events.extend(self._timeline_for_actions(page, [action], execute_navigation=execute_action))
+        return events
+
+    def _best_actions_for_message(
+        self,
+        message: str,
+        page: DemoPageManifest,
+    ) -> list[PageAction]:
+        tokens = self._meaningful_tokens(message)
+        scored: list[tuple[float, PageAction]] = []
+        for action in page.allowed_actions:
+            if action.requires_approval:
+                continue
+            text = f"{action.id} {action.label} {action.intent} {action.type}".lower()
+            score = 0.0
+            for token in tokens:
+                if self._contains_token(text, token):
+                    score += 1.0
+            if action.type == "highlight":
+                score += 0.4
+            if action.element_id:
+                score += 0.2
+            scored.append((score, action))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        return [action for _, action in scored]
+
+    def _timeline_for_actions(
+        self,
+        page: DemoPageManifest,
+        actions: list[PageAction],
+        *,
+        execute_navigation: bool = True,
+    ) -> list[DemoEvent]:
+        events: list[DemoEvent] = []
+        for action in actions:
+            if action.element_id:
+                events.extend(
+                    [
+                        DemoEvent(
+                            type="cursor.move",
+                            element_id=action.element_id,
+                            duration_ms=560,
+                        ),
+                        DemoEvent(
+                            type="highlight.show",
+                            element_id=action.element_id,
+                            label=action.label,
+                        ),
+                        DemoEvent(type="wait", duration_ms=900),
+                    ]
+                )
+            if action.type in {"click", "navigate"} and action.element_id and execute_navigation:
+                events.extend(
+                    [
+                        DemoEvent(type="cursor.click", element_id=action.element_id),
+                        DemoEvent(type="wait", duration_ms=260),
+                    ]
+                )
+            if action.type == "navigate" and action.target_page_id and execute_navigation:
+                target = self._page_by_id(action.target_page_id)
+                if target:
+                    events.extend(
+                        [
+                            DemoEvent(type="highlight.hide", element_id=action.element_id),
+                            DemoEvent(
+                                type="navigate",
+                                page_id=target.page_id,
+                                route=target.route,
+                            ),
+                            DemoEvent(type="wait", duration_ms=650),
+                        ]
+                    )
+            elif action.element_id:
+                events.append(DemoEvent(type="highlight.hide", element_id=action.element_id))
+        if not events:
+            events.extend(self._highlight_elements(self._primary_element_ids(page, limit=2)))
+        return events
+
+    def _preview_action(self, action: PageAction) -> list[DemoEvent]:
+        if not action.element_id:
+            return []
+        return [
+            DemoEvent(type="cursor.move", element_id=action.element_id, duration_ms=520),
+            DemoEvent(type="highlight.show", element_id=action.element_id, label=action.label),
+            DemoEvent(type="wait", duration_ms=850),
+            DemoEvent(type="highlight.hide", element_id=action.element_id),
+        ]
+
+    def _highlight_elements(self, element_ids: list[str]) -> list[DemoEvent]:
+        events: list[DemoEvent] = []
+        for element_id in element_ids:
+            events.extend(
+                [
+                    DemoEvent(type="cursor.move", element_id=element_id, duration_ms=520),
+                    DemoEvent(
+                        type="highlight.show",
+                        element_id=element_id,
+                        label=self._element_label(element_id),
+                    ),
+                    DemoEvent(type="wait", duration_ms=900),
+                    DemoEvent(type="highlight.hide", element_id=element_id),
+                ]
+            )
+        return events
 
     def _primary_element_ids(self, page: DemoPageManifest, limit: int = 2) -> list[str]:
         action_element_ids = [
@@ -386,7 +643,8 @@ class LiveDemoRuntime:
         request: LiveDemoMessageRequest,
         current_page: DemoPageManifest,
     ) -> dict | None:
-        if os.getenv("LIVE_DEMO_PLANNER", "").lower() not in {"1", "true", "openai", "llm"}:
+        planner_setting = os.getenv("LIVE_DEMO_PLANNER", "openai").lower()
+        if planner_setting in {"0", "false", "off", "disabled"}:
             return None
         api_key = settings.resolved_llm_api_key
         if not api_key:
@@ -396,6 +654,13 @@ class LiveDemoRuntime:
         allowed_element_ids = {
             element.id for page in self.manifest.pages for element in page.elements
         }
+        allowed_action_ids = {
+            action.id
+            for page in self.manifest.pages
+            for action in page.allowed_actions
+            if not action.requires_approval
+        }
+        allowed_flow_ids = {flow.id for flow in self.manifest.flows}
         client = OpenAI(api_key=api_key, timeout=float(os.getenv("LIVE_DEMO_PLANNER_TIMEOUT", "45")))
         model = os.getenv("LIVE_DEMO_PLANNER_MODEL", "gpt-5.4-mini")
         model_kwargs: dict[str, object] = {"model": model}
@@ -411,14 +676,14 @@ class LiveDemoRuntime:
                     "role": "system",
                     "content": (
                         "You are the planner for a safe AI product demo room. "
-                        "You can choose narration, an approved page, approved elements to highlight, "
-                        "and a lead-profile patch. You cannot invent pages or elements. "
-                        "Use the provided manifest pages, page summaries, actions, and flow steps to choose the best page. "
-                        "Prefer the current page when the user asks a local follow-up. "
-                        "For broad onboarding requests, follow the manifest flow. "
-                        "For questions about output after the demo, prefer CRM/summary/follow-up pages if present. "
-                        "For demo-room questions, prefer demo/prospect-room pages if present. "
-                        "Return strict JSON only: {\"reply\":\"string\",\"page_id\":\"string\","
+                        "You must choose only from the provided manifest. The manifest contains "
+                        "global product knowledge plus page-local allowed_actions. "
+                        "For a broad walkthrough, return mode='flow' and a flow_id. "
+                        "For a local question, return mode='actions', one approved page_id, "
+                        "and action_ids from that page's allowed_actions. Prefer action_ids over raw element_ids. "
+                        "Do not invent pages, elements, selectors, actions, claims, or flows. "
+                        "Return strict JSON only: {\"mode\":\"flow|actions\",\"reply\":\"string\","
+                        "\"flow_id\":\"string|null\",\"page_id\":\"string\",\"action_ids\":[\"string\"],"
                         "\"element_ids\":[\"string\"],\"state\":\"demoing|answering_question|qualifying\","
                         "\"lead_patch\":{\"use_case\":\"string|null\",\"urgency\":\"string|null\","
                         "\"interested_features\":[\"string\"],\"score\":number|null}}."
@@ -447,14 +712,32 @@ class LiveDemoRuntime:
         except (json.JSONDecodeError, TypeError):
             return None
 
+        if raw.get("mode") == "flow":
+            flow = self._flow_by_id(str(raw.get("flow_id") or "")) or self._primary_flow()
+            if flow is not None:
+                return self._build_guided_walkthrough_decision(flow)
+
         page_id = raw.get("page_id")
         if page_id not in allowed_page_ids:
             return None
+        action_ids = [
+            action_id
+            for action_id in raw.get("action_ids", [])
+            if isinstance(action_id, str) and action_id in allowed_action_ids
+        ][:4]
         element_ids = [
             element_id
             for element_id in raw.get("element_ids", [])
             if isinstance(element_id, str) and element_id in allowed_element_ids
         ][:4]
+        if not element_ids and action_ids:
+            page = self._page_by_id(page_id)
+            if page is not None:
+                element_ids = [
+                    action.element_id
+                    for action in self._actions_by_ids(page, action_ids)
+                    if action.element_id
+                ][:4]
         state = raw.get("state")
         if state not in {"demoing", "answering_question", "qualifying"}:
             state = "answering_question"
@@ -476,6 +759,7 @@ class LiveDemoRuntime:
         return {
             "page_id": page_id,
             "element_ids": element_ids,
+            "action_ids": action_ids,
             "state": state,
             "lead_patch": cleaned_patch,
             "reply": str(raw.get("reply") or "").strip()
@@ -483,19 +767,18 @@ class LiveDemoRuntime:
         }
 
     def _manifest_context(self, message: str, current_page: DemoPageManifest) -> dict[str, object]:
-        relevant_pages = self._relevant_pages(message, current_page)
         return {
             "product_name": self.manifest.product_name,
             "target_persona": self.manifest.target_persona,
             "cta": self.manifest.cta,
             "current_page": self._page_context(current_page),
-            "relevant_pages": [self._page_context(page) for page in relevant_pages],
+            "all_page_actions": [self._page_context(page) for page in self.manifest.pages],
             "page_index": [
                 {"page_id": page.page_id, "title": page.title, "summary": page.summary}
                 for page in self.manifest.pages
             ],
             "flows": [flow.model_dump() for flow in self.manifest.flows],
-            "knowledge": [record.model_dump() for record in self._relevant_knowledge(message)],
+            "knowledge": [record.model_dump() for record in self.manifest.knowledge],
             "qualification_questions": self.manifest.qualification_questions,
             "restricted_claims": self.manifest.restricted_claims,
         }
@@ -587,16 +870,25 @@ class LiveDemoRuntime:
             DemoEvent(type="navigate", page_id=target_page.page_id, route=target_page.route),
             DemoEvent(type="wait", duration_ms=180),
         ]
-        for element_id in element_ids:
-            events.extend(
-                [
-                    DemoEvent(type="cursor.move", element_id=element_id, duration_ms=520),
-                    DemoEvent(type="highlight.show", element_id=element_id, label=self._element_label(element_id)),
-                    DemoEvent(type="wait", duration_ms=520),
-                ]
-            )
-        if element_ids:
-            events.append(DemoEvent(type="highlight.hide", element_id=element_ids[-1]))
+        events.extend(self._highlight_elements(element_ids))
+        if lead_patch:
+            events.append(DemoEvent(type="lead.profile.updated", patch=lead_patch))
+        return events
+
+    def _build_action_events(
+        self,
+        reply: str,
+        target_page: DemoPageManifest,
+        action_ids: list[str],
+        lead_patch: dict[str, object],
+    ) -> list[DemoEvent]:
+        actions = self._actions_by_ids(target_page, action_ids)
+        events: list[DemoEvent] = [
+            DemoEvent(type="say", text=reply, duration_ms=1600),
+            DemoEvent(type="navigate", page_id=target_page.page_id, route=target_page.route),
+            DemoEvent(type="wait", duration_ms=180),
+            *self._timeline_for_actions(target_page, actions),
+        ]
         if lead_patch:
             events.append(DemoEvent(type="lead.profile.updated", patch=lead_patch))
         return events

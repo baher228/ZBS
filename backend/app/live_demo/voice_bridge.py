@@ -204,10 +204,12 @@ class GeminiLiveDemoVoiceBridge:
         page_index = ", ".join(f"{page.page_id} ({page.title})" for page in manifest.pages)
         product_context = self._business_intro()
         return (
-            f"You are the realtime voice demo agent for {manifest.product_name}. "
+            f"You are the realtime AI guide inside a {manifest.product_name} demo room. "
             f"Approved product purpose: {product_context}. "
-            "Your job is to greet the prospect, answer questions, and show the product through "
-            "approved demo tools. Sound like a human product specialist, not a script reader. "
+            f"Be clear that {manifest.product_name} is the product being shown, and the demo "
+            "agent is one capability inside that product. Your job is to greet the prospect, "
+            "answer questions, and show the product through approved demo tools. Sound like "
+            "a human product specialist, not a script reader. "
             "When greeting or giving a tour, first explain the business problem the product solves "
             "and the outcome it creates. Then use the UI as evidence. "
             "Connect highlighted UI labels to the business story naturally, but do not say "
@@ -403,7 +405,7 @@ class GeminiLiveDemoVoiceBridge:
                 "can_resume": self.paused_flow is not None,
             }
         if name == "start_demo_flow":
-            self.active_flow = self.runtime.manifest.flows[0] if self.runtime.manifest.flows else None
+            self.active_flow = self.runtime.primary_flow()
             self.active_flow_step_index = 0
             self.paused_flow = None
             self.paused_flow_step_index = None
@@ -589,24 +591,11 @@ class GeminiLiveDemoVoiceBridge:
         page: DemoPageManifest,
         step: DemoFlowStep,
     ) -> list[DemoEvent]:
-        element_ids = self._step_element_ids(page, step)
         events: list[DemoEvent] = [
             DemoEvent(type="navigate", page_id=page.page_id, route=page.route),
             DemoEvent(type="wait", duration_ms=400),
         ]
-        for element_id in element_ids[:2]:
-            events.extend(
-                [
-                    DemoEvent(type="cursor.move", element_id=element_id, duration_ms=520),
-                    DemoEvent(
-                        type="highlight.show",
-                        element_id=element_id,
-                        label=self._element_label(element_id),
-                    ),
-                    DemoEvent(type="wait", duration_ms=1800),
-                    DemoEvent(type="highlight.hide", element_id=element_id),
-                ]
-            )
+        events.extend(self.runtime._timeline_for_step(page, step))
         return self.runtime._validate_events(events)
 
     def _voice_step_reply(

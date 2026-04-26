@@ -149,6 +149,7 @@ def _convert_page(page: dict[str, Any]) -> DemoPageManifest:
                 )
             )
             element_ids.add(action.element_id)
+    actions = _add_element_highlight_actions(page_id, elements, actions)
     return DemoPageManifest(
         page_id=page_id,
         route=str(page.get("route") or f"/{page_id}"),
@@ -162,6 +163,35 @@ def _convert_page(page: dict[str, Any]) -> DemoPageManifest:
         elements=elements,
         allowed_actions=actions,
     )
+
+
+def _add_element_highlight_actions(
+    page_id: str,
+    elements: list[DemoElement],
+    actions: list[PageAction],
+) -> list[PageAction]:
+    actions_by_element = {action.element_id for action in actions if action.element_id}
+    action_ids = {action.id for action in actions}
+    enriched = list(actions)
+    for element in elements[:6]:
+        if element.id in actions_by_element:
+            continue
+        action_id = f"{page_id}_highlight_{element.id}"
+        if action_id in action_ids:
+            continue
+        enriched.append(
+            PageAction(
+                id=action_id,
+                type="highlight",
+                label=element.label,
+                element_id=element.id,
+                target_page_id=page_id,
+                intent=element.description,
+                requires_approval=False,
+            )
+        )
+        action_ids.add(action_id)
+    return enriched
 
 
 def _convert_element(element: dict[str, Any]) -> DemoElement:

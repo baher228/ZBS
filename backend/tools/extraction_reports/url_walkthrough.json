@@ -4,56 +4,62 @@
       {
         "page_id": "home",
         "route": "/",
-        "purpose": "Landing page introducing Demeo and entry points into the operator flow.",
+        "purpose": "Landing page introducing Demeo and its core AI GTM workflow.",
         "important_elements": [
           {
-            "element_id": "home_hero",
-            "label": "Manifesto / value proposition",
-            "selector_hint": "text=We turn cold outreach into personalized AI demo rooms",
-            "why": "Explains the product in one sentence."
-          },
-          {
-            "element_id": "home_demo_cta",
-            "label": "Try the demo room",
-            "selector_hint": "a[href=\"/demo\"]",
-            "why": "Direct path to the prospect-facing demo room."
-          },
-          {
-            "element_id": "home_dashboard_cta",
-            "label": "Open dashboard",
+            "element_id": "home_cta_dashboard",
+            "label": "Open Dashboard",
             "selector_hint": "a[href=\"/dashboard\"]",
-            "why": "Direct path to the founder/operator flow."
+            "why": "Primary path into the app from the landing page."
+          },
+          {
+            "element_id": "home_cta_onboarding",
+            "label": "Get Started",
+            "selector_hint": "a[href=\"/onboarding\"]",
+            "why": "Starts founder setup for company context."
+          },
+          {
+            "element_id": "home_agents",
+            "label": "Agent Control Panel",
+            "selector_hint": "button:has-text(\"01 Content Agent LIVE\")",
+            "why": "Shows the multi-agent concept on the homepage."
+          },
+          {
+            "element_id": "home_prompt",
+            "label": "Prompt textarea",
+            "selector_hint": "textarea[placeholder=\"Write a launch email for our new analytics product targeting engineering teams\u2026\"]",
+            "why": "Visible example input for content generation."
           }
         ],
         "allowed_actions": [
           {
-            "action_id": "nav_home_demo",
+            "action_id": "home_nav_onboarding",
             "type": "navigate",
-            "label": "Open Demo Room",
+            "label": "Go to Setup",
             "source_page_id": "home",
-            "target_page_id": "demo",
-            "element_id": "home_demo_cta",
-            "intent": "Show the prospect-facing demo experience.",
+            "target_page_id": "onboarding",
+            "element_id": "home_cta_onboarding",
+            "intent": "Show founder setup flow",
             "safe": true
           },
           {
-            "action_id": "nav_home_dashboard",
+            "action_id": "home_nav_dashboard",
             "type": "navigate",
             "label": "Open Dashboard",
             "source_page_id": "home",
             "target_page_id": "dashboard",
-            "element_id": "home_dashboard_cta",
-            "intent": "Show the founder/operator control flow.",
+            "element_id": "home_cta_dashboard",
+            "intent": "Show command center/dashboard",
             "safe": true
           },
           {
-            "action_id": "highlight_home_value",
+            "action_id": "home_highlight_agents",
             "type": "highlight",
-            "label": "Highlight value proposition",
+            "label": "Highlight agent panel",
             "source_page_id": "home",
             "target_page_id": "home",
-            "element_id": "home_hero",
-            "intent": "Emphasize what Demeo does.",
+            "element_id": "home_agents",
+            "intent": "Explain available agents",
             "safe": true
           }
         ]
@@ -61,42 +67,96 @@
       {
         "page_id": "onboarding",
         "route": "/onboarding",
-        "purpose": "Founder setup page for company and product context.",
+        "purpose": "Founder setup page for entering company and product context.",
         "important_elements": [
           {
-            "element_id": "setup_company_name",
-            "label": "Company name",
+            "element_id": "onboard_company_name",
+            "label": "Company name input",
             "selector_hint": "input[placeholder=\"Acme Inc.\"]",
-            "why": "Core company identity input."
+            "why": "Required setup field for company identity."
           },
           {
-            "element_id": "setup_one_liner",
+            "element_id": "onboard_one_liner",
             "label": "One-liner description",
             "selector_hint": "textarea[placeholder=\"We help B2B SaaS teams turn cold outreach into qualified pipeline with AI demo rooms.\"]",
-            "why": "Primary product summary used by agents."
+            "why": "Captures the core value proposition."
           },
           {
-            "element_id": "setup_industry",
-            "label": "Industry selection",
+            "element_id": "onboard_industry",
+            "label": "Industry selector",
             "selector_hint": "button:has-text(\"SaaS\")",
-            "why": "Used to tailor outputs."
+            "why": "Selects the company category."
           },
           {
-            "element_id": "setup_save",
-            "label": "Save profile",
+            "element_id": "onboard_target_audience",
+            "label": "Target audience input",
+            "selector_hint": "input[placeholder=\"Solo founders, lean B2B sales teams, Series A startups\"]",
+            "why": "Defines who the demo and content should speak to."
+          },
+          {
+            "element_id": "onboard_product_description",
+            "label": "Product/service description",
+            "selector_hint": "textarea[placeholder=\"Describe what your product does, its core value proposition, and how it works...\"]",
+            "why": "Provides product context for downstream agents."
+          },
+          {
+            "element_id": "onboard_website",
+            "label": "Website URL input",
+            "selector_hint": "input[placeholder=\"https://your-startup.com\"]",
+            "why": "Optional website source for parsing."
+          },
+          {
+            "element_id": "onboard_credentials",
+            "label": "Testing credentials textarea",
+            "selector_hint": "textarea[placeholder=\"e.g.\\nTest API Key: sk-test-xxx\\nSandbox URL: https://sandbox.example.com\\nTest User: demo@example.com / password123\"]",
+            "why": "Optional sandbox/test access notes."
+          },
+          {
+            "element_id": "onboard_save_profile",
+            "label": "Save Profile",
             "selector_hint": "button:has-text(\"Save Profile\")",
-            "why": "Persists founder context."
+            "why": "Clearly safe local save action."
           }
         ],
         "allowed_actions": [
           {
-            "action_id": "highlight_setup_inputs",
+            "action_id": "onboard_highlight_fields",
             "type": "highlight",
             "label": "Highlight setup fields",
             "source_page_id": "onboarding",
             "target_page_id": "onboarding",
-            "element_id": "setup_company_name",
-            "intent": "Show what the founder provides during setup.",
+            "element_id": "onboard_company_name",
+            "intent": "Show what the founder provides during setup",
+            "safe": true
+          },
+          {
+            "action_id": "onboard_nav_agents",
+            "type": "navigate",
+            "label": "Go to Agent Lab",
+            "source_page_id": "onboarding",
+            "target_page_id": "agents",
+            "element_id": null,
+            "intent": "Move to the agent overview after setup context",
+            "safe": true
+          },
+          {
+            "action_id": "onboard_nav_dashboard",
+            "type": "navigate",
+            "label": "Open Dashboard",
+            "source_page_id": "onboarding",
+            "target_page_id": "dashboard",
+            "element_id": null,
+            "intent": "Show command center after setup",
+            "safe": true
+          },
+          {
+            "action_id": "onboard_save_profile",
+            "type": "click",
+            "label": "Save Profile",
+            "source_page_id": "onboarding",
+            "target_page_id": "onboarding",
+            "element_id": "onboard_save_profile",
+            "intent": "Save founder profile locally",
             "safe": true
           }
         ]
@@ -104,46 +164,62 @@
       {
         "page_id": "agents",
         "route": "/agents",
-        "purpose": "Agent lab for viewing specialist modules.",
+        "purpose": "Agent lab showing the available specialist agents and demo room entry.",
         "important_elements": [
           {
             "element_id": "agents_content",
-            "label": "Content Agent",
+            "label": "Content Agent page link",
             "selector_hint": "a[href=\"/content\"]",
-            "why": "Shows generation of GTM assets."
+            "why": "Opens the content generation workflow."
           },
           {
             "element_id": "agents_legal",
-            "label": "Legal Agent",
+            "label": "Legal Agent page link",
             "selector_hint": "a[href=\"/legal\"]",
-            "why": "Shows legal issue-spotting module."
+            "why": "Opens legal guidance workflow."
+          },
+          {
+            "element_id": "agents_research",
+            "label": "Marketing Research page link",
+            "selector_hint": "a[href=\"/marketing-research\"]",
+            "why": "Opens research workflow."
           },
           {
             "element_id": "agents_demo",
-            "label": "Demo Agent",
+            "label": "Demo Room page link",
             "selector_hint": "a[href=\"/demo\"]",
-            "why": "Links to the prospect-facing demo room."
+            "why": "Opens the prospect-facing demo room."
           }
         ],
         "allowed_actions": [
           {
-            "action_id": "nav_agents_content",
+            "action_id": "agents_nav_content",
             "type": "navigate",
             "label": "Open Content Agent",
             "source_page_id": "agents",
             "target_page_id": "content",
             "element_id": "agents_content",
-            "intent": "Show content generation capability.",
+            "intent": "Show generated content workflow",
             "safe": true
           },
           {
-            "action_id": "nav_agents_demo",
+            "action_id": "agents_nav_demo",
             "type": "navigate",
             "label": "Open Demo Room",
             "source_page_id": "agents",
             "target_page_id": "demo",
             "element_id": "agents_demo",
-            "intent": "Show the prospect-facing room.",
+            "intent": "Show buyer-facing demo room",
+            "safe": true
+          },
+          {
+            "action_id": "agents_nav_dashboard",
+            "type": "navigate",
+            "label": "Open Dashboard",
+            "source_page_id": "agents",
+            "target_page_id": "dashboard",
+            "element_id": null,
+            "intent": "Return to command center",
             "safe": true
           }
         ]
@@ -151,151 +227,68 @@
       {
         "page_id": "dashboard",
         "route": "/dashboard",
-        "purpose": "Founder dashboard showing the GTM flow and pipeline stages.",
+        "purpose": "Command center showing onboarding status and quick actions.",
         "important_elements": [
           {
-            "element_id": "dashboard_prompt",
-            "label": "Product context prompt",
-            "selector_hint": "textarea:has-text(\"We're a developer-first analytics platform\")",
-            "why": "Example of the context fed into the operator."
+            "element_id": "dash_setup_profile",
+            "label": "Set Up Profile",
+            "selector_hint": "a[href=\"/onboarding\"]",
+            "why": "Direct path to onboarding."
           },
           {
-            "element_id": "dashboard_generate",
-            "label": "Generate GTM Flow",
-            "selector_hint": "button:has-text(\"Generate GTM Flow \u2192\")",
-            "why": "Primary safe generation action."
+            "element_id": "dash_agent_lab",
+            "label": "Agent Lab",
+            "selector_hint": "a[href=\"/agents\"]",
+            "why": "Direct path to agent overview."
           },
           {
-            "element_id": "dashboard_demo_stage",
-            "label": "Demo Room stage",
-            "selector_hint": "button:has-text(\"05 Demo Room DEMO AGENT\")",
-            "why": "Shows the demo step in the pipeline."
+            "element_id": "dash_legal",
+            "label": "Legal Agent",
+            "selector_hint": "a[href=\"/legal\"]",
+            "why": "Quick access to legal workflow."
+          },
+          {
+            "element_id": "dash_content",
+            "label": "Content Creator",
+            "selector_hint": "a[href=\"/content\"]",
+            "why": "Quick access to content workflow."
+          },
+          {
+            "element_id": "dash_research",
+            "label": "Marketing Research",
+            "selector_hint": "a[href=\"/marketing-research\"]",
+            "why": "Quick access to research workflow."
           }
         ],
         "allowed_actions": [
           {
-            "action_id": "highlight_dashboard_pipeline",
+            "action_id": "dash_nav_onboarding",
+            "type": "navigate",
+            "label": "Set Up Profile",
+            "source_page_id": "dashboard",
+            "target_page_id": "onboarding",
+            "element_id": "dash_setup_profile",
+            "intent": "Complete founder context",
+            "safe": true
+          },
+          {
+            "action_id": "dash_nav_agents",
+            "type": "navigate",
+            "label": "Open Agent Lab",
+            "source_page_id": "dashboard",
+            "target_page_id": "agents",
+            "element_id": "dash_agent_lab",
+            "intent": "Review available agents",
+            "safe": true
+          },
+          {
+            "action_id": "dash_highlight_status",
             "type": "highlight",
-            "label": "Highlight pipeline stages",
+            "label": "Highlight dashboard status",
             "source_page_id": "dashboard",
             "target_page_id": "dashboard",
-            "element_id": "dashboard_demo_stage",
-            "intent": "Show how the product moves from product context to demo and CRM.",
-            "safe": true
-          }
-        ]
-      },
-      {
-        "page_id": "demo",
-        "route": "/demo",
-        "purpose": "Prospect-facing private demo room with guided questions and chat input.",
-        "important_elements": [
-          {
-            "element_id": "demo_intro",
-            "label": "Personalized demo intro",
-            "selector_hint": "text=Hi Karri",
-            "why": "Illustrates a personalized room."
-          },
-          {
-            "element_id": "demo_prompt_btn",
-            "label": "Show me how this works for my team",
-            "selector_hint": "button:has-text(\"Show me how this works for my team\")",
-            "why": "Safe preset question to start the demo."
-          },
-          {
-            "element_id": "demo_input",
-            "label": "Ask anything input",
-            "selector_hint": "input[placeholder=\"Ask anything about the product\u2026\"]",
-            "why": "Lets the prospect ask questions."
-          },
-          {
-            "element_id": "demo_end_crm",
-            "label": "End & view CRM",
-            "selector_hint": "a[href=\"/crm\"]",
-            "why": "Shows the handoff to lead summary."
-          }
-        ],
-        "allowed_actions": [
-          {
-            "action_id": "nav_demo_crm",
-            "type": "navigate",
-            "label": "View CRM summary",
-            "source_page_id": "demo",
-            "target_page_id": "crm",
-            "element_id": "demo_end_crm",
-            "intent": "Show the output after a prospect finishes the demo.",
-            "safe": true
-          },
-          {
-            "action_id": "highlight_demo_room",
-            "type": "highlight",
-            "label": "Highlight demo room controls",
-            "source_page_id": "demo",
-            "target_page_id": "demo",
-            "element_id": "demo_prompt_btn",
-            "intent": "Show the buyer-facing interaction points.",
-            "safe": true
-          }
-        ]
-      },
-      {
-        "page_id": "crm",
-        "route": "/crm",
-        "purpose": "CRM summary showing lead score, objections, and follow-up draft.",
-        "important_elements": [
-          {
-            "element_id": "crm_score",
-            "label": "Lead score",
-            "selector_hint": "text=LEAD SCORE",
-            "why": "Shows qualification outcome."
-          },
-          {
-            "element_id": "crm_followup",
-            "label": "Generated follow-up email",
-            "selector_hint": "text=GENERATED FOLLOW-UP EMAIL",
-            "why": "Shows the post-demo output."
-          },
-          {
-            "element_id": "crm_send_now",
-            "label": "Send now",
-            "selector_hint": "button:has-text(\"Send now \u2192\")",
-            "why": "Visible action, but sending is a real outbound operation."
-          }
-        ],
-        "allowed_actions": [
-          {
-            "action_id": "highlight_crm_output",
-            "type": "highlight",
-            "label": "Highlight CRM summary",
-            "source_page_id": "crm",
-            "target_page_id": "crm",
-            "element_id": "crm_followup",
-            "intent": "Show what the founder receives after the prospect finishes.",
-            "safe": true
-          }
-        ]
-      },
-      {
-        "page_id": "about",
-        "route": "/about",
-        "purpose": "Company background and founder bios.",
-        "important_elements": [
-          {
-            "element_id": "about_mission",
-            "label": "Mission statement",
-            "selector_hint": "text=We believe the next generation of revenue teams will be mostly AI.",
-            "why": "Explains the company belief."
-          }
-        ],
-        "allowed_actions": [
-          {
-            "action_id": "highlight_about_mission",
-            "type": "highlight",
-            "label": "Highlight mission",
-            "source_page_id": "about",
-            "target_page_id": "about",
-            "element_id": "about_mission",
-            "intent": "Optional background context.",
+            "element_id": "dash_setup_profile",
+            "intent": "Show onboarding unlock state",
             "safe": true
           }
         ]
@@ -303,30 +296,52 @@
       {
         "page_id": "content",
         "route": "/content",
-        "purpose": "Content Agent page for generating GTM assets.",
+        "purpose": "Content generation workflow for posts, email, landing page, and blog post.",
         "important_elements": [
           {
-            "element_id": "content_prompt",
-            "label": "Content request textarea",
-            "selector_hint": "textarea[placeholder=\"Describe what content you need\u2026\"]",
-            "why": "Input for generation."
+            "element_id": "content_social_tab",
+            "label": "Social Post tab",
+            "selector_hint": "button:has-text(\"Social Post\")",
+            "why": "Selects a content workflow."
           },
           {
-            "element_id": "content_generate",
-            "label": "Generate Content",
-            "selector_hint": "button:has-text(\"Generate Content\")",
-            "why": "Safe generation action."
+            "element_id": "content_email_tab",
+            "label": "Email tab",
+            "selector_hint": "button:has-text(\"Email\")",
+            "why": "Selects a content workflow."
+          },
+          {
+            "element_id": "content_prompt",
+            "label": "Prompt textarea",
+            "selector_hint": "textarea[placeholder=\"Describe your social post\u2026\"]",
+            "why": "User prompt for generated content."
+          },
+          {
+            "element_id": "content_example_prompt",
+            "label": "Example prompt button",
+            "selector_hint": "button:has-text(\"Create social media posts announcing our product launch\")",
+            "why": "Safe preset prompt option."
           }
         ],
         "allowed_actions": [
           {
-            "action_id": "highlight_content_generate",
+            "action_id": "content_highlight_prompt",
             "type": "highlight",
-            "label": "Highlight content generation",
+            "label": "Highlight prompt box",
             "source_page_id": "content",
             "target_page_id": "content",
-            "element_id": "content_generate",
-            "intent": "Show how output is generated from founder context.",
+            "element_id": "content_prompt",
+            "intent": "Show how content is generated from founder context",
+            "safe": true
+          },
+          {
+            "action_id": "content_nav_onboarding",
+            "type": "navigate",
+            "label": "Go to Setup",
+            "source_page_id": "content",
+            "target_page_id": "onboarding",
+            "element_id": null,
+            "intent": "Prompt founder to add company context",
             "safe": true
           }
         ]
@@ -334,24 +349,173 @@
       {
         "page_id": "legal",
         "route": "/legal",
-        "purpose": "Legal Agent page for issue spotting and educational review.",
+        "purpose": "Legal guidance workflow with topic tabs and retry state.",
         "important_elements": [
           {
-            "element_id": "legal_run",
-            "label": "Run Agent",
-            "selector_hint": "button:has-text(\"Run Agent\")",
-            "why": "Safe analysis action."
+            "element_id": "legal_overview",
+            "label": "Overview tab",
+            "selector_hint": "button:has-text(\"Overview\")",
+            "why": "Switches legal workflow sections."
+          },
+          {
+            "element_id": "legal_advice",
+            "label": "Legal Advice tab",
+            "selector_hint": "button:has-text(\"Legal Advice\")",
+            "why": "Switches legal workflow sections."
+          },
+          {
+            "element_id": "legal_retry",
+            "label": "Try again button",
+            "selector_hint": "button:has-text(\"Try again\")",
+            "why": "Non-destructive retry for the failed load."
           }
         ],
         "allowed_actions": [
           {
-            "action_id": "highlight_legal_run",
+            "action_id": "legal_highlight_retry",
             "type": "highlight",
-            "label": "Highlight legal review",
+            "label": "Highlight retry state",
             "source_page_id": "legal",
             "target_page_id": "legal",
-            "element_id": "legal_run",
-            "intent": "Show the review step in the agent flow.",
+            "element_id": "legal_retry",
+            "intent": "Show an example of a recoverable workflow state",
+            "safe": true
+          }
+        ]
+      },
+      {
+        "page_id": "marketing-research",
+        "route": "/marketing-research",
+        "purpose": "Research workflow for competitors, market sizing, audience, and trends.",
+        "important_elements": [
+          {
+            "element_id": "research_competitors",
+            "label": "Competitors tab",
+            "selector_hint": "button:has-text(\"Competitors\")",
+            "why": "Selects competitor analysis workflow."
+          },
+          {
+            "element_id": "research_prompt",
+            "label": "Research prompt textarea",
+            "selector_hint": "textarea[placeholder=\"Ask about competitors\u2026\"]",
+            "why": "User query for research output."
+          }
+        ],
+        "allowed_actions": [
+          {
+            "action_id": "research_highlight_prompt",
+            "type": "highlight",
+            "label": "Highlight research prompt",
+            "source_page_id": "marketing-research",
+            "target_page_id": "marketing-research",
+            "element_id": "research_prompt",
+            "intent": "Show how the user asks for competitor analysis",
+            "safe": true
+          }
+        ]
+      },
+      {
+        "page_id": "demo",
+        "route": "/demo",
+        "purpose": "Prospect-facing AI demo room where the buyer can ask questions.",
+        "important_elements": [
+          {
+            "element_id": "demo_choice_roi",
+            "label": "What's the ROI? prompt",
+            "selector_hint": "button:has-text(\"What's the ROI?\")",
+            "why": "Safe starting question for the prospect."
+          },
+          {
+            "element_id": "demo_choice_hubspot",
+            "label": "HubSpot integration prompt",
+            "selector_hint": "button:has-text(\"Can it integrate with HubSpot?\")",
+            "why": "Common buyer concern."
+          },
+          {
+            "element_id": "demo_input",
+            "label": "Ask anything input",
+            "selector_hint": "input[placeholder=\"Ask anything about the product\u2026\"]",
+            "why": "Main interaction point for the prospect."
+          },
+          {
+            "element_id": "demo_send",
+            "label": "Send button",
+            "selector_hint": "button:has-text(\"Send\")",
+            "why": "Submits the prospect question."
+          },
+          {
+            "element_id": "demo_end_crm",
+            "label": "End & view CRM",
+            "selector_hint": "a[href=\"/crm\"]",
+            "why": "Moves to the founder outcome summary."
+          }
+        ],
+        "allowed_actions": [
+          {
+            "action_id": "demo_highlight_intro",
+            "type": "highlight",
+            "label": "Highlight demo room intro",
+            "source_page_id": "demo",
+            "target_page_id": "demo",
+            "element_id": "demo_input",
+            "intent": "Show the buyer asks questions in a personalized demo room",
+            "safe": true
+          },
+          {
+            "action_id": "demo_nav_crm",
+            "type": "navigate",
+            "label": "End & view CRM",
+            "source_page_id": "demo",
+            "target_page_id": "crm",
+            "element_id": "demo_end_crm",
+            "intent": "Show post-demo lead summary and follow-up",
+            "safe": true
+          }
+        ]
+      },
+      {
+        "page_id": "crm",
+        "route": "/crm",
+        "purpose": "CRM/lead summary page showing score, objections handled, and generated follow-up.",
+        "important_elements": [
+          {
+            "element_id": "crm_lead_score",
+            "label": "Lead score",
+            "selector_hint": null,
+            "why": "Shows qualification outcome."
+          },
+          {
+            "element_id": "crm_followup",
+            "label": "Generated follow-up email",
+            "selector_hint": null,
+            "why": "Shows what the founder receives after the demo."
+          },
+          {
+            "element_id": "crm_back_demo",
+            "label": "Back to demo",
+            "selector_hint": "a[href=\"/demo\"]",
+            "why": "Returns to the demo room."
+          }
+        ],
+        "allowed_actions": [
+          {
+            "action_id": "crm_highlight_summary",
+            "type": "highlight",
+            "label": "Highlight lead summary",
+            "source_page_id": "crm",
+            "target_page_id": "crm",
+            "element_id": "crm_lead_score",
+            "intent": "Show lead qualification output",
+            "safe": true
+          },
+          {
+            "action_id": "crm_nav_demo",
+            "type": "navigate",
+            "label": "Back to demo",
+            "source_page_id": "crm",
+            "target_page_id": "demo",
+            "element_id": "crm_back_demo",
+            "intent": "Return to prospect-facing demo room",
             "safe": true
           }
         ]
@@ -359,33 +523,64 @@
     ],
     "flows": [
       {
-        "flow_id": "founder_walkthrough",
-        "goal": "Show the full story from founder setup to prospect demo to CRM follow-up.",
+        "flow_id": "founder_setup_to_qualify",
+        "goal": "Show the full founder journey from setup to lead follow-up.",
         "steps": [
           {
             "page_id": "onboarding",
-            "action_id": "highlight_setup_inputs",
-            "say": "First, the founder adds company and product context."
+            "action_id": "onboard_highlight_fields",
+            "say": "First, the founder provides company and product context."
           },
           {
-            "page_id": "dashboard",
-            "action_id": "highlight_dashboard_pipeline",
-            "say": "Next, that context feeds the GTM pipeline and agent stages."
+            "page_id": "onboarding",
+            "action_id": "onboard_save_profile",
+            "say": "They can save that profile for downstream agents."
           },
           {
-            "page_id": "content",
-            "action_id": "highlight_content_generate",
-            "say": "The system can generate GTM content from the profile."
+            "page_id": "agents",
+            "action_id": "agents_nav_demo",
+            "say": "Next, open the demo room agent."
           },
           {
             "page_id": "demo",
-            "action_id": "highlight_demo_room",
-            "say": "Then the prospect gets a personalized demo room."
+            "action_id": "demo_highlight_intro",
+            "say": "A prospect gets a personalized demo link and asks questions here."
+          },
+          {
+            "page_id": "demo",
+            "action_id": "demo_nav_crm",
+            "say": "When the demo ends, Demeo shows the founder the CRM summary and follow-up."
           },
           {
             "page_id": "crm",
-            "action_id": "highlight_crm_output",
-            "say": "Finally, the founder sees the qualified lead and follow-up."
+            "action_id": "crm_highlight_summary",
+            "say": "This is the qualified lead outcome and generated follow-up."
+          }
+        ]
+      },
+      {
+        "flow_id": "content_generation_path",
+        "goal": "Show how AI output is generated from founder context.",
+        "steps": [
+          {
+            "page_id": "dashboard",
+            "action_id": "dash_nav_agents",
+            "say": "Open the agent lab from the dashboard."
+          },
+          {
+            "page_id": "agents",
+            "action_id": "agents_nav_content",
+            "say": "Switch into the content workflow."
+          },
+          {
+            "page_id": "content",
+            "action_id": "content_highlight_prompt",
+            "say": "The prompt box is where the founder asks for content."
+          },
+          {
+            "page_id": "content",
+            "action_id": "content_nav_onboarding",
+            "say": "If needed, return to setup to add better context."
           }
         ]
       }
@@ -409,17 +604,17 @@
     ],
     "notes": [
       "No destructive actions included.",
-      "Clicks were avoided except where they are ordinary navigation links; no non-navigational clicks were added.",
-      "Selector hints use only crawled page data.",
-      "CRM send actions are visible but not approved as actions because they initiate outbound messaging."
+      "Selector hints come only from crawled controls when available.",
+      "The /crm route is discovered via internal link and treated as part of the safe walkthrough.",
+      "Some buttons appear to be UI tabs or presets; they are not added as click actions unless their effect is clearly safe."
     ]
   },
   "extraction_score": {
-    "crawled_page_count": 9,
+    "crawled_page_count": 10,
     "manifest_page_count": 9,
-    "action_count": 13,
-    "safe_action_count": 13,
-    "known_action_count": 13,
+    "action_count": 21,
+    "safe_action_count": 21,
+    "known_action_count": 21,
     "expected_page_hits": {
       "setup": true,
       "content": true,
@@ -439,108 +634,122 @@
         "decisions": [
           {
             "question": "What does the founder need to provide?",
-            "reply": "The founder provides the product context that powers the demo room.",
+            "reply": "They provide product and buyer context so the demo can be personalized.",
             "events": [
               {
                 "type": "show_page",
                 "page_id": "onboarding",
                 "action_id": null,
                 "element_id": null,
-                "say": "Start with founder setup."
+                "say": "Here\u2019s the founder setup page."
               },
               {
                 "type": "highlight",
                 "page_id": "onboarding",
-                "action_id": "highlight_setup_inputs",
-                "element_id": "setup_company_name",
-                "say": "They enter company name, product one-liner, industry, and related setup details."
+                "action_id": "onboard_highlight_fields",
+                "element_id": "onboard_company_name",
+                "say": "The founder adds company name, one-liner, target audience, product description, website, sandbox credentials, and setup details."
               },
               {
                 "type": "answer",
-                "page_id": null,
+                "page_id": "onboarding",
                 "action_id": null,
                 "element_id": null,
                 "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
               }
             ],
-            "reason": "Best answered by showing the onboarding setup and then using the approved answer."
+            "reason": "This matches the setup flow and approved answer, and the onboarding page is the safest visual proof."
           },
           {
             "question": "Show me the agent/content console.",
-            "reply": "Here\u2019s the content generation side of the operator flow.",
+            "reply": "Here\u2019s where the founder turns setup context into generated output.",
             "events": [
               {
                 "type": "show_page",
                 "page_id": "dashboard",
                 "action_id": null,
                 "element_id": null,
-                "say": "This is the founder dashboard where the demo is orchestrated."
+                "say": "Start from the dashboard command center."
               },
               {
-                "type": "highlight",
+                "type": "click",
                 "page_id": "dashboard",
-                "action_id": "highlight_dashboard_pipeline",
-                "element_id": "dashboard_demo_stage",
-                "say": "The product context flows through the pipeline into the demo stage."
+                "action_id": "dash_nav_agents",
+                "element_id": "dash_agent_lab",
+                "say": "Open the agent lab."
+              },
+              {
+                "type": "click",
+                "page_id": "agents",
+                "action_id": "agents_nav_content",
+                "element_id": "agents_content",
+                "say": "Switch into the content workflow."
               },
               {
                 "type": "show_page",
                 "page_id": "content",
                 "action_id": null,
                 "element_id": null,
-                "say": "Now open the content agent console."
+                "say": "This is the content console."
               },
               {
                 "type": "highlight",
                 "page_id": "content",
-                "action_id": "highlight_content_generate",
-                "element_id": "content_generate",
-                "say": "This is where Demeo can generate GTM content from founder context."
+                "action_id": "content_highlight_prompt",
+                "element_id": "content_prompt",
+                "say": "The prompt box is where AI output is generated from founder context."
               }
             ],
-            "reason": "The manifest includes a safe content generation page, which directly demonstrates AI output generation."
+            "reason": "The manifest provides a safe path from dashboard to agents to content, which directly demonstrates generation."
           },
           {
             "question": "Show the prospect demo room.",
-            "reply": "Here\u2019s the buyer-facing demo room.",
+            "reply": "This is the buyer-facing demo room with a personalized question flow.",
             "events": [
               {
                 "type": "show_page",
                 "page_id": "demo",
                 "action_id": null,
                 "element_id": null,
-                "say": "This is the personalized prospect demo room."
+                "say": "Here\u2019s the prospect demo room."
               },
               {
                 "type": "highlight",
                 "page_id": "demo",
-                "action_id": "highlight_demo_room",
-                "element_id": "demo_prompt_btn",
-                "say": "The prospect can start with a guided question or ask anything."
+                "action_id": "demo_highlight_intro",
+                "element_id": "demo_input",
+                "say": "The buyer can ask questions like ROI or integrations in a guided demo experience."
               }
             ],
-            "reason": "This is the exact prospect-facing experience the founder asked to show."
+            "reason": "The demo page is the approved buyer-facing experience and can be shown safely without extra clicks."
           },
           {
             "question": "Show me what the founder receives after the demo.",
-            "reply": "After the prospect finishes, the founder gets a CRM summary and follow-up draft.",
+            "reply": "The founder gets a lead summary, qualification signal, and generated follow-up.",
             "events": [
               {
                 "type": "show_page",
                 "page_id": "crm",
                 "action_id": null,
                 "element_id": null,
-                "say": "Now open the CRM summary."
+                "say": "Here\u2019s the post-demo CRM view."
               },
               {
                 "type": "highlight",
                 "page_id": "crm",
-                "action_id": "highlight_crm_output",
-                "element_id": "crm_followup",
-                "say": "This shows the lead score, objections, and generated follow-up email."
+                "action_id": "crm_highlight_summary",
+                "element_id": "crm_lead_score",
+                "say": "This shows the lead score and qualified outcome."
+              },
+              {
+                "type": "answer",
+                "page_id": "crm",
+                "action_id": null,
+                "element_id": null,
+                "say": "The founder receives the CRM summary and generated follow-up email after the prospect finishes the demo."
               }
             ],
-            "reason": "The CRM page is the approved safe endpoint for post-demo output and qualification."
+            "reason": "The CRM page is the approved destination for the founder\u2019s post-demo outcome."
           }
         ]
       },
@@ -557,24 +766,24 @@
                 "page_id": "onboarding",
                 "action_id": null,
                 "element_id": null,
-                "say": "Start with founder setup."
+                "say": "Here\u2019s the founder setup page."
               },
               {
                 "type": "highlight",
                 "page_id": "onboarding",
-                "action_id": "highlight_setup_inputs",
-                "element_id": "setup_company_name",
-                "say": "They enter company name, product one-liner, industry, and related setup details."
+                "action_id": "onboard_highlight_fields",
+                "element_id": "onboard_company_name",
+                "say": "The founder adds company name, one-liner, target audience, product description, website, sandbox credentials, and setup details."
               },
               {
                 "type": "answer",
-                "page_id": null,
+                "page_id": "onboarding",
                 "action_id": null,
                 "element_id": null,
                 "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
               }
             ],
-            "reason": "Best answered by showing the onboarding setup and then using the approved answer."
+            "reason": "This matches the setup flow and approved answer, and the onboarding page is the safest visual proof."
           },
           {
             "question": "Show me the agent/content console.",
@@ -585,31 +794,38 @@
                 "page_id": "dashboard",
                 "action_id": null,
                 "element_id": null,
-                "say": "This is the founder dashboard where the demo is orchestrated."
+                "say": "Start from the dashboard command center."
               },
               {
-                "type": "highlight",
+                "type": "click",
                 "page_id": "dashboard",
-                "action_id": "highlight_dashboard_pipeline",
-                "element_id": "dashboard_demo_stage",
-                "say": "The product context flows through the pipeline into the demo stage."
+                "action_id": "dash_nav_agents",
+                "element_id": "dash_agent_lab",
+                "say": "Open the agent lab."
+              },
+              {
+                "type": "click",
+                "page_id": "agents",
+                "action_id": "agents_nav_content",
+                "element_id": "agents_content",
+                "say": "Switch into the content workflow."
               },
               {
                 "type": "show_page",
                 "page_id": "content",
                 "action_id": null,
                 "element_id": null,
-                "say": "Now open the content agent console."
+                "say": "This is the content console."
               },
               {
                 "type": "highlight",
                 "page_id": "content",
-                "action_id": "highlight_content_generate",
-                "element_id": "content_generate",
-                "say": "This is where Demeo can generate GTM content from founder context."
+                "action_id": "content_highlight_prompt",
+                "element_id": "content_prompt",
+                "say": "The prompt box is where AI output is generated from founder context."
               }
             ],
-            "reason": "The manifest includes a safe content generation page, which directly demonstrates AI output generation."
+            "reason": "The manifest provides a safe path from dashboard to agents to content, which directly demonstrates generation."
           },
           {
             "question": "Show the prospect demo room.",
@@ -620,17 +836,17 @@
                 "page_id": "demo",
                 "action_id": null,
                 "element_id": null,
-                "say": "This is the personalized prospect demo room."
+                "say": "Here\u2019s the prospect demo room."
               },
               {
                 "type": "highlight",
                 "page_id": "demo",
-                "action_id": "highlight_demo_room",
-                "element_id": "demo_prompt_btn",
-                "say": "The prospect can start with a guided question or ask anything."
+                "action_id": "demo_highlight_intro",
+                "element_id": "demo_input",
+                "say": "The buyer can ask questions like ROI or integrations in a guided demo experience."
               }
             ],
-            "reason": "This is the exact prospect-facing experience the founder asked to show."
+            "reason": "The demo page is the approved buyer-facing experience and can be shown safely without extra clicks."
           },
           {
             "question": "Show me what the founder receives after the demo.",
@@ -641,17 +857,24 @@
                 "page_id": "crm",
                 "action_id": null,
                 "element_id": null,
-                "say": "Now open the CRM summary."
+                "say": "Here\u2019s the post-demo CRM view."
               },
               {
                 "type": "highlight",
                 "page_id": "crm",
-                "action_id": "highlight_crm_output",
-                "element_id": "crm_followup",
-                "say": "This shows the lead score, objections, and generated follow-up email."
+                "action_id": "crm_highlight_summary",
+                "element_id": "crm_lead_score",
+                "say": "This shows the lead score and qualified outcome."
+              },
+              {
+                "type": "answer",
+                "page_id": "crm",
+                "action_id": null,
+                "element_id": null,
+                "say": "The founder receives the CRM summary and generated follow-up email after the prospect finishes the demo."
               }
             ],
-            "reason": "The CRM page is the approved safe endpoint for post-demo output and qualification."
+            "reason": "The CRM page is the approved destination for the founder\u2019s post-demo outcome."
           }
         ]
       },
@@ -667,108 +890,122 @@
     "decisions": [
       {
         "question": "What does the founder need to provide?",
-        "reply": "The founder provides the product context that powers the demo room.",
+        "reply": "They provide product and buyer context so the demo can be personalized.",
         "events": [
           {
             "type": "show_page",
             "page_id": "onboarding",
             "action_id": null,
             "element_id": null,
-            "say": "Start with founder setup."
+            "say": "Here\u2019s the founder setup page."
           },
           {
             "type": "highlight",
             "page_id": "onboarding",
-            "action_id": "highlight_setup_inputs",
-            "element_id": "setup_company_name",
-            "say": "They enter company name, product one-liner, industry, and related setup details."
+            "action_id": "onboard_highlight_fields",
+            "element_id": "onboard_company_name",
+            "say": "The founder adds company name, one-liner, target audience, product description, website, sandbox credentials, and setup details."
           },
           {
             "type": "answer",
-            "page_id": null,
+            "page_id": "onboarding",
             "action_id": null,
             "element_id": null,
             "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
           }
         ],
-        "reason": "Best answered by showing the onboarding setup and then using the approved answer."
+        "reason": "This matches the setup flow and approved answer, and the onboarding page is the safest visual proof."
       },
       {
         "question": "Show me the agent/content console.",
-        "reply": "Here\u2019s the content generation side of the operator flow.",
+        "reply": "Here\u2019s where the founder turns setup context into generated output.",
         "events": [
           {
             "type": "show_page",
             "page_id": "dashboard",
             "action_id": null,
             "element_id": null,
-            "say": "This is the founder dashboard where the demo is orchestrated."
+            "say": "Start from the dashboard command center."
           },
           {
-            "type": "highlight",
+            "type": "click",
             "page_id": "dashboard",
-            "action_id": "highlight_dashboard_pipeline",
-            "element_id": "dashboard_demo_stage",
-            "say": "The product context flows through the pipeline into the demo stage."
+            "action_id": "dash_nav_agents",
+            "element_id": "dash_agent_lab",
+            "say": "Open the agent lab."
+          },
+          {
+            "type": "click",
+            "page_id": "agents",
+            "action_id": "agents_nav_content",
+            "element_id": "agents_content",
+            "say": "Switch into the content workflow."
           },
           {
             "type": "show_page",
             "page_id": "content",
             "action_id": null,
             "element_id": null,
-            "say": "Now open the content agent console."
+            "say": "This is the content console."
           },
           {
             "type": "highlight",
             "page_id": "content",
-            "action_id": "highlight_content_generate",
-            "element_id": "content_generate",
-            "say": "This is where Demeo can generate GTM content from founder context."
+            "action_id": "content_highlight_prompt",
+            "element_id": "content_prompt",
+            "say": "The prompt box is where AI output is generated from founder context."
           }
         ],
-        "reason": "The manifest includes a safe content generation page, which directly demonstrates AI output generation."
+        "reason": "The manifest provides a safe path from dashboard to agents to content, which directly demonstrates generation."
       },
       {
         "question": "Show the prospect demo room.",
-        "reply": "Here\u2019s the buyer-facing demo room.",
+        "reply": "This is the buyer-facing demo room with a personalized question flow.",
         "events": [
           {
             "type": "show_page",
             "page_id": "demo",
             "action_id": null,
             "element_id": null,
-            "say": "This is the personalized prospect demo room."
+            "say": "Here\u2019s the prospect demo room."
           },
           {
             "type": "highlight",
             "page_id": "demo",
-            "action_id": "highlight_demo_room",
-            "element_id": "demo_prompt_btn",
-            "say": "The prospect can start with a guided question or ask anything."
+            "action_id": "demo_highlight_intro",
+            "element_id": "demo_input",
+            "say": "The buyer can ask questions like ROI or integrations in a guided demo experience."
           }
         ],
-        "reason": "This is the exact prospect-facing experience the founder asked to show."
+        "reason": "The demo page is the approved buyer-facing experience and can be shown safely without extra clicks."
       },
       {
         "question": "Show me what the founder receives after the demo.",
-        "reply": "After the prospect finishes, the founder gets a CRM summary and follow-up draft.",
+        "reply": "The founder gets a lead summary, qualification signal, and generated follow-up.",
         "events": [
           {
             "type": "show_page",
             "page_id": "crm",
             "action_id": null,
             "element_id": null,
-            "say": "Now open the CRM summary."
+            "say": "Here\u2019s the post-demo CRM view."
           },
           {
             "type": "highlight",
             "page_id": "crm",
-            "action_id": "highlight_crm_output",
-            "element_id": "crm_followup",
-            "say": "This shows the lead score, objections, and generated follow-up email."
+            "action_id": "crm_highlight_summary",
+            "element_id": "crm_lead_score",
+            "say": "This shows the lead score and qualified outcome."
+          },
+          {
+            "type": "answer",
+            "page_id": "crm",
+            "action_id": null,
+            "element_id": null,
+            "say": "The founder receives the CRM summary and generated follow-up email after the prospect finishes the demo."
           }
         ],
-        "reason": "The CRM page is the approved safe endpoint for post-demo output and qualification."
+        "reason": "The CRM page is the approved destination for the founder\u2019s post-demo outcome."
       }
     ]
   },
@@ -785,24 +1022,24 @@
             "page_id": "onboarding",
             "action_id": null,
             "element_id": null,
-            "say": "Start with founder setup."
+            "say": "Here\u2019s the founder setup page."
           },
           {
             "type": "highlight",
             "page_id": "onboarding",
-            "action_id": "highlight_setup_inputs",
-            "element_id": "setup_company_name",
-            "say": "They enter company name, product one-liner, industry, and related setup details."
+            "action_id": "onboard_highlight_fields",
+            "element_id": "onboard_company_name",
+            "say": "The founder adds company name, one-liner, target audience, product description, website, sandbox credentials, and setup details."
           },
           {
             "type": "answer",
-            "page_id": null,
+            "page_id": "onboarding",
             "action_id": null,
             "element_id": null,
             "say": "A product or staging URL, sandbox credentials when needed, target persona, demo goals, a short walkthrough, approved Q&A, CTA, and qualification questions."
           }
         ],
-        "reason": "Best answered by showing the onboarding setup and then using the approved answer."
+        "reason": "This matches the setup flow and approved answer, and the onboarding page is the safest visual proof."
       },
       {
         "question": "Show me the agent/content console.",
@@ -813,31 +1050,38 @@
             "page_id": "dashboard",
             "action_id": null,
             "element_id": null,
-            "say": "This is the founder dashboard where the demo is orchestrated."
+            "say": "Start from the dashboard command center."
           },
           {
-            "type": "highlight",
+            "type": "click",
             "page_id": "dashboard",
-            "action_id": "highlight_dashboard_pipeline",
-            "element_id": "dashboard_demo_stage",
-            "say": "The product context flows through the pipeline into the demo stage."
+            "action_id": "dash_nav_agents",
+            "element_id": "dash_agent_lab",
+            "say": "Open the agent lab."
+          },
+          {
+            "type": "click",
+            "page_id": "agents",
+            "action_id": "agents_nav_content",
+            "element_id": "agents_content",
+            "say": "Switch into the content workflow."
           },
           {
             "type": "show_page",
             "page_id": "content",
             "action_id": null,
             "element_id": null,
-            "say": "Now open the content agent console."
+            "say": "This is the content console."
           },
           {
             "type": "highlight",
             "page_id": "content",
-            "action_id": "highlight_content_generate",
-            "element_id": "content_generate",
-            "say": "This is where Demeo can generate GTM content from founder context."
+            "action_id": "content_highlight_prompt",
+            "element_id": "content_prompt",
+            "say": "The prompt box is where AI output is generated from founder context."
           }
         ],
-        "reason": "The manifest includes a safe content generation page, which directly demonstrates AI output generation."
+        "reason": "The manifest provides a safe path from dashboard to agents to content, which directly demonstrates generation."
       },
       {
         "question": "Show the prospect demo room.",
@@ -848,17 +1092,17 @@
             "page_id": "demo",
             "action_id": null,
             "element_id": null,
-            "say": "This is the personalized prospect demo room."
+            "say": "Here\u2019s the prospect demo room."
           },
           {
             "type": "highlight",
             "page_id": "demo",
-            "action_id": "highlight_demo_room",
-            "element_id": "demo_prompt_btn",
-            "say": "The prospect can start with a guided question or ask anything."
+            "action_id": "demo_highlight_intro",
+            "element_id": "demo_input",
+            "say": "The buyer can ask questions like ROI or integrations in a guided demo experience."
           }
         ],
-        "reason": "This is the exact prospect-facing experience the founder asked to show."
+        "reason": "The demo page is the approved buyer-facing experience and can be shown safely without extra clicks."
       },
       {
         "question": "Show me what the founder receives after the demo.",
@@ -869,17 +1113,24 @@
             "page_id": "crm",
             "action_id": null,
             "element_id": null,
-            "say": "Now open the CRM summary."
+            "say": "Here\u2019s the post-demo CRM view."
           },
           {
             "type": "highlight",
             "page_id": "crm",
-            "action_id": "highlight_crm_output",
-            "element_id": "crm_followup",
-            "say": "This shows the lead score, objections, and generated follow-up email."
+            "action_id": "crm_highlight_summary",
+            "element_id": "crm_lead_score",
+            "say": "This shows the lead score and qualified outcome."
+          },
+          {
+            "type": "answer",
+            "page_id": "crm",
+            "action_id": null,
+            "element_id": null,
+            "say": "The founder receives the CRM summary and generated follow-up email after the prospect finishes the demo."
           }
         ],
-        "reason": "The CRM page is the approved safe endpoint for post-demo output and qualification."
+        "reason": "The CRM page is the approved destination for the founder\u2019s post-demo outcome."
       }
     ]
   },
