@@ -27,10 +27,15 @@ def _clean_data(tmp_path: Path):
     """Redirect storage to a temp directory so tests don't conflict."""
     json_path = tmp_path / "company_profile.json"
     md_path = tmp_path / "company_profile.md"
+    website_context_path = tmp_path / "website_context.json"
+    chat_context_path = tmp_path / "chat_context.json"
     with (
         patch("app.company.storage.DATA_DIR", tmp_path),
         patch("app.company.storage.PROFILE_JSON", json_path),
         patch("app.company.storage.PROFILE_MD", md_path),
+        patch("app.company.context_store.DATA_DIR", tmp_path),
+        patch("app.company.context_store.WEBSITE_CONTEXT_JSON", website_context_path),
+        patch("app.company.context_store.CHAT_CONTEXT_JSON", chat_context_path),
     ):
         yield tmp_path
 
