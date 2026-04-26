@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, MonitorPlay, Scale } from "lucide-react";
+import { FileText, MonitorPlay, Scale, Search } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createFileRoute("/agents")({
@@ -27,6 +27,14 @@ const agents = [
     status: "Live",
     description:
       "Run source-grounded founder legal issue scans with citations and counsel questions.",
+  },
+  {
+    to: "/marketing-research",
+    icon: Search,
+    name: "Marketing Research",
+    status: "Live",
+    description:
+      "Competitor analysis, market sizing, audience research, and trend intelligence.",
   },
   {
     to: "/demo",

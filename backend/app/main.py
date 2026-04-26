@@ -6,6 +6,7 @@ from app.api.routes.company import router as company_router
 from app.api.routes.content_chat import router as content_chat_router
 from app.api.routes.health import router as health_router
 from app.api.routes.legal_chat import router as legal_chat_router
+from app.api.routes.marketing_research import router as marketing_research_router
 from app.api.routes.tasks import router as tasks_router
 from app.core.config import settings
 
@@ -31,6 +32,7 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(tasks_router)
     api_v1_router.include_router(legal_chat_router)
     api_v1_router.include_router(content_chat_router)
+    api_v1_router.include_router(marketing_research_router)
 
     @app.get("/")
     def root() -> dict[str, str]:
