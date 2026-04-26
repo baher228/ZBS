@@ -226,9 +226,21 @@ class AudioLoop:
                     server_content = getattr(response, "server_content", None)
                     if getattr(server_content, "interrupted", False):
                         interrupted = True
+                        while not self.audio_in_queue.empty():
+                            self.audio_in_queue.get_nowait()
 
-                    if data := response.data:
+                    model_turn = getattr(server_content, "model_turn", None)
+                    parts = getattr(model_turn, "parts", None) or []
+                    handled_audio_part = False
+                    for part in parts:
+                        inline_data = getattr(part, "inline_data", None)
+                        if inline_data and inline_data.data:
+                            self.audio_in_queue.put_nowait(inline_data.data)
+                            handled_audio_part = True
+
+                    if not handled_audio_part and (data := response.data):
                         self.audio_in_queue.put_nowait(data)
+
                     if text := response.text:
                         print(text, end="")
 
