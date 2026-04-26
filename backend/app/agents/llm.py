@@ -660,17 +660,27 @@ class OpenAILLMProvider(LLMProvider):
     def __init__(self, api_key: str | None = None, base_url: str | None = None) -> None:
         from langchain_openai import ChatOpenAI
 
+        resolved_key = api_key or settings.resolved_llm_api_key
+
         self.model = ChatOpenAI(
-            model=settings.resolved_llm_model,
-            api_key=api_key or settings.resolved_llm_api_key,
+            model="o3",
+            api_key=resolved_key,
             base_url=base_url,
-            temperature=0.2,
             max_retries=0,
-            timeout=10,
+            timeout=30,
+        )
+
+        self.content_model = ChatOpenAI(
+            model="gpt-4.1",
+            api_key=resolved_key,
+            base_url=base_url,
+            temperature=1.1,
+            max_retries=0,
+            timeout=20,
         )
 
     def generate_content_package(self, request: TaskRequest) -> dict[str, str]:
-        structured_model = self.model.with_structured_output(ContentPackage)
+        structured_model = self.content_model.with_structured_output(ContentPackage)
 
         company_context = request.context.get("company_profile", "")
         company_block = (
@@ -712,42 +722,12 @@ class OpenAILLMProvider(LLMProvider):
             [
                 (
                     "system",
-                    "You are a world-class creative director and GTM strategist for B2B startups. "
-                    "Your content should be vivid, memorable, and impossible to ignore.\n\n"
-                    "CRITICAL WRITING RULES (non-negotiable):\n"
-                    "- NEVER use em dashes or long dashes. Use commas, periods, semicolons, or rewrite the sentence instead.\n"
-                    "- NEVER use these overused AI emoji: rocket, lightbulb, fire, sparkles, brain, gem, star, target, megaphone, "
-                    "pointing down, muscle, chart, check mark, crystal ball, trophy. "
-                    "If you must use emoji, pick unusual ones that feel human and specific to the context.\n"
-                    "- NEVER use phrases like 'game-changer', 'revolutionize', 'unlock', 'supercharge', 'turbocharge', "
-                    "'harness the power', 'leverage', 'cutting-edge', 'seamless', 'robust', 'elevate', "
-                    "'dive into', 'in today''s fast-paced world', 'imagine a world where', 'at the end of the day'. "
-                    "These instantly signal AI-generated text.\n"
-                    "- NEVER use placeholder links like '[paste the link]', '[your-url]', or '[website]'. "
-                    "If the company website URL is available, use the actual URL. If not available, "
-                    "write the CTA without a URL placeholder.\n"
-                    "- Write in short, punchy sentences. Vary sentence length. Use fragments for emphasis.\n"
-                    "- Sound like a sharp founder writing to a peer, not a marketing agency writing a brochure.\n\n"
-                    "Creative principles:\n"
-                    "- Lead with a story, insight, or provocative angle, not a generic claim\n"
-                    "- Use concrete details: real numbers, specific scenarios, named pain points\n"
-                    "- Write like a human who deeply understands the audience's daily frustrations\n"
-                    "- Every sentence should earn its place. Cut anything that sounds like marketing filler.\n"
-                    "- Use power words, rhythm, and surprise to make copy sticky\n\n"
-                    "Section guidelines:\n"
-                    "- positioning: a bold, memorable statement that reframes how the audience "
-                    "thinks about the problem. Not 'we do X for Y' but a paradigm shift.\n"
-                    "- landing_copy: headline that stops scrolling + subhead that explains the 'how' "
-                    "+ 3 benefit bullets that paint a before/after picture\n"
-                    "- icp_notes: vivid buyer persona with day-in-the-life details, emotional triggers, "
-                    "budget authority signals, and 'hair on fire' moments\n"
-                    "- launch_email: subject line that creates curiosity (not clickbait) + body "
-                    "that tells a mini-story leading to a single clear CTA\n"
-                    "- social_post: a hook that stops the scroll in the first line, followed by "
-                    "a punchy insight or story, ending with engagement bait. NO rocket emoji.\n\n"
-                    "If social media insights are provided, match the company's existing voice and "
-                    "content themes while pushing for higher impact.\n"
-                    "Reference actual product features, audience, and differentiators, not generic placeholders."
+                    "You are a creative content writer for startups. Write with a distinctive "
+                    "human voice. You decide the tone, style, and approach.\n\n"
+                    "Write content that sounds like a real person, not a corporate bot. "
+                    "Use the company's actual website URL for links. Never use placeholder links.\n\n"
+                    "Sections: positioning, landing_copy, icp_notes, launch_email, social_post. "
+                    "Each should be ready to use as-is."
                     + company_block
                     + social_block
                     + link_instruction
@@ -1255,50 +1235,24 @@ class OpenAILLMProvider(LLMProvider):
         company_context: str,
         workflow: str | None = None,
     ) -> ContentChatResponse:
-        structured_model = self.model.with_structured_output(ContentChatResponse)
+        structured_model = self.content_model.with_structured_output(ContentChatResponse)
 
-        workflow_instructions = {
-            "social_post": (
-                "You are creating social media posts. Generate platform-ready posts "
-                "(LinkedIn, Twitter/X, Instagram, Facebook) with proper formatting, hashtags, "
-                "and calls-to-action. Use the company's actual website URL for links. "
-                "Output the posts directly in generated_content with keys like 'linkedin_post', "
-                "'twitter_post', etc."
-            ),
-            "launch_email": (
-                "You are drafting a launch/marketing email. Create a complete, send-ready email "
-                "with subject line, body, and call-to-action. Use the company's actual website URL. "
-                "Output in generated_content with key 'email_draft'."
-            ),
-            "landing_page": (
-                "You are writing landing page copy. Create headline, subheadline, hero section, "
-                "features/benefits, social proof section, and CTA. Output in generated_content "
-                "with keys like 'hero_section', 'features', 'cta_section'."
-            ),
-            "blog_post": (
-                "You are writing a blog post. Create a complete post with title, introduction, "
-                "body sections with subheadings, and conclusion. Make it SEO-friendly. "
-                "Output in generated_content with key 'blog_post'."
-            ),
-        }
-
-        workflow_context = ""
-        if workflow and workflow in workflow_instructions:
-            workflow_context = f"\n\nWORKFLOW: {workflow}\n{workflow_instructions[workflow]}"
+        workflow_hint = ""
+        if workflow:
+            workflow_hint = f"\nThe user selected the '{workflow.replace('_', ' ')}' workflow."
 
         system_prompt = (
-            "You are a startup content creation assistant. You help founders create marketing content.\n\n"
-            "CRITICAL: Be direct and output-focused. Do NOT be overly chatty.\n"
-            "- On the FIRST message, generate the requested content immediately in generated_content.\n"
-            "- Set content_ready=true and populate generated_content right away.\n"
-            "- Only ask follow-up questions if you genuinely need specific materials " 
-            "(team photos, screenshots, brand assets) to improve the output.\n"
-            "- Keep follow_up_questions to 1-2 max, and only for things like photos or brand assets.\n"
-            "- generated_content keys should be descriptive: 'linkedin_post', 'email_draft', "
-            "'landing_copy', 'blog_post', etc.\n"
-            "- Use the company's actual website URL for any links.\n"
-            "- NEVER use placeholder links like '[paste the link]' or '[your-url]'."
-            + workflow_context
+            "You are a creative content writer with a distinctive human voice. "
+            "Write like a real person — not a corporate marketing bot.\n\n"
+            "Rules:\n"
+            "- Generate content immediately. Set content_ready=true and put output in generated_content.\n"
+            "- You decide the tone, style, platform specifics, and structure. "
+            "Only follow specific constraints if the user explicitly asks for them.\n"
+            "- Write with personality, opinion, and edge. Avoid generic marketing speak.\n"
+            "- Use the company's real website URL if available. Never use placeholder links.\n"
+            "- Only ask follow-up questions if you truly need specific assets (photos, screenshots).\n"
+            "- generated_content keys should be descriptive (e.g. 'linkedin_post', 'email_draft')."
+            + workflow_hint
         )
 
         if company_context:
@@ -1318,34 +1272,10 @@ class OpenAILLMProvider(LLMProvider):
         request: SocialPostRequest,
         company_context: str,
     ) -> SocialPost:
-        structured_model = self.model.with_structured_output(SocialPost)
-
-        platform_guidance = {
-            "linkedin": (
-                "LinkedIn best practices: 1000-1500 chars. "
-                "Start with a bold hook line that makes people stop scrolling. "
-                "Use short paragraphs (1-2 sentences each) with line breaks between them. "
-                "Include a personal insight or contrarian take. 3-5 relevant hashtags at the end."
-            ),
-            "twitter": (
-                "Twitter/X best practices: Max 280 chars. "
-                "Punchy, provocative, or surprisingly insightful. "
-                "Make people want to retweet. 1-2 hashtags max."
-            ),
-            "instagram": (
-                "Instagram best practices: 500-1000 chars. "
-                "Open with an emotional hook. Tell a micro-story. "
-                "Use emoji strategically (not excessively). 10-15 hashtags."
-            ),
-            "facebook": (
-                "Facebook best practices: 200-500 chars. "
-                "Conversational and relatable. Ask a question or share a realization. 2-3 hashtags."
-            ),
-        }
-        guidance = platform_guidance.get(request.platform, "Professional and engaging.")
+        structured_model = self.content_model.with_structured_output(SocialPost)
 
         company_block = (
-            f"\n\nCompany context (use this to ground the post):\n{company_context}"
+            f"\n\nCompany context:\n{company_context}"
             if company_context
             else ""
         )
@@ -1366,37 +1296,22 @@ class OpenAILLMProvider(LLMProvider):
         link_instruction = ""
         if website_url:
             link_instruction = (
-                f"\n\nIMPORTANT: The company website is {website_url}. "
-                "Use this actual URL in the call_to_action and anywhere a link is needed. "
-                "NEVER use placeholders like '[paste the link]' or '[your-url]'."
+                f"\n\nThe company website is {website_url}. "
+                "Use this actual URL where a link is needed. Never use placeholder links."
             )
 
         return structured_model.invoke(
             [
                 (
                     "system",
-                    f"You are a top-tier social media strategist who writes posts that go viral. "
-                    f"Generate a {request.platform} post that people actually want to engage with.\n\n"
-                    f"Platform guidelines: {guidance}\n"
-                    f"Tone: {request.tone}\n\n"
-                    "CRITICAL WRITING RULES:\n"
-                    "- NEVER use em dashes or long dashes. Use commas, periods, or rewrite.\n"
-                    "- NEVER use these overused AI emoji: rocket, lightbulb, fire, sparkles, brain, gem, star, target, megaphone, "
-                    "pointing down, muscle, chart, check mark, crystal ball, trophy.\n"
-                    "- NEVER use phrases like 'game-changer', 'revolutionize', 'unlock', 'supercharge', 'seamless', "
-                    "'cutting-edge', 'robust', 'elevate', 'dive into'. These scream AI.\n"
-                    "- NEVER use placeholder links like '[paste the link]', '[your-url]', or '[website]'. "
-                    "Use the actual company URL if available, or omit the link.\n"
-                    "- Sound like a real person sharing a genuine insight, not a corporate bot.\n\n"
-                    "Content rules:\n"
-                    "- caption: Start with an irresistible hook (question, bold claim, or story opener). "
-                    "The first line determines if anyone reads the rest. "
-                    "Write like a founder sharing real experience, not a marketing bot. Ready to copy-paste.\n"
-                    "- hashtags: relevant hashtags as a single string\n"
-                    "- call_to_action: specific, compelling next step (not generic 'learn more'). "
-                    "Include the actual website URL if available.\n"
-                    "- follow_up_needed: if you need more info from the user to write a better post, "
-                    "list specific questions here. Leave empty if context is sufficient."
+                    f"You are a creative social media writer. Write a {request.platform} post "
+                    "that sounds like a real human wrote it. You decide the tone, style, and structure. "
+                    "Write with personality and edge.\n\n"
+                    "Output:\n"
+                    "- caption: the post text, ready to copy-paste\n"
+                    "- hashtags: relevant hashtags\n"
+                    "- call_to_action: a natural next step for the reader\n"
+                    "- follow_up_needed: leave empty unless you need specific info"
                     + company_block
                     + extra_block
                     + link_instruction,

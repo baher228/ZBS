@@ -429,8 +429,6 @@ function LegalAgentPage() {
                         ? "Mock provider"
                         : `${providerInfo.provider} · ${providerInfo.model}`}
                     </span>
-                    <span className="text-foreground/20">·</span>
-                    <span>{providerInfo.model}</span>
                   </div>
                 )}
               </div>

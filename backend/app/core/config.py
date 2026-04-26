@@ -72,8 +72,8 @@ class Settings(BaseSettings):
         if self.llm_model != "mock-gtm-v1":
             return self.llm_model
         if self.resolved_llm_provider == "gateway":
-            return "gpt-4.1"
-        return "gpt-4.1"
+            return "o3"
+        return "o3"
 
     @property
     def resolved_cors_allow_origins(self) -> list[str]:
