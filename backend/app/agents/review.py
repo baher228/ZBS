@@ -41,9 +41,14 @@ class ReviewAgent:
             2,
         )
 
-        if not response.output or score < 0.4:
+        if not response.output or score < 0.35:
             status = ReviewStatus.FAILED
-        elif score < 0.75 or evaluation.completeness < 0.8:
+        elif (
+            score < 0.70
+            or evaluation.completeness < 0.7
+            or evaluation.relevance < 0.6
+            or evaluation.revision_instruction
+        ):
             status = ReviewStatus.REVISE
         else:
             status = ReviewStatus.APPROVED
