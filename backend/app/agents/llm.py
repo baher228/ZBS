@@ -27,6 +27,8 @@ from app.agents.models import (
     LegalIssueScan,
     LegalOverviewResponse,
     LLMReviewEvaluation,
+    MarketingResearchMessage,
+    MarketingResearchResponse,
     SocialPost,
     SocialPostRequest,
     TaskClassification,
@@ -150,6 +152,15 @@ class LLMProvider(ABC):
         workflow: str | None = None,
     ) -> ContentChatResponse:
         """Handle a multi-turn content creation chat conversation."""
+
+    @abstractmethod
+    def chat_marketing_research(
+        self,
+        messages: list[MarketingResearchMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> MarketingResearchResponse:
+        """Handle a multi-turn marketing research chat conversation."""
 
     @abstractmethod
     def generate_social_post(
@@ -640,6 +651,23 @@ class MockLLMProvider(LLMProvider):
             follow_up_questions=[],
             content_ready=True,
             generated_content={"draft": f"Mock generated content for: {last_msg[:100]}"},
+        )
+
+    def chat_marketing_research(
+        self,
+        messages: list[MarketingResearchMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> MarketingResearchResponse:
+        last_msg = messages[-1].content if messages else "market research"
+        workflow_label = f" [{workflow}]" if workflow else ""
+        return MarketingResearchResponse(
+            reply=(
+                f"[Mock research response{workflow_label}] Here is the research for: {last_msg[:100]}."
+            ),
+            follow_up_questions=[],
+            research_ready=True,
+            research_data={"analysis": f"Mock market research for: {last_msg[:100]}"},
         )
 
     def generate_social_post(
@@ -1267,6 +1295,42 @@ class OpenAILLMProvider(LLMProvider):
 
         return structured_model.invoke(chat_messages)
 
+    def chat_marketing_research(
+        self,
+        messages: list[MarketingResearchMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> MarketingResearchResponse:
+        structured_model = self.model.with_structured_output(MarketingResearchResponse)
+
+        workflow_hint = ""
+        if workflow:
+            workflow_hint = f"\nThe user selected the '{workflow.replace('_', ' ')}' workflow."
+
+        system_prompt = (
+            "You are an expert marketing research analyst. "
+            "Provide data-driven, actionable market intelligence.\n\n"
+            "Rules:\n"
+            "- Deliver research immediately. Set research_ready=true and put findings in research_data.\n"
+            "- Use specific numbers, percentages, and data points wherever possible.\n"
+            "- Cite real market trends, competitor names, and industry benchmarks.\n"
+            "- research_data keys should be descriptive (e.g. 'competitor_analysis', 'market_size', 'positioning_map').\n"
+            "- Only ask follow-up questions if you need critical missing info about their product or market."
+            + workflow_hint
+        )
+
+        if company_context:
+            system_prompt += (
+                f"\n\nCompany context (use to ground research):\n{company_context}\n\n"
+                "Use these details to personalize all research. Don't re-ask for info already provided."
+            )
+
+        chat_messages: list[tuple[str, str]] = [("system", system_prompt)]
+        for msg in messages:
+            chat_messages.append((msg.role if msg.role == "user" else "assistant", msg.content))
+
+        return structured_model.invoke(chat_messages)
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -1449,6 +1513,14 @@ class ResilientLLMProvider(LLMProvider):
     ) -> ContentChatResponse:
         return self._try_primary("chat_content", messages, company_context, workflow)
 
+    def chat_marketing_research(
+        self,
+        messages: list[MarketingResearchMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> MarketingResearchResponse:
+        return self._try_primary("chat_marketing_research", messages, company_context, workflow)
+
     def generate_social_post(
         self,
         request: SocialPostRequest,
@@ -1562,6 +1634,14 @@ class UnconfiguredLLMProvider(LLMProvider):
         company_context: str,
         workflow: str | None = None,
     ) -> ContentChatResponse:
+        self._raise_unconfigured()
+
+    def chat_marketing_research(
+        self,
+        messages: list[MarketingResearchMessage],
+        company_context: str,
+        workflow: str | None = None,
+    ) -> MarketingResearchResponse:
         self._raise_unconfigured()
 
     def generate_social_post(
