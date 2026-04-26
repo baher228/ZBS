@@ -91,7 +91,7 @@ function CompetitorTable({ table }: { table: ParsedMarkdownTable }) {
                     key={`${header}-${rowIndex}-${cellIndex}`}
                     className="break-words px-3 py-3 text-[11px] leading-relaxed align-top text-foreground/80"
                   >
-                    {row[cellIndex] || "-"}
+                    <TableCellContent content={row[cellIndex]} />
                   </TableCell>
                 ))}
               </TableRow>
@@ -101,6 +101,32 @@ function CompetitorTable({ table }: { table: ParsedMarkdownTable }) {
       </div>
     </div>
   );
+}
+
+function TableCellContent({ content }: { content: string | undefined }) {
+  const items = getTableCellItems(content);
+
+  if (items.length === 0) return "-";
+  if (items.length === 1) return items[0];
+
+  return (
+    <ul className="m-0 list-none space-y-1 p-0">
+      {items.map((item, index) => (
+        <li key={`${item}-${index}`} className="m-0 p-0">
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function getTableCellItems(content: string | undefined): string[] {
+  if (!content) return [];
+
+  return content
+    .split(/;|\n/)
+    .map((item) => item.trim().replace(/^[\s•▪◦*-]+/, "").trim())
+    .filter(Boolean);
 }
 
 export function formatResearchValue(value: unknown): string {
