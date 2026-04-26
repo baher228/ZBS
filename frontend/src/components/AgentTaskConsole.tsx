@@ -169,17 +169,20 @@ export function AgentTaskConsole({
         )}
 
         <div className="mt-8 space-y-4">
-          <label className="block">
-            <span className="label-mono">API Base URL</span>
-            <div className="mt-2 flex items-center gap-2 border border-foreground/20 bg-card/50 px-3 py-2">
-              <Server className="h-4 w-4 text-muted-foreground" />
-              <input
-                value={apiBaseUrl}
-                onChange={(event) => setApiBaseUrl(event.target.value)}
-                className="w-full bg-transparent text-sm outline-none"
-              />
-            </div>
-          </label>
+          {/* Hide API Base URL on legal page — not needed for end users */}
+          {!isLegal && (
+            <label className="block">
+              <span className="label-mono">API Base URL</span>
+              <div className="mt-2 flex items-center gap-2 border border-foreground/20 bg-card/50 px-3 py-2">
+                <Server className="h-4 w-4 text-muted-foreground" />
+                <input
+                  value={apiBaseUrl}
+                  onChange={(event) => setApiBaseUrl(event.target.value)}
+                  className="w-full bg-transparent text-sm outline-none"
+                />
+              </div>
+            </label>
+          )}
 
           <label className="block">
             <span className="label-mono">Prompt</span>
@@ -191,42 +194,47 @@ export function AgentTaskConsole({
             />
           </label>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              ["startup_idea", "Startup idea"],
-              ["target_audience", "Audience"],
-              ["goal", "Goal"],
-              ["channel", "Channel"],
-            ].map(([field, label]) => (
-              <label key={field} className="block">
-                <span className="label-mono">{label}</span>
-                <input
-                  value={(payload[field as keyof AgentTaskPayload] as string | undefined) ?? ""}
-                  onChange={(event) =>
-                    updatePayload(field as keyof AgentTaskPayload, event.target.value)
-                  }
-                  className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
-                />
-              </label>
-            ))}
-          </div>
+          {/* Only show manual context fields when no company profile is loaded */}
+          {!companyProfile && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                ["startup_idea", "Startup idea"],
+                ["target_audience", "Audience"],
+                ["goal", "Goal"],
+                ["channel", "Channel"],
+              ].map(([field, label]) => (
+                <label key={field} className="block">
+                  <span className="label-mono">{label}</span>
+                  <input
+                    value={(payload[field as keyof AgentTaskPayload] as string | undefined) ?? ""}
+                    onChange={(event) =>
+                      updatePayload(field as keyof AgentTaskPayload, event.target.value)
+                    }
+                    className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
+                  />
+                </label>
+              ))}
+            </div>
+          )}
 
-          {/* Startup URL */}
-          <label className="block">
-            <span className="label-mono">
-              <Globe className="inline h-3 w-3 mr-1" />
-              Startup URL (optional)
-            </span>
-            <input
-              value={startupUrl}
-              onChange={(e) => setStartupUrl(e.target.value)}
-              placeholder="https://your-startup.com"
-              className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
-            />
-          </label>
+          {/* Startup URL — hidden on legal page since website is already on onboarding */}
+          {!isLegal && (
+            <label className="block">
+              <span className="label-mono">
+                <Globe className="inline h-3 w-3 mr-1" />
+                Startup URL (optional)
+              </span>
+              <input
+                value={startupUrl}
+                onChange={(e) => setStartupUrl(e.target.value)}
+                placeholder="https://your-startup.com"
+                className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
+              />
+            </label>
+          )}
 
-          {/* Jurisdiction selector — legal page only */}
-          {isLegal && (
+          {/* Jurisdiction selector — only when no company profile (profile has jurisdictions) */}
+          {isLegal && !companyProfile && (
             <div>
               <span className="label-mono">Jurisdictions</span>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -248,8 +256,8 @@ export function AgentTaskConsole({
             </div>
           )}
 
-          {/* Industry selector — legal page only */}
-          {isLegal && (
+          {/* Industry selector — only when no company profile (profile has industry) */}
+          {isLegal && !companyProfile && (
             <div>
               <span className="label-mono">Industries (optional)</span>
               <div className="mt-2 flex flex-wrap gap-2">
