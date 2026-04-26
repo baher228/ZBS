@@ -1,8 +1,10 @@
 """Fetch and parse a company website to extract structured context."""
 from __future__ import annotations
 
+import ipaddress
 import logging
 import re
+import socket
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -38,6 +40,25 @@ _HEADERS = {
 
 _MAX_PAGES = 10
 _TIMEOUT = 15
+
+
+def _is_safe_url(url: str) -> bool:
+    """Reject URLs targeting private/reserved IP ranges or non-HTTP schemes."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return False
+    hostname = parsed.hostname
+    if not hostname:
+        return False
+    try:
+        infos = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        for info in infos:
+            addr = ipaddress.ip_address(info[4][0])
+            if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+                return False
+    except (socket.gaierror, ValueError):
+        return False
+    return True
 
 
 def _classify_page(url: str, title: str, text: str) -> str:
@@ -131,11 +152,13 @@ async def parse_website(url: str) -> WebsiteContext:
     pages: list[WebsitePageData] = []
     visited: set[str] = set()
 
+    if not _is_safe_url(url):
+        raise ValueError(f"URL not allowed (private/reserved IP or non-HTTP scheme): {url}")
+
     async with httpx.AsyncClient(
         headers=_HEADERS,
         timeout=_TIMEOUT,
         follow_redirects=True,
-        verify=False,
     ) as client:
         # Fetch homepage first to discover more links
         try:

@@ -26,7 +26,7 @@ from app.company.context_store import (
 )
 from app.company.storage import get_company_context, save_profile, delete_profile
 from app.company.models import CompanyProfile
-from app.company.website_parser import _classify_page, _extract_text
+from app.company.website_parser import _classify_page, _extract_text, _is_safe_url
 from app.main import app
 
 client = TestClient(app)
@@ -247,6 +247,15 @@ class TestWebsiteParser:
         assert _classify_page("https://x.com/privacy", "Privacy Policy", "") == "privacy_policy"
         assert _classify_page("https://x.com/terms", "Terms", "") == "terms_of_service"
         assert _classify_page("https://x.com/features", "Features", "") == "features"
+
+    def test_ssrf_blocks_private_ips(self):
+        assert not _is_safe_url("http://127.0.0.1/")
+        assert not _is_safe_url("http://localhost/")
+        assert not _is_safe_url("http://169.254.169.254/latest/meta-data/")
+        assert not _is_safe_url("http://10.0.0.1/")
+        assert not _is_safe_url("http://192.168.1.1/")
+        assert not _is_safe_url("ftp://example.com/file")
+        assert not _is_safe_url("file:///etc/passwd")
 
     def test_extract_text_from_html(self):
         html = """

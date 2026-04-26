@@ -34,7 +34,21 @@ def extract_insights_from_messages(
 
     Only processes the most recent user message to avoid duplicates, since
     the frontend sends the full conversation history on each request.
+
+    This is a non-critical side effect — errors are logged but never
+    propagated so the primary chat response is not interrupted.
     """
+    try:
+        return _do_extract(messages, source_agent)
+    except Exception:
+        logger.warning("Failed to extract chat insights", exc_info=True)
+        return []
+
+
+def _do_extract(
+    messages: list[dict[str, str]],
+    source_agent: str,
+) -> list[ChatInsight]:
     # Find the last user message
     last_user_idx = -1
     for i in range(len(messages) - 1, -1, -1):

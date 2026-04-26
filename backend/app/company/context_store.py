@@ -119,10 +119,11 @@ def add_chat_insight(insight: ChatInsight) -> ChatContext:
 
 
 def delete_chat_context() -> bool:
-    if CHAT_CONTEXT_JSON.exists():
-        CHAT_CONTEXT_JSON.unlink()
-        return True
-    return False
+    with _chat_lock:
+        if CHAT_CONTEXT_JSON.exists():
+            CHAT_CONTEXT_JSON.unlink()
+            return True
+        return False
 
 
 # ── Enriched Context Builder ────────────────────────────────
