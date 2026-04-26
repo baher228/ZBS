@@ -39,6 +39,7 @@ _HEADERS = {
 }
 
 _MAX_PAGES = 10
+_MAX_REDIRECTS = 5
 _TIMEOUT = 15
 
 
@@ -59,6 +60,21 @@ def _is_safe_url(url: str) -> bool:
     except (socket.gaierror, ValueError):
         return False
     return True
+
+
+async def _safe_get(client: httpx.AsyncClient, url: str) -> httpx.Response:
+    """GET with manual redirect following — validates each hop against SSRF."""
+    current_url = url
+    for _ in range(_MAX_REDIRECTS):
+        resp = await client.get(current_url)
+        if resp.is_redirect and "location" in resp.headers:
+            next_url = urljoin(current_url, resp.headers["location"])
+            if not _is_safe_url(next_url):
+                raise ValueError(f"Redirect target not allowed: {next_url}")
+            current_url = next_url
+            continue
+        return resp
+    raise httpx.TooManyRedirects(f"Too many redirects from {url}")
 
 
 def _classify_page(url: str, title: str, text: str) -> str:
@@ -158,11 +174,11 @@ async def parse_website(url: str) -> WebsiteContext:
     async with httpx.AsyncClient(
         headers=_HEADERS,
         timeout=_TIMEOUT,
-        follow_redirects=True,
+        follow_redirects=False,
     ) as client:
         # Fetch homepage first to discover more links
         try:
-            resp = await client.get(url)
+            resp = await _safe_get(client, url)
             resp.raise_for_status()
             homepage_html = resp.text
             title, text = _extract_text(homepage_html)
@@ -201,7 +217,7 @@ async def parse_website(url: str) -> WebsiteContext:
             visited.add(norm)
 
             try:
-                resp = await client.get(candidate_url)
+                resp = await _safe_get(client, candidate_url)
                 if resp.status_code == 404:
                     continue
                 resp.raise_for_status()
