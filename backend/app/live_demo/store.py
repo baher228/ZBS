@@ -12,7 +12,10 @@ class LiveDemoSessionStore:
 
     def create(self, startup_id: str = "demeo", current_page_id: str = "setup") -> LiveDemoSession:
         with self._lock:
-            session = LiveDemoSession(startup_id=startup_id, current_page_id=current_page_id)
+            session = LiveDemoSession(
+                startup_id=startup_id,
+                current_page_id=current_page_id,
+            )
             self._sessions[session.id] = session
             return session
 

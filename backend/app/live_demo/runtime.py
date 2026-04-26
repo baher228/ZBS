@@ -39,12 +39,17 @@ class LiveDemoRuntime:
         if current_page is None:
             current_page = self.manifest.pages[0]
 
-        decision = self._decide_with_llm(session, request, current_page) or self._decide(
-            request.message, current_page
-        )
+        decision = self._decide_guided_walkthrough(request.message) or self._decide_with_llm(
+            session, request, current_page
+        ) or self._decide(request.message, current_page)
         target_page = self._page_by_id(decision["page_id"]) or current_page
         reply = decision["reply"]
-        events = self._build_events(reply, target_page, decision["element_ids"], decision["lead_patch"])
+        events = decision.get("events") or self._build_events(
+            reply,
+            target_page,
+            decision["element_ids"],
+            decision["lead_patch"],
+        )
         events = self._validate_events(events)
 
         lead_profile = self._update_lead_profile(session.lead_profile, decision["lead_patch"])
@@ -70,87 +75,83 @@ class LiveDemoRuntime:
             available_actions=target_page.allowed_actions,
         )
 
+    def _decide_guided_walkthrough(self, message: str) -> dict | None:
+        text = message.lower()
+        if not any(term in text for term in ["walk me through", "walkthrough", "demo the app", "show me around", "full demo"]):
+            return None
+
+        flow = self._primary_flow()
+        if flow is None or not flow.steps:
+            return None
+
+        events: list[DemoEvent] = [
+            DemoEvent(
+                type="say",
+                text=f"I'll walk through the approved flow: {flow.goal}",
+                duration_ms=2600,
+            )
+        ]
+        final_page = self._page_by_id(flow.steps[-1].page_id)
+        for step in flow.steps:
+            page = self._page_by_id(step.page_id)
+            if page is None:
+                continue
+            element_ids = self._action_element_ids(page, step.recommended_action_ids)
+            if not element_ids:
+                element_ids = self._primary_element_ids(page, limit=2)
+            events.extend(
+                [
+                    DemoEvent(type="navigate", page_id=page.page_id, route=page.route),
+                    DemoEvent(type="wait", duration_ms=650),
+                    DemoEvent(
+                        type="say",
+                        text=step.talk_track or f"{page.title} {page.summary}".strip(),
+                        duration_ms=3200,
+                    ),
+                ]
+            )
+            for element_id in element_ids:
+                events.extend(
+                    [
+                        DemoEvent(type="cursor.move", element_id=element_id, duration_ms=480),
+                        DemoEvent(
+                            type="highlight.show",
+                            element_id=element_id,
+                            label=self._element_label(element_id),
+                        ),
+                        DemoEvent(type="wait", duration_ms=1300),
+                    ]
+                )
+            if element_ids:
+                events.append(DemoEvent(type="highlight.hide", element_id=element_ids[-1]))
+        events.append(
+            DemoEvent(
+                type="lead.profile.updated",
+                patch={"interested_features": ["guided product walkthrough"]},
+            )
+        )
+
+        if final_page is None:
+            final_page = self.manifest.pages[0]
+        return {
+            "page_id": final_page.page_id,
+            "element_ids": [],
+            "state": "demoing",
+            "lead_patch": {"interested_features": ["guided product walkthrough"]},
+            "reply": (
+                f"I'll walk through the approved flow: {flow.goal}"
+            ),
+            "events": events,
+        }
+
     def available_actions(self, page_id: str) -> list[PageAction]:
         page = self._page_by_id(page_id)
         return page.allowed_actions if page else []
 
     def _decide(self, message: str, current_page: DemoPageManifest) -> dict:
-        text = message.lower()
-        lead_patch: dict[str, object] = {}
-
-        if any(term in text for term in ["voice", "gemini", "realtime", "real time", "talk"]):
-            return {
-                "page_id": "live_room",
-                "element_ids": ["voice-control", "event-stream"],
-                "state": "answering_question",
-                "lead_patch": {"interested_features": ["voice demo agent"]},
-                "reply": (
-                    "Yes. Gemini Live can sit on top of this same event loop. "
-                    "The voice model should call safe tools like highlight, move cursor, and show page; "
-                    "our backend still validates every visual action."
-                ),
-            }
-
-        if any(term in text for term in ["input", "founder", "provide", "startup", "setup", "start"]):
-            lead_patch["use_case"] = "creating an agent-led product demo"
-            return {
-                "page_id": "setup",
-                "element_ids": ["product-url", "persona-card", "walkthrough-card"],
-                "state": "demoing",
-                "lead_patch": lead_patch,
-                "reply": (
-                    "The founder starts with a product URL or sandbox, the target buyer, "
-                    "the demo goals, a plain-English walkthrough, approved Q&A, CTA, and qualification questions. "
-                    "That is enough to build the first reviewed demo room."
-                ),
-            }
-
-        if any(term in text for term in ["knowledge", "q&a", "pricing", "security", "roadmap", "claim"]):
-            return {
-                "page_id": "knowledge",
-                "element_ids": ["approved-qna", "restricted-claims", "qualification-rules"],
-                "state": "answering_question",
-                "lead_patch": {"interested_features": ["approved answers"]},
-                "reply": (
-                    "The knowledge bank separates approved answers from restricted claims. "
-                    "That lets the agent answer pricing, security, integration, and roadmap questions without inventing."
-                ),
-            }
-
-        if any(term in text for term in ["action", "click", "cursor", "flow", "page", "safe", "stagehand"]):
-            return {
-                "page_id": "flow",
-                "element_ids": ["page-actions", "safety-gate", "flow-graph"],
-                "state": "demoing",
-                "lead_patch": {"interested_features": ["safe guided actions"]},
-                "reply": (
-                    "The agent is adaptive, but it only receives actions available on the current page. "
-                    "It can highlight, move the cursor, navigate approved pages, or propose a click that passes the safety gate."
-                ),
-            }
-
-        if any(term in text for term in ["prospect", "room", "demo", "show me", "walk", "real"]):
-            return {
-                "page_id": "live_room",
-                "element_ids": ["agent-cursor-preview", "event-stream"],
-                "state": "demoing",
-                "lead_patch": {"urgency": "active evaluation"},
-                "reply": (
-                    "This is the prospect-facing room. The agent answers the question, then the page plays the same decision as visual events: "
-                    "navigation, cursor movement, highlights, and action logging."
-                ),
-            }
-
-        if any(term in text for term in ["qualify", "lead", "crm", "summary", "follow", "score"]):
-            return {
-                "page_id": "summary",
-                "element_ids": ["lead-score", "crm-summary", "follow-up"],
-                "state": "qualifying",
-                "lead_patch": {"score": 82, "interested_features": ["lead qualification"]},
-                "reply": (
-                    "After the demo, the founder gets the useful sales output: lead score, use case, objections, CRM summary, and a follow-up draft."
-                ),
-            }
+        generic = self._decide_from_manifest(message, current_page)
+        if generic is not None:
+            return generic
 
         return {
             "page_id": current_page.page_id,
@@ -162,6 +163,77 @@ class LiveDemoRuntime:
                 "Ask me to show inputs, knowledge, safe actions, voice, or qualification and I will move the demo there."
             ),
         }
+
+    def _decide_from_manifest(
+        self,
+        message: str,
+        current_page: DemoPageManifest,
+    ) -> dict | None:
+        words = {
+            word
+            for word in re.findall(r"[a-z0-9]+", message.lower())
+            if len(word) > 2
+        }
+        best_page = current_page
+        best_score = -1
+        for page in self.manifest.pages:
+            haystack = " ".join(
+                [
+                    page.page_id,
+                    page.title,
+                    page.summary,
+                    " ".join(page.visible_concepts),
+                    " ".join(element.label + " " + element.description for element in page.elements),
+                    " ".join(action.label + " " + action.intent for action in page.allowed_actions),
+                ]
+            ).lower()
+            score = sum(1 for word in words if word in haystack)
+            if score > best_score:
+                best_score = score
+                best_page = page
+
+        element_ids = [
+            action.element_id
+            for action in best_page.allowed_actions
+            if action.element_id and action.type in {"highlight", "cursor.move", "navigate"}
+        ][:3]
+        if not element_ids:
+            element_ids = [element.id for element in best_page.elements[:3]]
+
+        return {
+            "page_id": best_page.page_id,
+            "element_ids": element_ids,
+            "state": "demoing",
+            "lead_patch": {"interested_features": [best_page.title]},
+            "reply": (
+                f"I'll show {best_page.title.lower()}. "
+                f"{best_page.summary or 'This is the relevant part of the extracted app.'}"
+            ),
+        }
+
+    def _primary_flow(self):
+        return self.manifest.flows[0] if self.manifest.flows else None
+
+    def _action_element_ids(self, page: DemoPageManifest, action_ids: list[str]) -> list[str]:
+        ids: list[str] = []
+        for action_id in action_ids:
+            action = next((item for item in page.allowed_actions if item.id == action_id), None)
+            if action and action.element_id and action.element_id not in ids:
+                ids.append(action.element_id)
+        return ids
+
+    def _primary_element_ids(self, page: DemoPageManifest, limit: int = 2) -> list[str]:
+        action_element_ids = [
+            action.element_id
+            for action in page.allowed_actions
+            if action.element_id and action.type in {"highlight", "cursor.move", "navigate"}
+        ]
+        element_ids = action_element_ids + [element.id for element in page.elements]
+        deduped: list[str] = []
+        for element_id in element_ids:
+            if element_id not in deduped:
+                deduped.append(element_id)
+        return deduped[:limit]
 
     def _decide_with_llm(
         self,
@@ -196,11 +268,11 @@ class LiveDemoRuntime:
                         "You are the planner for a safe AI product demo room. "
                         "You can choose narration, an approved page, approved elements to highlight, "
                         "and a lead-profile patch. You cannot invent pages or elements. "
-                        "Route startup/founder input/setup questions to setup. "
-                        "Route approved answers, security, pricing, and claims questions to knowledge. "
-                        "Route safe actions, cursor, Stagehand, browser control, and flow questions to flow. "
-                        "Route prospect room, demo room, live demo, voice, Gemini, and real-time experience questions to live_room. "
-                        "Route after-demo, qualification, CRM, lead score, and follow-up questions to summary. "
+                        "Use the provided manifest pages, page summaries, actions, and flow steps to choose the best page. "
+                        "Prefer the current page when the user asks a local follow-up. "
+                        "For broad onboarding requests, follow the manifest flow. "
+                        "For questions about output after the demo, prefer CRM/summary/follow-up pages if present. "
+                        "For demo-room questions, prefer demo/prospect-room pages if present. "
                         "Return strict JSON only: {\"reply\":\"string\",\"page_id\":\"string\","
                         "\"element_ids\":[\"string\"],\"state\":\"demoing|answering_question|qualifying\","
                         "\"lead_patch\":{\"use_case\":\"string|null\",\"urgency\":\"string|null\","
@@ -218,7 +290,7 @@ class LiveDemoRuntime:
                             "recent_transcript": [
                                 turn.model_dump(mode="json") for turn in session.transcript[-6:]
                             ],
-                            "manifest": self._manifest_context(),
+                            "manifest": self._manifest_context(request.message, current_page),
                         },
                         indent=2,
                     ),
@@ -265,35 +337,89 @@ class LiveDemoRuntime:
             or f"I will show the {self._page_by_id(page_id).title.lower()} step.",
         }
 
-    def _manifest_context(self) -> dict[str, object]:
+    def _manifest_context(self, message: str, current_page: DemoPageManifest) -> dict[str, object]:
+        relevant_pages = self._relevant_pages(message, current_page)
         return {
             "product_name": self.manifest.product_name,
             "target_persona": self.manifest.target_persona,
             "cta": self.manifest.cta,
-            "pages": [
-                {
-                    "page_id": page.page_id,
-                    "title": page.title,
-                    "summary": page.summary,
-                    "visible_concepts": page.visible_concepts,
-                    "elements": [
-                        {
-                            "id": element.id,
-                            "label": element.label,
-                            "description": element.description,
-                            "safe_to_click": element.safe_to_click,
-                        }
-                        for element in page.elements
-                    ],
-                    "allowed_actions": [action.model_dump() for action in page.allowed_actions],
-                }
+            "current_page": self._page_context(current_page),
+            "relevant_pages": [self._page_context(page) for page in relevant_pages],
+            "page_index": [
+                {"page_id": page.page_id, "title": page.title, "summary": page.summary}
                 for page in self.manifest.pages
             ],
             "flows": [flow.model_dump() for flow in self.manifest.flows],
-            "knowledge": [record.model_dump() for record in self.manifest.knowledge],
+            "knowledge": [record.model_dump() for record in self._relevant_knowledge(message)],
             "qualification_questions": self.manifest.qualification_questions,
             "restricted_claims": self.manifest.restricted_claims,
         }
+
+    def _page_context(self, page: DemoPageManifest) -> dict[str, object]:
+        return {
+            "page_id": page.page_id,
+            "title": page.title,
+            "summary": page.summary,
+            "visible_concepts": page.visible_concepts,
+            "elements": [
+                {
+                    "id": element.id,
+                    "label": element.label,
+                    "description": element.description,
+                    "safe_to_click": element.safe_to_click,
+                }
+                for element in page.elements
+            ],
+            "allowed_actions": [action.model_dump() for action in page.allowed_actions],
+        }
+
+    def _relevant_pages(
+        self,
+        message: str,
+        current_page: DemoPageManifest,
+        limit: int = 4,
+    ) -> list[DemoPageManifest]:
+        words = {
+            word
+            for word in re.findall(r"[a-z0-9]+", message.lower())
+            if len(word) > 2
+        }
+        scored: list[tuple[int, DemoPageManifest]] = []
+        for page in self.manifest.pages:
+            haystack = " ".join(
+                [
+                    page.page_id,
+                    page.title,
+                    page.summary,
+                    " ".join(page.visible_concepts),
+                    " ".join(element.label + " " + element.description for element in page.elements),
+                ]
+            ).lower()
+            score = sum(1 for word in words if word in haystack)
+            if page.page_id == current_page.page_id:
+                score += 2
+            scored.append((score, page))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        pages: list[DemoPageManifest] = []
+        for _, page in scored:
+            if page.page_id not in {item.page_id for item in pages}:
+                pages.append(page)
+            if len(pages) >= limit:
+                break
+        return pages
+
+    def _relevant_knowledge(self, message: str, limit: int = 4):
+        words = {
+            word
+            for word in re.findall(r"[a-z0-9]+", message.lower())
+            if len(word) > 2
+        }
+        scored = []
+        for record in self.manifest.knowledge:
+            haystack = f"{record.topic} {record.content} {' '.join(record.tags)}".lower()
+            scored.append((sum(1 for word in words if word in haystack), record))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        return [record for _, record in scored[:limit]]
 
     def _parse_json(self, text: str) -> dict:
         try:

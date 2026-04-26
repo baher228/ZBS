@@ -103,6 +103,47 @@ class DemoManifest(BaseModel):
     restricted_claims: list[str] = Field(default_factory=list)
 
 
+class ApprovedQA(BaseModel):
+    question: str
+    answer: str
+
+
+class FounderDemoInput(BaseModel):
+    product_name: str = "Demeo"
+    product_description: str = ""
+    product_url: str = "http://127.0.0.1:5175"
+    target_customer: str = ""
+    prospect_description: str = ""
+    demo_goals: list[str] = Field(default_factory=list)
+    founder_walkthrough: str = ""
+    approved_qa: list[ApprovedQA] = Field(default_factory=list)
+    cta: str = "Book a setup call"
+    qualification_questions: list[str] = Field(default_factory=list)
+
+
+class DemoSetup(BaseModel):
+    id: str = Field(default_factory=lambda: new_id("setup"))
+    startup_id: str
+    founder_input: FounderDemoInput
+    manifest: DemoManifest
+    status: Literal["draft", "approved"] = "draft"
+    source: Literal["cached_extraction", "provided_manifest", "live_extraction"] = "cached_extraction"
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+class DemoSetupCreateRequest(BaseModel):
+    startup_id: str | None = None
+    founder_input: FounderDemoInput
+    source: Literal["cached_extraction", "provided_manifest"] = "cached_extraction"
+    manifest: DemoManifest | None = None
+    approve: bool = True
+
+
+class DemoSetupApproveRequest(BaseModel):
+    approved: bool = True
+
+
 class LeadProfile(BaseModel):
     use_case: str | None = None
     urgency: str | None = None
@@ -143,8 +184,8 @@ class LiveDemoSession(BaseModel):
 
 
 class LiveDemoSessionCreateRequest(BaseModel):
-    startup_id: str = "demeo"
-    current_page_id: str = "setup"
+    startup_id: str | None = None
+    current_page_id: str | None = None
 
 
 class LiveDemoMessageRequest(BaseModel):
