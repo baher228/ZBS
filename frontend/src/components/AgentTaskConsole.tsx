@@ -191,25 +191,28 @@ export function AgentTaskConsole({
             />
           </label>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              ["startup_idea", "Startup idea"],
-              ["target_audience", "Audience"],
-              ["goal", "Goal"],
-              ["channel", "Channel"],
-            ].map(([field, label]) => (
-              <label key={field} className="block">
-                <span className="label-mono">{label}</span>
-                <input
-                  value={(payload[field as keyof AgentTaskPayload] as string | undefined) ?? ""}
-                  onChange={(event) =>
-                    updatePayload(field as keyof AgentTaskPayload, event.target.value)
-                  }
-                  className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
-                />
-              </label>
-            ))}
-          </div>
+          {/* Only show manual context fields when no company profile is loaded */}
+          {!companyProfile && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                ["startup_idea", "Startup idea"],
+                ["target_audience", "Audience"],
+                ["goal", "Goal"],
+                ["channel", "Channel"],
+              ].map(([field, label]) => (
+                <label key={field} className="block">
+                  <span className="label-mono">{label}</span>
+                  <input
+                    value={(payload[field as keyof AgentTaskPayload] as string | undefined) ?? ""}
+                    onChange={(event) =>
+                      updatePayload(field as keyof AgentTaskPayload, event.target.value)
+                    }
+                    className="mt-2 w-full border border-foreground/20 bg-card/50 px-3 py-2 text-sm outline-none"
+                  />
+                </label>
+              ))}
+            </div>
+          )}
 
           {/* Startup URL */}
           <label className="block">
