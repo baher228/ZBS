@@ -94,6 +94,7 @@ class DemoFlow(BaseModel):
 class DemoManifest(BaseModel):
     startup_id: str
     product_name: str
+    product_description: str = ""
     target_persona: str
     cta: str
     pages: list[DemoPageManifest]

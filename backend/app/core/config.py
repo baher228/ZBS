@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     pydantic_ai_gateway_base_url: str | None = None
     pydantic: str | None = None
     fal_api_key: str | None = None
+    gemini_api_key: str | None = None
+    gemini_live_model: str = "gemini-3.1-flash-live-preview"
+    gemini_live_voice: str = "Zephyr"
+    gemini_live_enabled: bool = True
 
     model_config = SettingsConfigDict(
         env_file=(str(REPO_ROOT / ".env"), str(BACKEND_ROOT / ".env")),

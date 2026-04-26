@@ -87,12 +87,12 @@ class LiveDemoRuntime:
         events: list[DemoEvent] = [
             DemoEvent(
                 type="say",
-                text=f"I'll walk through the approved flow: {flow.goal}",
-                duration_ms=2600,
+                text=self._walkthrough_intro(flow),
+                duration_ms=3600,
             )
         ]
         final_page = self._page_by_id(flow.steps[-1].page_id)
-        for step in flow.steps:
+        for step_index, step in enumerate(flow.steps):
             page = self._page_by_id(step.page_id)
             if page is None:
                 continue
@@ -105,7 +105,11 @@ class LiveDemoRuntime:
                     DemoEvent(type="wait", duration_ms=650),
                     DemoEvent(
                         type="say",
-                        text=step.talk_track or f"{page.title} {page.summary}".strip(),
+                        text=self._walkthrough_step_narration(
+                            step,
+                            page,
+                            step_index=step_index,
+                        ),
                         duration_ms=3200,
                     ),
                 ]
@@ -138,9 +142,7 @@ class LiveDemoRuntime:
             "element_ids": [],
             "state": "demoing",
             "lead_patch": {"interested_features": ["guided product walkthrough"]},
-            "reply": (
-                f"I'll walk through the approved flow: {flow.goal}"
-            ),
+            "reply": self._walkthrough_intro(flow),
             "events": events,
         }
 
@@ -169,25 +171,10 @@ class LiveDemoRuntime:
         message: str,
         current_page: DemoPageManifest,
     ) -> dict | None:
-        words = {
-            word
-            for word in re.findall(r"[a-z0-9]+", message.lower())
-            if len(word) > 2
-        }
         best_page = current_page
-        best_score = -1
+        best_score = float("-inf")
         for page in self.manifest.pages:
-            haystack = " ".join(
-                [
-                    page.page_id,
-                    page.title,
-                    page.summary,
-                    " ".join(page.visible_concepts),
-                    " ".join(element.label + " " + element.description for element in page.elements),
-                    " ".join(action.label + " " + action.intent for action in page.allowed_actions),
-                ]
-            ).lower()
-            score = sum(1 for word in words if word in haystack)
+            score = self._score_page_for_message(message, page)
             if score > best_score:
                 best_score = score
                 best_page = page
@@ -211,8 +198,166 @@ class LiveDemoRuntime:
             ),
         }
 
+    def _score_page_for_message(self, message: str, page: DemoPageManifest) -> float:
+        tokens = self._meaningful_tokens(message)
+        phrases = self._query_phrases(message)
+        title = page.title.lower()
+        summary = page.summary.lower()
+        concepts = " ".join(page.visible_concepts).lower()
+        elements = " ".join(
+            element.label + " " + element.description for element in page.elements
+        ).lower()
+        actions = " ".join(
+            action.label + " " + action.intent for action in page.allowed_actions
+        ).lower()
+        flow_context = " ".join(
+            step.objective + " " + step.talk_track
+            for flow in self.manifest.flows
+            for step in flow.steps
+            if step.page_id == page.page_id
+        ).lower()
+
+        score = 0.0
+        weighted_fields = [
+            (title, 4.0),
+            (summary, 3.0),
+            (concepts, 2.5),
+            (actions, 2.0),
+            (flow_context, 2.0),
+            (elements, 1.5),
+            (page.page_id.lower().replace("_", " "), 1.0),
+        ]
+        for token in tokens:
+            for field, weight in weighted_fields:
+                if self._contains_token(field, token):
+                    score += weight
+        for phrase in phrases:
+            for field, weight in weighted_fields[:5]:
+                if phrase in field:
+                    score += weight * (len(phrase.split()) + 1)
+
+        if (
+            self._is_specific_navigation_request(message)
+            and self._looks_like_entry_page(page)
+            and not self._asks_for_entry_page(message)
+        ):
+            score -= 12.0
+        return score
+
+    def _contains_token(self, field: str, token: str) -> bool:
+        return re.search(rf"(^|[^a-z0-9]){re.escape(token)}([^a-z0-9]|$)", field) is not None
+
+    def _meaningful_tokens(self, message: str) -> list[str]:
+        stopwords = {
+            "the",
+            "and",
+            "for",
+            "you",
+            "your",
+            "what",
+            "how",
+            "does",
+            "can",
+            "show",
+            "open",
+            "take",
+            "tell",
+            "me",
+            "this",
+            "that",
+            "with",
+            "from",
+            "into",
+            "about",
+        }
+        return [
+            word
+            for word in re.findall(r"[a-z0-9]+", message.lower())
+            if len(word) > 2 and word not in stopwords
+        ]
+
+    def _query_phrases(self, message: str) -> list[str]:
+        tokens = self._meaningful_tokens(message)
+        phrases: list[str] = []
+        for size in (4, 3, 2):
+            for index in range(0, max(0, len(tokens) - size + 1)):
+                phrases.append(" ".join(tokens[index : index + size]))
+        return phrases
+
+    def _is_specific_navigation_request(self, message: str) -> bool:
+        text = message.lower()
+        return any(term in text for term in ["show", "open", "take me", "go to", "walk me to"])
+
+    def _looks_like_entry_page(self, page: DemoPageManifest) -> bool:
+        page_text = " ".join(
+            [page.page_id, page.title, page.summary, " ".join(page.visible_concepts)]
+        ).lower()
+        return any(
+            term in page_text
+            for term in ["home", "homepage", "landing", "overview", "entry point", "navigation"]
+        )
+
+    def _asks_for_entry_page(self, message: str) -> bool:
+        text = message.lower()
+        return any(term in text for term in ["home", "homepage", "landing page", "overview"])
+
     def _primary_flow(self):
         return self.manifest.flows[0] if self.manifest.flows else None
+
+    def _walkthrough_intro(self, flow) -> str:
+        description = self.manifest.product_description.strip().rstrip(".")
+        if description:
+            return (
+                f"{description}. I will follow the approved product journey: "
+                f"{flow.goal[:1].lower() + flow.goal[1:]}"
+            )
+        return (
+            f"{self.manifest.product_name} is built for {self.manifest.target_persona}. "
+            f"I will show the product journey: {flow.goal[:1].lower() + flow.goal[1:]}"
+        )
+
+    def _walkthrough_step_narration(
+        self,
+        step,
+        page: DemoPageManifest,
+        *,
+        step_index: int,
+    ) -> str:
+        base = self._clean_step_text(step.talk_track or step.objective or page.summary)
+        element_context = self._element_context_sentence(page, step.recommended_action_ids)
+        prefix = "We start here because" if step_index == 0 else "This step matters because"
+        purpose = (base or page.summary).strip()
+        if not purpose:
+            purpose = f"it shows {page.title.lower()}"
+        return f"{prefix} {purpose[:1].lower() + purpose[1:]}. {element_context}".strip()
+
+    def _element_context_sentence(
+        self,
+        page: DemoPageManifest,
+        action_ids: list[str],
+    ) -> str:
+        element_ids = self._action_element_ids(page, action_ids)
+        if not element_ids:
+            element_ids = self._primary_element_ids(page, limit=2)
+        by_id = {element.id: element for element in page.elements}
+        snippets = []
+        for element_id in element_ids[:2]:
+            element = by_id.get(element_id)
+            if element is None:
+                continue
+            description = self._clean_step_text(element.description)
+            snippets.append(f"{element.label} {description[:1].lower() + description[1:]}")
+        if not snippets:
+            return ""
+        return " ".join(snippets) + "."
+
+    def _clean_step_text(self, value: str) -> str:
+        cleaned = value.strip().rstrip(".")
+        lowered = cleaned.lower()
+        for prefix in ("first, ", "then ", "after the demo, ", "finally, ", "next, "):
+            if lowered.startswith(prefix):
+                return cleaned[len(prefix):].strip()
+        return cleaned
 
     def _action_element_ids(self, page: DemoPageManifest, action_ids: list[str]) -> list[str]:
         ids: list[str] = []

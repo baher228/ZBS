@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, WebSocket
 
 from app.live_demo.models import (
     DemoManifest,
@@ -15,6 +15,7 @@ from app.live_demo.models import (
 from app.live_demo.runtime import LiveDemoRuntime
 from app.live_demo.setup_store import live_demo_setup_store
 from app.live_demo.store import live_demo_session_store
+from app.live_demo.voice_bridge import GeminiLiveDemoVoiceBridge
 
 router = APIRouter(tags=["live-demo"])
 
@@ -91,3 +92,27 @@ def send_live_demo_message(
         raise HTTPException(status_code=404, detail="Live demo session not found")
     manifest = get_live_demo_manifest(session.startup_id)
     return get_live_demo_runtime(manifest).handle_message(session, request)
+
+
+@router.websocket("/live-demo/sessions/{session_id}/voice")
+async def live_demo_voice(session_id: str, websocket: WebSocket) -> None:
+    session = live_demo_session_store.get(session_id)
+    if session is None:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "message": "Live demo session not found"})
+        await websocket.close(code=1008)
+        return
+    try:
+        manifest = get_live_demo_manifest(session.startup_id)
+    except HTTPException as exc:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "message": str(exc.detail)})
+        await websocket.close(code=1008)
+        return
+    bridge = GeminiLiveDemoVoiceBridge(
+        websocket=websocket,
+        runtime=get_live_demo_runtime(manifest),
+        store=live_demo_session_store,
+        session_id=session_id,
+    )
+    await bridge.run()

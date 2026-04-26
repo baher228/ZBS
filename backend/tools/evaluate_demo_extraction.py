@@ -23,10 +23,10 @@ ARTIFACT_DIR = Path(__file__).resolve().parent / "extraction_artifacts"
 DEFAULT_FOUNDER_INPUT = {
     "product_name": "Demeo",
     "product_description": (
-        "Demeo creates personalized AI demo rooms for technical B2B founders. "
-        "A founder provides product context and a prospect receives a link to a "
-        "guided AI demo that can show pages, move a cursor, answer questions, "
-        "qualify the lead, and produce follow-up."
+        "Demeo helps technical B2B founders turn their product into a guided "
+        "buyer demo. A prospect receives a link to an AI-led experience that "
+        "explains the product, answers questions, qualifies the opportunity, "
+        "and prepares follow-up for the founder."
     ),
     "target_customer": "technical B2B startup founders selling software",
     "prospect_description": "a founder evaluating whether Demeo can demo their own startup",

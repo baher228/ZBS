@@ -126,6 +126,22 @@ def test_live_demo_session_message_returns_valid_visual_events() -> None:
     )
 
 
+def test_demo_room_question_routes_to_actual_demo_page_not_home() -> None:
+    session = create_session()
+
+    response = client.post(
+        f"/api/v1/live-demo/sessions/{session['id']}/message",
+        json={
+            "message": "Show me what the agent demo room does.",
+            "current_page_id": session["current_page_id"],
+            "visible_element_ids": [],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["session"]["current_page_id"] == "demo"
+
+
 def test_rejects_unknown_startup_or_page() -> None:
     bad_startup = client.post(
         "/api/v1/live-demo/sessions",
@@ -147,3 +163,13 @@ def test_unknown_session_returns_404() -> None:
     )
 
     assert response.status_code == 404
+
+
+def test_voice_socket_reports_missing_gemini_key() -> None:
+    session = create_session()
+
+    with client.websocket_connect(f"/api/v1/live-demo/sessions/{session['id']}/voice") as websocket:
+        body = websocket.receive_json()
+
+    assert body["type"] == "error"
+    assert "GEMINI_API_KEY" in body["message"]

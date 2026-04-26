@@ -98,6 +98,7 @@ def convert_extracted_manifest(
     return DemoManifest(
         startup_id=startup_id,
         product_name=str(founder_input.get("product_name") or "Demeo extracted demo"),
+        product_description=str(founder_input.get("product_description") or ""),
         target_persona=str(
             founder_input.get("prospect_description")
             or founder_input.get("target_customer")
