@@ -114,7 +114,7 @@ function Landing() {
               { k: "200", l: "Stored insights" },
             ].map((s, i) => (
               <div
-                key={s.k}
+                key={s.l}
                 className={`px-6 py-6 animate-fade-up ${i > 0 ? "border-l border-foreground/15" : ""}`}
                 style={{ animationDelay: `${800 + i * 100}ms` }}
               >
